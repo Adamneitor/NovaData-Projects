@@ -1,0 +1,35 @@
+{% extends "shell.html" %}
+{% block title %}{{ module.name }} - Nova Projects{% endblock %}
+{% block content %}
+<div class="module-view">
+    <nav class="breadcrumb breadcrumb--top" aria-label="Ruta">
+        <a href="{{ url_for('home') }}" class="breadcrumb__link">
+            <i class="fa-solid fa-house"></i>
+            Home
+        </a>
+        {% if portal %}
+        <i class="fa-solid fa-chevron-right breadcrumb__separator"></i>
+        <a href="{{ url_for('portal_view', portal_id=portal.id) }}" class="breadcrumb__link">
+            <i class="fa-solid fa-{{ portal.icon }}"></i>
+            {{ portal.name }}
+        </a>
+        {% endif %}
+        <i class="fa-solid fa-chevron-right breadcrumb__separator"></i>
+        <span class="breadcrumb__current">{{ module.name }}</span>
+    </nav>
+
+    <div class="card module-view__placeholder">
+        <i class="fa-solid fa-{{ module.icon }} module-view__icon"></i>
+        <h3 class="module-view__title">{{ module.name }}</h3>
+        <p class="module-view__hint">
+            Este módulo se implementará como <strong>Flask Blueprint</strong> bajo <code>blueprints/</code>.
+        </p>
+        <div class="module-view__cta">
+            <button class="btn btn-primary" onclick="window.notify && window.notify.show ? window.notify.show({type:'info', title:'Módulo', message:'Funcionalidad próximamente'}) : alert('Funcionalidad próximamente')">
+                <i class="fa-solid fa-bolt"></i>
+                Acción Demo
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

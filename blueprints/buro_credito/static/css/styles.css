@@ -1,0 +1,639 @@
+/* ===================================================================
+   Buró de Crédito — estilos del módulo (paleta gris/blanco/negro).
+   Diseñado para integrarse con el shell de Nova Projects usando las
+   variables del design system (--text-*, --border-*, --bg-*).
+   ================================================================= */
+
+:root {
+    --buro-ink:        #111111;
+    --buro-ink-soft:   #3a3a3a;
+    --buro-muted:      #6b6b6b;
+    --buro-line:       #e2e2e2;
+    --buro-line-soft:  #ececec;
+    --buro-bg:         #ffffff;
+    --buro-bg-alt:     #f7f7f8;
+    --buro-bg-strong:  #ededed;
+    --buro-accent:     #1f1f1f;
+}
+
+/* ============ Formulario de consulta ============ */
+.buro-form-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 1rem 0 3rem;
+}
+
+.buro-form-card {
+    width: 100%;
+    max-width: 44rem;
+    background: var(--buro-bg);
+    border: 1px solid var(--buro-line);
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.buro-form-card__head {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    padding: 1.5rem 1.75rem;
+    background: var(--buro-bg-alt);
+    border-bottom: 1px solid var(--buro-line);
+}
+
+.buro-form-card__icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--buro-ink);
+    color: #fff;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.buro-form-card__title {
+    margin: 0;
+    font-size: 1.125rem;
+    color: var(--buro-ink);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.buro-form-card__subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--buro-muted);
+}
+
+.buro-form {
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.buro-alert {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+    background: #f4f4f4;
+    border: 1px solid #d6d6d6;
+    border-left: 3px solid var(--buro-ink);
+    border-radius: 6px;
+    color: var(--buro-ink-soft);
+    font-size: 0.8125rem;
+}
+
+.buro-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.buro-field__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--buro-muted);
+}
+
+.buro-field__input {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+    background: var(--buro-bg);
+    border: 1.5px solid var(--buro-line);
+    border-radius: 8px;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.buro-field__input:focus-within {
+    border-color: var(--buro-ink);
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.06);
+}
+
+.buro-field__input i {
+    color: var(--buro-muted);
+}
+
+.buro-field__input input {
+    border: none;
+    outline: none;
+    background: transparent;
+    flex: 1;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--buro-ink);
+    letter-spacing: 0.04em;
+}
+
+.buro-field__input input::placeholder {
+    color: #bdbdbd;
+}
+
+.buro-field__hint {
+    font-size: 0.75rem;
+    color: var(--buro-muted);
+}
+
+.buro-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.25rem;
+    background: var(--buro-ink);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 150ms ease, transform 150ms ease;
+}
+
+.buro-btn:hover { background: #000; transform: translateY(-1px); }
+.buro-btn:active { transform: translateY(0); }
+
+.buro-demo {
+    border-top: 1px solid var(--buro-line);
+    padding: 1.25rem 1.75rem 1.75rem;
+    background: var(--buro-bg-alt);
+}
+
+.buro-demo__title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--buro-muted);
+    margin-bottom: 0.75rem;
+}
+
+.buro-demo__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.buro-demo__item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    background: var(--buro-bg);
+    border: 1px solid var(--buro-line);
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--buro-ink);
+    font-size: 0.8125rem;
+    transition: background 150ms ease, border-color 150ms ease;
+}
+
+.buro-demo__item:hover {
+    background: var(--buro-bg-strong);
+    border-color: var(--buro-ink);
+}
+
+.buro-demo__ced {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-weight: 600;
+    color: var(--buro-ink);
+}
+
+.buro-demo__name {
+    color: var(--buro-muted);
+    flex: 1;
+}
+
+.buro-demo__item i {
+    color: var(--buro-muted);
+    font-size: 0.75rem;
+}
+
+/* ============ Reporte ============ */
+.buro-report {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding-bottom: 3rem;
+}
+
+.buro-section {
+    background: var(--buro-bg);
+    border: 1px solid var(--buro-line);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.buro-section__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.875rem 1.25rem;
+    background: var(--buro-bg-alt);
+    border-bottom: 1px solid var(--buro-line);
+}
+
+.buro-section__title {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--buro-ink);
+    letter-spacing: -0.01em;
+}
+
+.buro-section__meta {
+    font-size: 0.75rem;
+    color: var(--buro-muted);
+    font-weight: 500;
+}
+
+/* ----- Encabezado del cliente ----- */
+.buro-encabezado {
+    display: grid;
+    grid-template-columns: 120px 1fr 1fr;
+    gap: 1.5rem;
+    padding: 1.25rem;
+}
+
+.buro-foto {
+    width: 100px;
+    height: 120px;
+    border: 1px solid var(--buro-line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--buro-bg-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.buro-foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.buro-foto__placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.375rem;
+    color: var(--buro-muted);
+    font-size: 0.6875rem;
+}
+
+.buro-foto__placeholder i { font-size: 1.5rem; }
+
+.buro-datos {
+    display: contents;
+}
+
+.buro-datos__group ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4375rem;
+}
+
+.buro-datos__group li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.625rem;
+    font-size: 0.8125rem;
+    color: var(--buro-ink);
+}
+
+.buro-datos__group li strong {
+    min-width: 8rem;
+    color: var(--buro-muted);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.buro-xcore {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--buro-ink);
+    letter-spacing: -0.02em;
+}
+
+.buro-flag { font-weight: 600; }
+.buro-flag--ok  { color: var(--buro-ink); }
+.buro-flag--bad { color: #c63030; }
+
+/* ----- Cuentas ----- */
+.buro-cuentas {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.25rem;
+}
+
+.buro-cuenta {
+    border: 1px solid var(--buro-line);
+    border-radius: 8px;
+    background: var(--buro-bg);
+    padding: 0.875rem 1rem;
+    page-break-inside: avoid;
+}
+
+.buro-cuenta__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.625rem;
+    border-bottom: 1px solid var(--buro-line-soft);
+    margin-bottom: 0.75rem;
+}
+
+.buro-cuenta__banco {
+    font-weight: 600;
+    color: var(--buro-ink);
+    font-size: 0.8125rem;
+}
+
+.buro-cuenta__datos {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.625rem 1rem;
+    margin-bottom: 0.875rem;
+}
+
+.buro-cuenta__datos > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.buro-cuenta__datos span {
+    font-size: 0.6875rem;
+    color: var(--buro-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+}
+
+.buro-cuenta__datos strong {
+    font-size: 0.8125rem;
+    color: var(--buro-ink);
+    font-weight: 600;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.buro-monto-vencido { color: #c63030 !important; }
+
+.buro-cuenta__historial-label {
+    display: block;
+    font-size: 0.6875rem;
+    color: var(--buro-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 0.375rem;
+}
+
+.buro-historial {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+.buro-cuadro {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    border: 1px solid #cfcfcf;
+    background: #fff;
+    color: var(--buro-ink);
+    border-radius: 3px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.buro-cuadro--none { background: #d0d0d0 !important; border-color: #c0c0c0; color: #6e6e6e; }
+.buro-cuadro--ok   { background: #fff;      border-color: #cfcfcf; color: #1a1a1a; }
+.buro-cuadro--warn { background: #9e9e9e !important; border-color: #7a7a7a; color: #fff; }
+.buro-cuadro--mid  { background: #5a5a5a !important; border-color: #3a3a3a; color: #fff; }
+.buro-cuadro--bad  { background: #1a1a1a !important; border-color: #000;    color: #fff; }
+
+/* ----- Badges de estatus (sin colores de marca) ----- */
+.buro-estatus {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.estatus-abierto   { background: #1a1a1a; color: #fff; }
+.estatus-ciclo-1   { background: #f2f2f2; color: #333; border-color: #d0d0d0; }
+.estatus-ciclo-2   { background: #d0d0d0; color: #1a1a1a; }
+.estatus-malo      { background: #fff;    color: #c63030; border-color: #c63030; }
+.estatus-acuerdo   { background: #fff;    color: #1a1a1a; border-color: #1a1a1a; }
+.estatus-cerrado   { background: #ededed; color: #555; }
+.estatus-default   { background: #f5f5f5; color: #666; border-color: #e0e0e0; }
+
+/* ----- Tabla resumen ----- */
+.buro-table-wrap {
+    padding: 0;
+    overflow-x: auto;
+}
+
+.buro-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.buro-table th,
+.buro-table td {
+    padding: 0.625rem 0.875rem;
+    text-align: right;
+    border-bottom: 1px solid var(--buro-line-soft);
+}
+
+.buro-table th:first-child,
+.buro-table td:first-child,
+.buro-table th:nth-child(2),
+.buro-table td:nth-child(2),
+.buro-table th:nth-child(3),
+.buro-table td:nth-child(3) {
+    text-align: left;
+}
+
+.buro-table th {
+    background: var(--buro-ink);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.75rem 0.875rem;
+    border-bottom: 0;
+}
+
+.buro-table tbody tr:hover {
+    background: var(--buro-bg-alt);
+}
+
+.buro-table__subtotal td {
+    background: var(--buro-bg-strong) !important;
+    font-weight: 700;
+    color: var(--buro-ink);
+    border-bottom: 1px solid var(--buro-line);
+}
+
+/* ----- Leads pre-aprobados ----- */
+.buro-leads {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+    gap: 0.875rem;
+    padding: 1.25rem;
+}
+
+.buro-lead {
+    border: 1px solid var(--buro-line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--buro-bg);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.buro-lead:hover {
+    border-color: var(--buro-ink-soft);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.buro-lead__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--buro-ink);
+    color: #fff;
+}
+
+.buro-lead__tipo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.buro-lead__dictamen {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
+    background: #3a3a3a;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.buro-lead__dictamen.is-aprobado    { background: #fff; color: #111; }
+.buro-lead__dictamen.is-preaprobado { background: #ededed; color: #1a1a1a; }
+.buro-lead__dictamen.is-declinado   { background: #c63030; color: #fff; }
+
+.buro-lead__body {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+}
+
+.buro-metric {
+    padding: 0.5rem 0.875rem;
+    border-bottom: 1px solid var(--buro-line-soft);
+    border-right: 1px solid var(--buro-line-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.buro-metric:nth-child(even) { border-right: none; }
+
+.buro-metric--full {
+    grid-column: 1 / -1;
+    border-right: none;
+    background: var(--buro-bg-alt);
+}
+
+.buro-metric span {
+    font-size: 0.6875rem;
+    color: var(--buro-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.buro-metric strong {
+    font-size: 0.875rem;
+    color: var(--buro-ink);
+    font-weight: 700;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.buro-empty {
+    padding: 2rem;
+    text-align: center;
+    color: var(--buro-muted);
+    font-size: 0.875rem;
+}
+
+/* ----- Responsive ----- */
+@media (max-width: 860px) {
+    .buro-encabezado {
+        grid-template-columns: 1fr;
+    }
+    .buro-cuenta__datos {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ----- Print ----- */
+@media print {
+    .no-print { display: none !important; }
+
+    .buro-section {
+        box-shadow: none;
+        page-break-inside: avoid;
+    }
+
+    .buro-cuenta {
+        page-break-inside: avoid;
+    }
+
+    .buro-leads {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

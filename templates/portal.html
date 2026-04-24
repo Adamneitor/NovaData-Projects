@@ -1,0 +1,58 @@
+{% extends "shell.html" %}
+{% block title %}{{ portal.name }} - Nova Projects{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="{{ url_for('home') }}" class="breadcrumb__link">
+            <i class="fa-solid fa-house"></i>
+            Home
+        </a>
+        <i class="fa-solid fa-chevron-right breadcrumb__separator"></i>
+        <span class="breadcrumb__current">Portals</span>
+        <i class="fa-solid fa-chevron-right breadcrumb__separator"></i>
+        <span class="breadcrumb__current">{{ portal.name }}</span>
+    </div>
+
+    <div class="portal-header">
+        <div class="portal-header__icon">
+            <i class="fa-solid fa-{{ portal.icon }}"></i>
+        </div>
+        <div class="portal-header__body">
+            <h1 class="page-header__title">{{ portal.name }}</h1>
+            <p class="page-header__subtitle">{{ portal.description }}</p>
+            <div class="portal-header__meta">
+                <span class="badge badge-nova">
+                    <i class="fa-solid fa-layer-group"></i>
+                    {{ total_modules }} módulo{{ 's' if total_modules != 1 else '' }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if modules %}
+<div class="module-grid" data-sort="modules">
+    {% for module in modules %}
+    <a href="{{ module.route }}" class="module-card" data-module-route="{{ module.route }}">
+        <div class="module-card__header">
+            <div class="module-card__icon">
+                <i class="fa-solid fa-{{ module.icon }}"></i>
+            </div>
+            <h3 class="module-card__title">{{ module.name }}</h3>
+        </div>
+        <p class="module-card__description">{{ module.description }}</p>
+        <div class="module-card__footer">
+            <span class="module-card__category">{{ module.category }}</span>
+            <i class="fa-solid fa-arrow-right module-card__arrow"></i>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div style="text-align: center; padding: 5rem 2rem;">
+    <i class="fa-solid fa-inbox" style="font-size: 4rem; color: var(--text-5); margin-bottom: 1.5rem;"></i>
+    <h3 style="font-size: 1.5rem; color: var(--text-3); margin-bottom: 0.5rem;">Sin módulos disponibles</h3>
+    <p style="color: var(--text-4);">Este portal aún no tiene módulos asignados a tu rol.</p>
+</div>
+{% endif %}
+{% endblock %}

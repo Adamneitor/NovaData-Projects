@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+{% block body %}
+<!-- Splash de entrada (se muestra solo tras login, fade-out automático) -->
+<div id="nova-splash" class="auth-loader" aria-hidden="true">
+    <div class="auth-loader__fill" aria-label="Cargando">
+        <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" class="auth-loader__logo-base">
+        <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" class="auth-loader__logo-color">
+    </div>
+</div>
+<script>
+(function () {
+    try {
+        if (sessionStorage.getItem('nova-entering') === '1') {
+            const splash = document.getElementById('nova-splash');
+            splash.classList.add('is-active');
+            splash.setAttribute('aria-hidden', 'false');
+            document.documentElement.classList.add('nova-entering');
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    splash.classList.add('is-leaving');
+                    setTimeout(() => {
+                        splash.classList.remove('is-active', 'is-leaving');
+                        splash.setAttribute('aria-hidden', 'true');
+                        document.documentElement.classList.remove('nova-entering');
+                        sessionStorage.removeItem('nova-entering');
+                    }, 700);
+                }, 2200);
+            });
+        }
+    } catch (err) { /* noop */ }
+})();
+</script>
+
+<div class="app-shell">
+    <div class="app-brand" id="app-brand">
+        <a href="{{ url_for('home') }}" class="nova-brand nova-brand--sidebar" aria-label="Nova Data Solutions">
+            <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" class="nova-brand__icon">
+            <span class="nova-brand__text">
+                <span class="nova-brand__name">NOVA</span>
+                <span class="nova-brand__sub">DATA SOLUTIONS</span>
+            </span>
+        </a>
+    </div>
+
+    <button type="button" class="app-sidebar__collapse" id="sidebar-toggle" title="Ocultar/mostrar barra (Ctrl+B)" aria-label="Alternar barra lateral">
+        <i class="fa-solid fa-angle-left" id="sidebar-toggle-icon"></i>
+    </button>
+
+    <aside class="app-sidebar" id="app-sidebar">
+        <div class="app-sidebar__scroll">
+            <div class="app-sidebar__section">
+                <div class="app-sidebar__section-title">Main</div>
+                <ul class="app-sidebar__nav">
+                    <li class="app-sidebar__nav-item">
+                        <a href="{{ url_for('home') }}" class="app-sidebar__nav-link {% if request.endpoint == 'home' %}active{% endif %}">
+                            <i class="fa-solid fa-house"></i>
+                            <span>Home</span>
+                        </a>
+                    </li>
+                    {% if user.role == 'admin' %}
+                    <li class="app-sidebar__nav-item">
+                        <a href="{{ url_for('admin_dashboard') }}" class="app-sidebar__nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <span>Admin</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% if nav_portals %}
+            <div class="app-sidebar__section" id="sidebar-portals-section">
+                <div class="app-sidebar__section-title">Portals</div>
+                <ul class="app-sidebar__nav" id="sidebar-portals">
+                    {% for p in nav_portals %}
+                    <li class="app-sidebar__nav-item" data-portal-id="{{ p.id }}">
+                        <a href="{{ url_for('portal_view', portal_id=p.id) }}"
+                           class="app-sidebar__nav-link {% if current_portal_id == p.id %}active{% endif %}"
+                           data-portal-link="{{ p.id }}">
+                            <i class="fa-solid fa-{{ p.icon }}"></i>
+                            <span>{{ p.name }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </aside>
+
+    <header class="app-header" id="app-header">
+        <div class="app-header__search">
+            <div class="search">
+                <input type="text" id="global-search" class="search__input" placeholder="Buscar módulos, portales..." autocomplete="off">
+                <i class="fa-solid fa-magnifying-glass search__icon"></i>
+                <div class="search__kbd">
+                    <span class="search__kbd-key">⌘K</span>
+                </div>
+                <div id="search-results" class="search__results"></div>
+            </div>
+        </div>
+        <div class="app-header__actions">
+            <button class="btn btn-ghost btn-sm" id="theme-toggle" title="Cambiar tema">
+                <i class="fa-solid fa-circle-half-stroke"></i>
+            </button>
+            <button class="btn btn-ghost btn-sm" id="focus-toggle" title="Modo enfoque (Ctrl+Q)">
+                <i class="fa-solid fa-expand"></i>
+            </button>
+            <div class="app-header__user">
+                <div class="app-header__user-info">
+                    <div class="app-header__user-name">{{ user.name }}</div>
+                    <div class="app-header__user-role">{{ user.role|title }}</div>
+                </div>
+                <div class="avatar">
+                    {% if user.photo %}
+                    <img src="{{ url_for('get_user_photo', username=user.username) }}" alt="{{ user.name }}">
+                    {% else %}
+                    {{ user.name[0]|upper }}
+                    {% endif %}
+                </div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm" title="Salir">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </a>
+        </div>
+    </header>
+
+    <main class="app-main">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+<div class="focus-hint" id="focus-hint" aria-hidden="true">
+    <i class="fa-solid fa-keyboard"></i>
+    <span>Modo enfoque activo — Pulsa <kbd>Ctrl</kbd>+<kbd>Q</kbd> para salir</span>
+</div>
+
+<script>
+class App {
+  constructor() {
+    this.socket = io();
+    this.initSearch();
+    this.initTheme();
+    this.initSocketIO();
+    this.initKeyboard();
+    this.initSidebar();
+    this.initFocusMode();
+    this.initUsageTracking();
+  }
+
+  /* ========================
+     Socket.IO
+     ======================== */
+  initSocketIO() {
+    this.socket.on('connect', () => console.log('Connected'));
+    this.socket.on('notification', (data) => {
+      window.notify && window.notify.show && window.notify.show({
+        type: data.type || 'info',
+        title: data.title,
+        message: data.message,
+        duration: data.duration || 5000
+      });
+    });
+  }
+
+  /* ========================
+     Global search
+     ======================== */
+  initSearch() {
+    const input = document.getElementById('global-search');
+    const results = document.getElementById('search-results');
+    if (!input || !results) return;
+    let timer, currentResults = [], selectedIndex = -1;
+
+    input.addEventListener('input', (e) => {
+      const q = e.target.value.trim();
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        if (!q) { results.classList.remove('active'); return; }
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        currentResults = await res.json();
+        selectedIndex = -1;
+        if (!currentResults.length) {
+          results.innerHTML = '<div class="search__result-item" style="cursor:default;"><div class="search__result-content"><div class="search__result-title" style="color:var(--text-4);">Sin resultados</div></div></div>';
+        } else {
+          results.innerHTML = currentResults.map((r, i) => `
+            <div class="search__result-item" data-index="${i}" data-route="${r.route}">
+              <div class="search__result-icon"><i class="fa-solid fa-${r.icon}"></i></div>
+              <div class="search__result-content">
+                <div class="search__result-title">${r.name}</div>
+                <div class="search__result-description">${r.description}</div>
+              </div>
+            </div>
+          `).join('');
+          results.querySelectorAll('.search__result-item').forEach(item => {
+            item.addEventListener('click', () => { if (item.dataset.route) window.location.href = item.dataset.route; });
+            item.addEventListener('mouseenter', () => { selectedIndex = parseInt(item.dataset.index); updateSelected(); });
+          });
+        }
+        results.classList.add('active');
+      }, 200);
+    });
+
+    const updateSelected = () => {
+      results.querySelectorAll('.search__result-item').forEach((item, i) => {
+        item.classList.toggle('selected', i === selectedIndex);
+      });
+    };
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); selectedIndex = (selectedIndex + 1) % currentResults.length; updateSelected(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); selectedIndex = selectedIndex <= 0 ? currentResults.length - 1 : selectedIndex - 1; updateSelected(); }
+      else if (e.key === 'Enter' && selectedIndex >= 0 && currentResults[selectedIndex]) { e.preventDefault(); window.location.href = currentResults[selectedIndex].route; }
+      else if (e.key === 'Escape') { results.classList.remove('active'); input.blur(); }
+    });
+    document.addEventListener('click', (e) => { if (!e.target.closest('.search')) results.classList.remove('active'); });
+  }
+
+  /* ========================
+     Theme
+     ======================== */
+  initTheme() {
+    const btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    const html = document.documentElement;
+    const saved = localStorage.getItem('theme') || 'light';
+    html.dataset.theme = saved;
+    btn.addEventListener('click', () => {
+      const newTheme = html.dataset.theme === 'light' ? 'dark' : 'light';
+      html.dataset.theme = newTheme;
+      localStorage.setItem('theme', newTheme);
+    });
+  }
+
+  /* ========================
+     Sidebar toggle (colapsar hacia la izquierda)
+     ======================== */
+  initSidebar() {
+    const shell = document.querySelector('.app-shell');
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    const toggleIcon = document.getElementById('sidebar-toggle-icon');
+    if (!shell) return;
+
+    const apply = (hidden) => {
+      shell.classList.toggle('sidebar-hidden', hidden);
+      if (toggleIcon) {
+        toggleIcon.className = hidden ? 'fa-solid fa-angle-right' : 'fa-solid fa-angle-left';
+      }
+      localStorage.setItem('nova-sidebar-hidden', hidden ? '1' : '0');
+    };
+
+    apply(localStorage.getItem('nova-sidebar-hidden') === '1');
+
+    toggleBtn && toggleBtn.addEventListener('click', () => {
+      apply(!shell.classList.contains('sidebar-hidden'));
+    });
+  }
+
+  /* ========================
+     Focus mode (Ctrl+Q)
+     ======================== */
+  initFocusMode() {
+    const btn = document.getElementById('focus-toggle');
+    const hint = document.getElementById('focus-hint');
+    const shell = document.querySelector('.app-shell');
+    if (!shell) return;
+
+    const apply = (on) => {
+      shell.classList.toggle('focus-mode', on);
+      if (hint) {
+        hint.classList.toggle('is-visible', on);
+        if (on) setTimeout(() => hint.classList.remove('is-visible'), 2400);
+      }
+    };
+
+    btn && btn.addEventListener('click', () => apply(!shell.classList.contains('focus-mode')));
+  }
+
+  /* ========================
+     Keyboard shortcuts
+     ======================== */
+  initKeyboard() {
+    const shell = document.querySelector('.app-shell');
+    document.addEventListener('keydown', (e) => {
+      // ⌘K / Ctrl+K → búsqueda global
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        document.getElementById('global-search')?.focus();
+        return;
+      }
+      // Ctrl+Q → modo enfoque (oculta header + sidebar, iframe a pantalla completa)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'q') {
+        e.preventDefault();
+        if (shell) {
+          const on = !shell.classList.contains('focus-mode');
+          shell.classList.toggle('focus-mode', on);
+          const hint = document.getElementById('focus-hint');
+          if (hint) {
+            hint.classList.toggle('is-visible', on);
+            if (on) setTimeout(() => hint.classList.remove('is-visible'), 2400);
+          }
+        }
+        return;
+      }
+      // Ctrl+B → toggle sidebar
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        document.getElementById('sidebar-toggle')?.click();
+      }
+    });
+  }
+
+  /* ========================
+     Usage tracking (ordena portales y módulos por uso reciente)
+     ======================== */
+  initUsageTracking() {
+    const STORE_PORTAL = 'nova-usage-portal';
+    const STORE_MODULE = 'nova-usage-module';
+
+    const read = (key) => {
+      try { return JSON.parse(localStorage.getItem(key) || '{}'); }
+      catch (e) { return {}; }
+    };
+    const write = (key, obj) => {
+      try { localStorage.setItem(key, JSON.stringify(obj)); } catch (e) {}
+    };
+
+    // Registrar uso si estamos en una página de portal o módulo
+    const path = window.location.pathname;
+    const now = Date.now();
+    if (path.startsWith('/portal/')) {
+      const id = path.split('/')[2];
+      const store = read(STORE_PORTAL);
+      store[id] = now;
+      write(STORE_PORTAL, store);
+    }
+    if (path.startsWith('/module/')) {
+      const route = path.endsWith('/') ? path : path + '/';
+      const store = read(STORE_MODULE);
+      store[route] = now;
+      // También buscar la versión sin trailing slash
+      store[path] = now;
+      write(STORE_MODULE, store);
+    }
+
+    // Reordenar listas que tengan data-sort-by-usage
+    const sortList = (list, keyAttr, store) => {
+      if (!list) return;
+      const items = Array.from(list.children);
+      items.sort((a, b) => {
+        const ka = a.getAttribute(keyAttr) || (a.querySelector('[href]')?.getAttribute('href')) || '';
+        const kb = b.getAttribute(keyAttr) || (b.querySelector('[href]')?.getAttribute('href')) || '';
+        const ua = store[ka] || 0;
+        const ub = store[kb] || 0;
+        if (ub !== ua) return ub - ua;
+        return 0; // mantener orden relativo original si no hay uso
+      });
+      items.forEach(it => list.appendChild(it));
+
+      // Marcar los más recientes con clase .is-recent (top 3)
+      const sortedUsed = items.filter(it => {
+        const k = it.getAttribute(keyAttr) || (it.querySelector('[href]')?.getAttribute('href')) || '';
+        return !!store[k];
+      }).slice(0, 3);
+      sortedUsed.forEach(it => it.classList.add('is-recent'));
+    };
+
+    const portalStore = read(STORE_PORTAL);
+    const moduleStore = read(STORE_MODULE);
+
+    // Sidebar de portales
+    sortList(document.getElementById('sidebar-portals'), 'data-portal-id', portalStore);
+
+    // Home: grid de portales
+    document.querySelectorAll('[data-sort="portals"]').forEach(grid => {
+      sortList(grid, 'data-portal-id', portalStore);
+    });
+
+    // Home / portal: grid de módulos
+    document.querySelectorAll('[data-sort="modules"]').forEach(grid => {
+      sortList(grid, 'data-module-route', moduleStore);
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => { window.app = new App(); });
+</script>
+{% endblock %}

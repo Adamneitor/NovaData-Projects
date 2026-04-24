@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Login - Nova Projects{% endblock %}
+{% block body %}
+<div class="auth-page">
+
+    <!-- LEFT: Brand Panel -->
+    <aside class="auth-brand">
+        <div class="auth-brand__bg" aria-hidden="true">
+            <span class="auth-blob auth-blob--1"></span>
+            <span class="auth-blob auth-blob--2"></span>
+            <span class="auth-blob auth-blob--3"></span>
+            <div class="auth-grid"></div>
+            <i class="fa-solid fa-brain tech-float tech-float--1"></i>
+            <i class="fa-solid fa-microchip tech-float tech-float--2"></i>
+            <i class="fa-solid fa-database tech-float tech-float--3"></i>
+            <i class="fa-solid fa-chart-column tech-float tech-float--4"></i>
+            <i class="fa-solid fa-network-wired tech-float tech-float--5"></i>
+        </div>
+
+        <div class="auth-brand__content">
+            <div class="auth-anim" style="--delay: 0ms;">
+                <div class="nova-brand nova-brand--login auth-brand__logo">
+                    <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="Nova" class="nova-brand__icon">
+                    <span class="nova-brand__divider"></span>
+                    <span class="nova-brand__text">
+                        <span class="nova-brand__name">NOVA</span>
+                        <span class="nova-brand__sub">DATA SOLUTIONS</span>
+                    </span>
+                </div>
+            </div>
+
+            <h2 class="auth-brand__tagline auth-anim" style="--delay: 150ms;">
+                El impulso <span class="gradient-word">inteligente</span>
+                de tu <span class="gradient-word gradient-word--alt">crecimiento</span>
+            </h2>
+
+            <p class="auth-brand__description auth-anim" style="--delay: 300ms;">
+                Transformamos información en decisiones estratégicas y resultados medibles.
+                Portal interno de herramientas de análisis y operación.
+            </p>
+
+            <div class="auth-brand__footer auth-anim" style="--delay: 450ms;">
+                <div class="auth-social">
+                    <a href="https://www.datanova.com.do/" target="_blank" rel="noopener" class="auth-social__link" title="Sitio web" aria-label="Sitio web">
+                        <i class="fa-solid fa-globe"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/company/nova-data-solutions/" target="_blank" rel="noopener" class="auth-social__link" title="LinkedIn" aria-label="LinkedIn">
+                        <i class="fa-brands fa-linkedin-in"></i>
+                    </a>
+                    <a href="https://www.instagram.com/novadatasolutions/" target="_blank" rel="noopener" class="auth-social__link" title="Instagram" aria-label="Instagram">
+                        <i class="fa-brands fa-instagram"></i>
+                    </a>
+                    <a href="mailto:info@datanova.com.do" class="auth-social__link" title="Email" aria-label="Email">
+                        <i class="fa-solid fa-envelope"></i>
+                    </a>
+                </div>
+                <a href="https://www.datanova.com.do/" target="_blank" rel="noopener" class="auth-website">
+                    <span>datanova.com.do</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- RIGHT: Form Panel -->
+    <section class="auth-form-panel">
+        <div class="auth-form">
+            <div class="auth-form__mobile-logo">
+                <div class="nova-brand">
+                    <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" class="nova-brand__icon">
+                    <span class="nova-brand__divider"></span>
+                    <span class="nova-brand__text">
+                        <span class="nova-brand__name">NOVA</span>
+                        <span class="nova-brand__sub">DATA SOLUTIONS</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="auth-form__header auth-anim" style="--delay: 100ms;">
+                <h1>Bienvenido</h1>
+                <p>Inicia sesión para acceder a tu portal</p>
+            </div>
+
+            <form method="POST" id="login-form" class="auth-form__body auth-anim" style="--delay: 250ms;" novalidate>
+                {% if error %}
+                <div class="auth-error">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>{{ error }}</span>
+                </div>
+                {% endif %}
+
+                <div class="auth-field">
+                    <label for="username">Usuario</label>
+                    <div class="auth-input">
+                        <i class="fa-solid fa-user auth-input__icon"></i>
+                        <input type="text" id="username" name="username" class="input" placeholder="Ingresa tu usuario" required autofocus autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="auth-field">
+                    <div class="auth-field__label-row">
+                        <label for="password">Contraseña</label>
+                        <a href="#" class="auth-field__link" onclick="event.preventDefault()">¿Olvidaste tu contraseña?</a>
+                    </div>
+                    <div class="auth-input">
+                        <i class="fa-solid fa-lock auth-input__icon"></i>
+                        <input type="password" id="password" name="password" class="input" placeholder="Ingresa tu contraseña" required autocomplete="current-password">
+                        <button type="button" class="auth-input__toggle" aria-label="Mostrar contraseña" id="toggle-password">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-brand auth-submit">
+                    <span class="auth-submit__label">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                        Iniciar sesión
+                    </span>
+                    <span class="auth-submit__loading">
+                        <span class="auth-spinner"></span>
+                        Verificando...
+                    </span>
+                </button>
+            </form>
+
+            <p class="auth-form__copy auth-anim" style="--delay: 400ms;">
+                &copy; <span id="auth-year">2026</span> Nova Data Solutions · Todos los derechos reservados
+            </p>
+        </div>
+    </section>
+</div>
+
+<!-- Loading overlay: se activa al enviar credenciales válidas -->
+<div id="auth-loader" class="auth-loader" aria-hidden="true">
+    <div class="auth-loader__fill" aria-label="Cargando">
+        <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" class="auth-loader__logo-base">
+        <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" class="auth-loader__logo-color">
+    </div>
+</div>
+
+<script>
+(function () {
+    document.getElementById('auth-year').textContent = new Date().getFullYear();
+
+    const form = document.getElementById('login-form');
+    const submitBtn = form.querySelector('.auth-submit');
+    const loader = document.getElementById('auth-loader');
+
+    // Mostrar/ocultar contraseña
+    const toggle = document.getElementById('toggle-password');
+    const pwdInput = document.getElementById('password');
+    toggle.addEventListener('click', () => {
+        const isPwd = pwdInput.type === 'password';
+        pwdInput.type = isPwd ? 'text' : 'password';
+        toggle.querySelector('i').className = isPwd ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    });
+
+    // Al enviar formulario: loader + flag para que /home muestre el splash
+    form.addEventListener('submit', (e) => {
+        const username = form.username.value.trim();
+        const password = form.password.value;
+        if (!username || !password) return;
+
+        submitBtn.classList.add('is-loading');
+        submitBtn.disabled = true;
+
+        try {
+            sessionStorage.setItem('nova-entering', '1');
+        } catch (err) { /* sessionStorage no disponible */ }
+
+        loader.classList.add('is-active');
+        loader.setAttribute('aria-hidden', 'false');
+    });
+
+    // Animación de entrada de los paneles
+    document.body.classList.add('auth-loaded');
+})();
+</script>
+{% endblock %}

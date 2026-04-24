@@ -1,0 +1,289 @@
+{% extends "shell.html" %}
+{% block title %}Reporte {{ datos.Cedula }} - Buró de Crédito{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('buro_credito.static', filename='css/styles.css') }}">
+
+<nav class="breadcrumb breadcrumb--top no-print" aria-label="Ruta">
+    <a href="{{ url_for('home') }}" class="breadcrumb__link">
+        <i class="fa-solid fa-house"></i>
+        Home
+    </a>
+    <i class="fa-solid fa-chevron-right breadcrumb__separator"></i>
+    <a href="{{ url_for('portal_view', portal_id='analisis-credito') }}" class="breadcrumb__link">
+        <i class="fa-solid fa-file-invoice-dollar"></i>
+        Análisis de Crédito
+    </a>
+    <i class="fa-solid fa-chevron-right breadcrumb__separator"></i>
+    <a href="{{ url_for('buro_credito.formulario') }}" class="breadcrumb__link">
+        <i class="fa-solid fa-id-card"></i>
+        Buró de Crédito
+    </a>
+    <i class="fa-solid fa-chevron-right breadcrumb__separator"></i>
+    <span class="breadcrumb__current">Reporte {{ datos.Cedula }}</span>
+
+    <div class="breadcrumb__actions no-print">
+        <a href="{{ url_for('buro_credito.formulario') }}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Otra cédula
+        </a>
+        <button type="button" onclick="window.print()" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-print"></i>
+            Imprimir
+        </button>
+    </div>
+</nav>
+
+<div class="buro-report">
+
+    <section class="buro-section" id="encabezado">
+        <div class="buro-section__head">
+            <div class="buro-section__title">Información general</div>
+            <div class="buro-section__meta">Cliente · {{ datos.Cedula }}</div>
+        </div>
+        <div class="buro-encabezado">
+            <div class="buro-foto">
+                {% if datos.Foto_Cliente %}
+                    <img src="data:image/jpeg;base64,{{ datos.Foto_Cliente }}" alt="Foto">
+                {% else %}
+                    <div class="buro-foto__placeholder">
+                        <i class="fa-solid fa-user"></i>
+                        <span>Sin foto</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="buro-datos">
+                <div class="buro-datos__group">
+                    <ul>
+                        <li><strong>Nombre</strong><span>{{ datos.Nombre }} {{ datos.Apellidos }}</span></li>
+                        <li><strong>Cédula</strong><span>{{ datos.Cedula }}</span></li>
+                        <li><strong>Fecha nac.</strong><span>{{ datos.Fecha_De_Nacimiento }}</span></li>
+                        <li><strong>Edad</strong><span>{{ datos.Edad }}</span></li>
+                        <li><strong>Vencimiento</strong>
+                            <span class="{{ 'buro-flag buro-flag--bad' if datos.Fecha_Vencimiento < now.strftime('%Y%m%d') else 'buro-flag buro-flag--ok' }}">
+                                {{ datos.Fecha_Vencimiento }}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="buro-datos__group">
+                    <ul>
+                        <li>
+                            <strong>Score (Xcore)</strong>
+                            <span class="buro-xcore">{{ datos.Xcore }}</span>
+                        </li>
+                        <li><strong>Riesgo a favor</strong><span>{{ datos.ChanceRiesgoFavor }}</span></li>
+                        <li><strong>Riesgo en contra</strong><span>{{ datos.ChanceRiesgoEnContra }}</span></li>
+                        <li><strong>Mes evaluación</strong><span>{{ datos.Mes_Evaluacion }}</span></li>
+                        <li><strong>EIC</strong>
+                            <span>{{ datos.Eic_Min | moneda_sola }} / {{ datos.Eic_Max | moneda_sola }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="buro-section" id="detalle-cuentas">
+        <div class="buro-section__head">
+            <div class="buro-section__title">Detalle de cuentas</div>
+            <div class="buro-section__meta">{{ cuentas|length }} cuenta(s)</div>
+        </div>
+
+        <div class="buro-cuentas">
+            {% for cuenta in cuentas %}
+            {% set clase, icono = cuenta.EstatusEstandarizado | badge_info %}
+            <article class="buro-cuenta">
+                <header class="buro-cuenta__head">
+                    <span class="buro-cuenta__banco">{{ cuenta.Banco }}</span>
+                    <span class="buro-estatus {{ clase }}">{{ icono }} {{ cuenta.EstatusEstandarizado }}</span>
+                </header>
+
+                <div class="buro-cuenta__datos">
+                    <div><span>F. Apertura</span><strong>{{ cuenta.Fecha_Apertura }}</strong></div>
+                    <div><span>Mes</span><strong>{{ cuenta.Mes_Consolidado }}</strong></div>
+                    <div><span>Últ. Mov.</span><strong>{{ cuenta.Fecha_Ult_Transaccion }}</strong></div>
+                    <div><span>Moneda</span><strong>{{ cuenta.Moneda }}</strong></div>
+                    <div><span>Aprobado</span><strong>{{ cuenta.Credito_Aprobado | moneda_sola }}</strong></div>
+                    <div><span>Adeudado</span><strong>{{ cuenta.Monto_Adeudado | moneda_sola }}</strong></div>
+                    <div><span>Cuota</span><strong>{{ cuenta.Pago_Cuota | moneda_sola }}</strong></div>
+                    <div>
+                        <span>Vencido</span>
+                        <strong class="{{ 'buro-monto-vencido' if cuenta.Atraso_Total > 0 else '' }}">
+                            {{ cuenta.Atraso_Total | moneda_sola }}
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="buro-cuenta__historial">
+                    <span class="buro-cuenta__historial-label">Historial de pago (24 meses)</span>
+                    <div class="buro-historial">
+                        {% for valor in cuenta.Historial_Pago %}
+                            {% if valor == '-' %}
+                                <span class="buro-cuadro buro-cuadro--none">-</span>
+                            {% elif valor == '0' %}
+                                <span class="buro-cuadro buro-cuadro--ok">0</span>
+                            {% elif valor == '1' %}
+                                <span class="buro-cuadro buro-cuadro--warn">1</span>
+                            {% elif valor == '2' %}
+                                <span class="buro-cuadro buro-cuadro--mid">2</span>
+                            {% else %}
+                                <span class="buro-cuadro buro-cuadro--bad">{{ valor }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="buro-section" id="resumen-estatus">
+        <div class="buro-section__head">
+            <div class="buro-section__title">Resumen por estatus</div>
+            <div class="buro-section__meta">Montos consolidados</div>
+        </div>
+
+        <div class="buro-table-wrap">
+            <table class="buro-table">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Moneda</th>
+                        <th>Estado</th>
+                        <th>Cant.</th>
+                        <th>Monto adeudado</th>
+                        <th>Atraso</th>
+                        <th>Cuotas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set rows = [] %}
+                    {% for (tipo, moneda), estados in resumen.items() %}
+                        {% for estado, valores in estados.items() %}
+                            {% set _ = rows.append({'tipo': tipo, 'moneda': moneda, 'estado': estado, 'valores': valores}) %}
+                        {% endfor %}
+                    {% endfor %}
+                    {% set rows = rows|sort(attribute='moneda') %}
+                    {% set subtotal = namespace(moneda=None, cant=0, adeudado=0, atraso=0, cuotas=0) %}
+
+                    {% for row in rows %}
+                        {% if subtotal.moneda is not none and subtotal.moneda != row.moneda and subtotal.cant > 0 %}
+                        <tr class="buro-table__subtotal">
+                            <td colspan="3">Subtotal {{ subtotal.moneda }}</td>
+                            <td>{{ subtotal.cant }}</td>
+                            <td>{{ subtotal.adeudado | moneda_sola }}</td>
+                            <td>{{ subtotal.atraso | moneda_sola }}</td>
+                            <td>{{ subtotal.cuotas | moneda_sola }}</td>
+                        </tr>
+                        {% set subtotal.cant = 0 %}
+                        {% set subtotal.adeudado = 0 %}
+                        {% set subtotal.atraso = 0 %}
+                        {% set subtotal.cuotas = 0 %}
+                        {% endif %}
+                        <tr>
+                            <td>{{ row.tipo }}</td>
+                            <td>{{ row.moneda }}</td>
+                            <td>{{ row.estado }}</td>
+                            <td>{{ row.valores.Cantidad }}</td>
+                            <td>{{ row.valores.Monto_Adeudado | moneda_sola }}</td>
+                            <td>{{ row.valores.Monto_Atraso | moneda_sola }}</td>
+                            <td>{{ row.valores.Cuotas | moneda_sola }}</td>
+                        </tr>
+                        {% set subtotal.moneda = row.moneda %}
+                        {% set subtotal.cant = subtotal.cant + row.valores.Cantidad %}
+                        {% set subtotal.adeudado = subtotal.adeudado + row.valores.Monto_Adeudado %}
+                        {% set subtotal.atraso = subtotal.atraso + row.valores.Monto_Atraso %}
+                        {% set subtotal.cuotas = subtotal.cuotas + row.valores.Cuotas %}
+                        {% if loop.last and subtotal.cant > 0 %}
+                        <tr class="buro-table__subtotal">
+                            <td colspan="3">Subtotal {{ subtotal.moneda }}</td>
+                            <td>{{ subtotal.cant }}</td>
+                            <td>{{ subtotal.adeudado | moneda_sola }}</td>
+                            <td>{{ subtotal.atraso | moneda_sola }}</td>
+                            <td>{{ subtotal.cuotas | moneda_sola }}</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="buro-section" id="leads-preaprobados">
+        <div class="buro-section__head">
+            <div class="buro-section__title">Leads pre-aprobados</div>
+            <div class="buro-section__meta">{{ leads|length }} oferta(s)</div>
+        </div>
+
+        {% if leads %}
+        <div class="buro-leads">
+            {% for grupo in leads %}
+            {% set first = grupo.lineas[0] %}
+            {% set d = (first.Dictamen or '')|lower %}
+            <article class="buro-lead">
+                <header class="buro-lead__head">
+                    <span class="buro-lead__tipo">
+                        {% set t = grupo.tipo|lower %}
+                        {% if 'tc' in t or 'limite' in t %}
+                            <i class="fa-solid fa-credit-card"></i>
+                        {% elif 'hipotec' in t %}
+                            <i class="fa-solid fa-house-chimney"></i>
+                        {% elif 'consolid' in t %}
+                            <i class="fa-solid fa-arrows-turn-to-dots"></i>
+                        {% else %}
+                            <i class="fa-solid fa-money-bill-trend-up"></i>
+                        {% endif %}
+                        {{ grupo.tipo }}
+                    </span>
+                    <span class="buro-lead__dictamen
+                        {% if 'aprobado' in d and 'pre' not in d %}is-aprobado{% elif 'pre' in d %}is-preaprobado{% elif 'declinado' in d %}is-declinado{% endif %}">
+                        {{ first.Dictamen }}
+                    </span>
+                </header>
+
+                {% if grupo.es_tc and grupo.lineas|length > 1 %}
+                {% set dop = namespace(monto=0, cuota=0, producto='') %}
+                {% set usd = namespace(monto=0, cuota=0) %}
+                {% for linea in grupo.lineas %}
+                    {% if linea.Codigo_Iso_3_Char == 'DOP' %}
+                        {% set dop.monto = linea.Monto or 0 %}
+                        {% set dop.cuota = linea.Cuota or 0 %}
+                        {% set dop.producto = linea.Producto_Sugerido or '' %}
+                    {% elif linea.Codigo_Iso_3_Char == 'USD' %}
+                        {% set usd.monto = linea.Monto or 0 %}
+                        {% set usd.cuota = linea.Cuota or 0 %}
+                    {% endif %}
+                {% endfor %}
+                <div class="buro-lead__body">
+                    <div class="buro-metric"><span>Monto DOP</span><strong>{{ dop.monto | moneda_sola }}</strong></div>
+                    <div class="buro-metric"><span>Cuota DOP</span><strong>{{ dop.cuota | moneda_sola }}</strong></div>
+                    <div class="buro-metric"><span>Monto USD</span><strong>{{ usd.monto | moneda_sola }}</strong></div>
+                    <div class="buro-metric"><span>Cuota USD</span><strong>{{ usd.cuota | moneda_sola }}</strong></div>
+                    {% if dop.producto %}
+                    <div class="buro-metric buro-metric--full"><span>Producto sugerido</span><strong>{{ dop.producto }}</strong></div>
+                    {% endif %}
+                </div>
+                {% else %}
+                {% set linea = grupo.lineas[0] %}
+                <div class="buro-lead__body">
+                    <div class="buro-metric"><span>Moneda</span><strong>{{ linea.Codigo_Iso_3_Char }}</strong></div>
+                    <div class="buro-metric"><span>Monto</span><strong>{{ (linea.Monto or 0) | moneda_sola }}</strong></div>
+                    <div class="buro-metric"><span>Plazo</span><strong>{{ linea.Plazo or '—' }}</strong></div>
+                    <div class="buro-metric"><span>Tasa</span><strong>{{ "{:.2f}%".format(linea.Tasa) if linea.Tasa else '—' }}</strong></div>
+                    <div class="buro-metric"><span>Cuota</span><strong>{{ (linea.Cuota or 0) | moneda_sola }}</strong></div>
+                    {% if linea.Producto_Sugerido %}
+                    <div class="buro-metric buro-metric--full"><span>Producto sugerido</span><strong>{{ linea.Producto_Sugerido }}</strong></div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="buro-empty">No se encontraron leads pre-aprobados para esta cédula.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

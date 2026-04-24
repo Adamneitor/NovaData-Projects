@@ -1,0 +1,76 @@
+{% extends "shell.html" %}
+{% block title %}Admin Dashboard - Nova Projects{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-header__title">Admin Dashboard</h1>
+    <p class="page-header__subtitle">System overview and management</p>
+</div>
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card__label">Total Users</div>
+        <div class="stat-card__value">{{ stats.total_users }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__label">Total Modules</div>
+        <div class="stat-card__value">{{ stats.total_modules }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__label">Active Sessions</div>
+        <div class="stat-card__value">{{ stats.active_sessions }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__label">System Health</div>
+        <div class="stat-card__value" style="font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-circle-check" style="color: var(--success);"></i>
+            {{ stats.system_health|title }}
+        </div>
+    </div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr)); gap: 2rem; margin-top: 2rem;">
+    <div class="table-container">
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-hairline); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.0625rem; font-weight: 600; color: var(--text-1);">Users</h3>
+            <button class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add User</button>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user_item in users %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div class="avatar">{{ user_item.name[0]|upper }}</div>
+                            <span style="font-weight: 500;">{{ user_item.name }}</span>
+                        </div>
+                    </td>
+                    <td><span class="badge">{{ user_item.role|title }}</span></td>
+                    <td style="color: var(--text-4);">{{ user_item.email }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="table-container">
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-hairline);">
+            <h3 style="font-size: 1.0625rem; font-weight: 600; color: var(--text-1);">Recent Activity</h3>
+        </div>
+        <div style="padding: 1.5rem;">
+            {% for i in range(5) %}
+            <div style="display: flex; gap: 1rem; padding: 1rem 0; {% if not loop.last %}border-bottom: 1px solid var(--border-hairline);{% endif %}">
+                <div class="avatar" style="flex-shrink: 0;">A</div>
+                <div style="flex: 1;">
+                    <div style="font-size: 0.8125rem; font-weight: 500; color: var(--text-2); margin-bottom: 0.25rem;">User logged in</div>
+                    <div style="font-size: 0.6875rem; color: var(--text-4);">{{ i+1 }} minutes ago</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

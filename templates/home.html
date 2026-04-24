@@ -1,0 +1,81 @@
+{% extends "shell.html" %}
+{% block title %}Home - Nova Projects{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-header__title">Bienvenido, {{ user.name.split()[0] }}</h1>
+    <p class="page-header__subtitle">
+        {{ total_portals }} portal{{ 'es' if total_portals != 1 else '' }}
+        &middot;
+        {{ total_modules }} módulo{{ 's' if total_modules != 1 else '' }} disponibles
+    </p>
+</div>
+
+{% if portals %}
+<section class="home-section">
+    <div class="home-section__header">
+        <div>
+            <h2 class="home-section__title">Portals</h2>
+            <p class="home-section__subtitle">Áreas de negocio con sus herramientas especializadas</p>
+        </div>
+    </div>
+
+    <div class="portal-grid" data-sort="portals">
+        {% for portal in portals %}
+        <a href="{{ url_for('portal_view', portal_id=portal.id) }}" class="portal-card" data-portal-id="{{ portal.id }}">
+            <div class="portal-card__icon">
+                <i class="fa-solid fa-{{ portal.icon }}"></i>
+            </div>
+            <div class="portal-card__body">
+                <h3 class="portal-card__title">{{ portal.name }}</h3>
+                <p class="portal-card__description">{{ portal.description }}</p>
+            </div>
+            <div class="portal-card__footer">
+                <span class="badge badge-nova">
+                    <i class="fa-solid fa-layer-group"></i>
+                    {{ portal.module_count }} módulo{{ 's' if portal.module_count != 1 else '' }}
+                </span>
+                <i class="fa-solid fa-arrow-right module-card__arrow"></i>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if modules %}
+<section class="home-section">
+    <div class="home-section__header">
+        <div>
+            <h2 class="home-section__title">Todos los módulos</h2>
+            <p class="home-section__subtitle">Vista completa de las herramientas disponibles para tu rol</p>
+        </div>
+    </div>
+
+    <div class="module-grid" data-sort="modules">
+        {% for module in modules %}
+        <a href="{{ module.route }}" class="module-card" data-module-route="{{ module.route }}">
+            <div class="module-card__header">
+                <div class="module-card__icon">
+                    <i class="fa-solid fa-{{ module.icon }}"></i>
+                </div>
+                <h3 class="module-card__title">{{ module.name }}</h3>
+            </div>
+            <p class="module-card__description">{{ module.description }}</p>
+            <div class="module-card__footer">
+                <span class="module-card__category">{{ module.category }}</span>
+                <i class="fa-solid fa-arrow-right module-card__arrow"></i>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if total_modules == 0 and total_portals == 0 %}
+<div style="text-align: center; padding: 5rem 2rem;">
+    <i class="fa-solid fa-inbox" style="font-size: 4rem; color: var(--text-5); margin-bottom: 1.5rem;"></i>
+    <h3 style="font-size: 1.5rem; color: var(--text-3); margin-bottom: 0.5rem;">Sin acceso a módulos</h3>
+    <p style="color: var(--text-4);">Contacta a tu administrador para solicitar permisos.</p>
+</div>
+{% endif %}
+{% endblock %}
