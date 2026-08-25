@@ -56,8 +56,12 @@ SQL_SERVER = os.getenv("HELIOS_SQL_SERVER", r"BVNBEET0110\BIDEV")
 SQL_DATABASE = os.getenv("HELIOS_SQL_DATABASE", "Helios")
 SQL_DRIVER = os.getenv("HELIOS_SQL_DRIVER", "ODBC Driver 17 for SQL Server")
 
-SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv(
-    "HELIOS_SECRET_KEY", "helios-dev-secret-cambiar-en-produccion"
+DEFAULT_SECRET = "dev-secret-key-change-in-production"
+
+SECRET_KEY = (
+    os.getenv("SECRET_KEY")
+    or os.getenv("HELIOS_SECRET_KEY")
+    or DEFAULT_SECRET
 )
 AD_DOMAIN = os.getenv("HELIOS_AD_DOMAIN", "BVIMENCA")
 

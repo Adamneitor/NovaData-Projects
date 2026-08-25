@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from a2wsgi import ASGIMiddleware
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 ROOT = Path(__file__).resolve().parent
 
@@ -25,11 +26,11 @@ _spec = importlib.util.spec_from_file_location("nova_portal", _portal_path)
 if _spec is None or _spec.loader is None:
     raise RuntimeError("No se pudo cargar app.py del portal NOVA")
 _nova_portal = importlib.util.module_from_spec(_spec)
-# Mientras se ejecuta app.py, 'app' en sys.modules es el paquete Helios.
-# app.py no importa 'app.*'; define Flask() localmente como variable `app`.
 sys.modules["nova_portal"] = _nova_portal
 _spec.loader.exec_module(_nova_portal)
 flask_app = _nova_portal.app
+# Railway / proxies: confiar en X-Forwarded-Proto para cookies Secure
+flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 
 def application(environ, start_response):

@@ -20,7 +20,16 @@ HELIOS_PREFIXES = (
 
 _SSO_COOKIE = "nova_helios_sso"
 _SSO_SALT = "nova-helios-sso-v1"
+_DEFAULT_SECRET = "dev-secret-key-change-in-production"
 _helios_asgi_cache = None
+
+
+def _shared_secret() -> str:
+    return (
+        os.environ.get("SECRET_KEY")
+        or os.environ.get("HELIOS_SECRET_KEY")
+        or _DEFAULT_SECRET
+    )
 
 
 def is_helios_path(path: str) -> bool:
@@ -34,16 +43,14 @@ def is_helios_path(path: str) -> bool:
 def sign_sso_token(username: str, name: str = "") -> str:
     from itsdangerous import URLSafeTimedSerializer
 
-    secret = os.environ.get("SECRET_KEY") or os.environ.get("HELIOS_SECRET_KEY") or "dev-secret"
-    ser = URLSafeTimedSerializer(secret, salt=_SSO_SALT)
+    ser = URLSafeTimedSerializer(_shared_secret(), salt=_SSO_SALT)
     return ser.dumps({"u": username, "n": name or username})
 
 
 def load_sso_token(token: str, max_age: int = 60 * 60 * 12) -> dict | None:
     from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
-    secret = os.environ.get("SECRET_KEY") or os.environ.get("HELIOS_SECRET_KEY") or "dev-secret"
-    ser = URLSafeTimedSerializer(secret, salt=_SSO_SALT)
+    ser = URLSafeTimedSerializer(_shared_secret(), salt=_SSO_SALT)
     try:
         data = ser.loads(token, max_age=max_age)
         if isinstance(data, dict) and data.get("u"):

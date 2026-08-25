@@ -33,8 +33,13 @@ from database import User, create_and_seed, db, init_app as init_database
 from solutions import SOLUTIONS, get_solution, sanitize_next_path
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+# Misma clave por defecto que Helios / helios_bridge (evita bucle SSO en Railway)
+_DEFAULT_SECRET = "dev-secret-key-change-in-production"
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or _DEFAULT_SECRET
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["PREFERRED_URL_SCHEME"] = "https" if os.environ.get("RAILWAY_ENVIRONMENT") else "http"
 
 init_database(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -178,6 +183,31 @@ MODULES_DB = [
         "permissions": ["admin", "analyst", "user"],
     },
 ]
+
+
+def _cookie_secure() -> bool:
+    if request.headers.get("X-Forwarded-Proto", "").split(",")[0].strip() == "https":
+        return True
+    return bool(request.is_secure)
+
+
+def _attach_sso_cookie(resp, user: User | None = None):
+    """Adjunta cookie SSO Helios (misma SECRET_KEY). Evita bucle login↔/casos."""
+    from helios_bridge import SSO_COOKIE_NAME, sign_sso_token
+
+    u = user or _current_user()
+    if not u:
+        return resp
+    resp.set_cookie(
+        SSO_COOKIE_NAME,
+        sign_sso_token(u.username, u.name),
+        max_age=60 * 60 * 12,
+        httponly=True,
+        samesite="Lax",
+        secure=_cookie_secure(),
+        path="/",
+    )
+    return resp
 
 
 def login_required(f):
@@ -415,7 +445,9 @@ def helios_home():
 @login_required
 def helios_casos():
     """Compat: el BPM real vive en Helios FastAPI (/casos)."""
-    return redirect("/casos")
+    from flask import make_response
+
+    return _attach_sso_cookie(make_response(redirect("/casos")))
 
 
 # ---------- Auth ----------
@@ -425,7 +457,6 @@ def login():
 
     if request.method == "POST":
         username = (request.form.get("username") or "").strip()
-        # Prefijo visual BVIMENCA\ — no forma parte del username en BD
         if "\\" in username:
             username = username.split("\\")[-1].strip()
         password = request.form.get("password") or ""
@@ -440,18 +471,8 @@ def login():
             user.last_seen = datetime.utcnow()
             db.session.commit()
             from flask import make_response
-            from helios_bridge import SSO_COOKIE_NAME, sign_sso_token
 
-            resp = make_response(redirect(next_path))
-            resp.set_cookie(
-                SSO_COOKIE_NAME,
-                sign_sso_token(user.username, user.name),
-                max_age=60 * 60 * 12,
-                httponly=True,
-                samesite="Lax",
-                secure=bool(os.environ.get("RAILWAY_ENVIRONMENT")),
-            )
-            return resp
+            return _attach_sso_cookie(make_response(redirect(next_path)), user)
 
         return render_template(
             "auth/login.html",
@@ -460,7 +481,10 @@ def login():
         )
 
     if "user_id" in session:
-        return redirect(next_path)
+        from flask import make_response
+
+        # Crítico: reemitir SSO o Helios redirige a /login otra vez (bucle)
+        return _attach_sso_cookie(make_response(redirect(next_path)))
 
     return render_template("auth/login.html", next_path=next_path)
 
@@ -472,7 +496,7 @@ def logout():
     from helios_bridge import SSO_COOKIE_NAME
 
     resp = make_response(redirect(url_for("launcher")))
-    resp.set_cookie(SSO_COOKIE_NAME, "", max_age=0)
+    resp.set_cookie(SSO_COOKIE_NAME, "", max_age=0, path="/")
     return resp
 
 
@@ -655,6 +679,17 @@ def _ensure_db():
             app._db_ready = True
         except Exception as exc:  # noqa: BLE001
             app.logger.exception("No se pudo inicializar BD: %s", exc)
+
+
+@app.after_request
+def _ensure_helios_sso(resp):
+    """En cada respuesta Flask autenticada, refresca cookie SSO (rompe el bucle Railway)."""
+    if session.get("user_id") and request.endpoint not in ("static", None):
+        try:
+            return _attach_sso_cookie(resp)
+        except Exception:
+            return resp
+    return resp
 
 
 if __name__ == "__main__":
