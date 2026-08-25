@@ -450,6 +450,16 @@ def helios_casos():
     return _attach_sso_cookie(make_response(redirect("/casos")))
 
 
+@app.route("/helios/entrar")
+@login_required
+def helios_entrar():
+    """Handoff: reemite SSO y entra al módulo Helios (rompe bucle de cookies viejas)."""
+    from flask import make_response
+
+    target = sanitize_next_path(request.args.get("to"), "/casos")
+    return _attach_sso_cookie(make_response(redirect(target)))
+
+
 # ---------- Auth ----------
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -481,9 +491,15 @@ def login():
         )
 
     if "user_id" in session:
+        # Anti-bucle: Helios ya falló SSO con cookie presente → no redirigir otra vez
+        if request.args.get("sso") == "fail":
+            return render_template(
+                "auth/login.html",
+                error="No se pudo abrir Helios (SSO). Cierra sesión, borra cookies del sitio e intenta de nuevo.",
+                next_path=next_path,
+            )
         from flask import make_response
 
-        # Crítico: reemitir SSO o Helios redirige a /login otra vez (bucle)
         return _attach_sso_cookie(make_response(redirect(next_path)))
 
     return render_template("auth/login.html", next_path=next_path)

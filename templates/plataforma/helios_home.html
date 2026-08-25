@@ -15,8 +15,8 @@
     </div>
   </div>
   <div class="hh-actions">
-    <a class="nv-btn-sec" href="/flujos">Diseñar flujos</a>
-    <a class="nv-btn-amber" href="/casos">
+    <a class="nv-btn-sec" href="{{ url_for('helios_entrar', to='/flujos') }}">Diseñar flujos</a>
+    <a class="nv-btn-amber" href="{{ url_for('helios_entrar', to='/casos') }}">
       Ir a Casos
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
     </a>
@@ -28,13 +28,13 @@
   <span class="sep"></span>
   <span>Motor operativo conectado</span>
   <span class="dot">·</span>
-  <a href="/casos" style="font-weight:600">Abrir bandeja de casos</a>
+  <a href="{{ url_for('helios_entrar', to='/casos') }}" style="font-weight:600">Abrir bandeja de casos</a>
   <span class="dot">·</span>
-  <a href="/flujos" style="font-weight:600">Flujos</a>
+  <a href="{{ url_for('helios_entrar', to='/flujos') }}" style="font-weight:600">Flujos</a>
 </div>
 
 <div class="hh-tiles">
-  <a class="hh-tile hh-tile--active" href="/casos">
+  <a class="hh-tile hh-tile--active" href="{{ url_for('helios_entrar', to='/casos') }}">
     <div class="hh-tile__top">
       <span class="hh-tile__ico">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="6" rx="1.5"></rect><rect x="3.5" y="14" width="17" height="6" rx="1.5"></rect></svg>
@@ -48,7 +48,7 @@
     <span class="hh-tile__link">Abrir casos <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
   </a>
 
-  <a class="hh-tile" href="/catalogos/clientes">
+  <a class="hh-tile" href="{{ url_for('helios_entrar', to='/catalogos/clientes') }}">
     <div class="hh-tile__top">
       <span class="hh-tile__ico">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"></path><path d="M16 6.5a3 3 0 0 1 0 6"></path><path d="M17.5 20c0-2.4-.9-4.2-2.3-5.2"></path></svg>
@@ -62,7 +62,7 @@
     <span class="hh-tile__link">Ver clientes <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
   </a>
 
-  <a class="hh-tile" href="/apis">
+  <a class="hh-tile" href="{{ url_for('helios_entrar', to='/apis') }}">
     <div class="hh-tile__top">
       <span class="hh-tile__ico">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v5"></path><path d="M15 3v5"></path><rect x="6.5" y="8" width="11" height="7" rx="2"></rect><path d="M12 15v6"></path></svg>
@@ -76,7 +76,7 @@
     <span class="hh-tile__link">Ver APIs <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
   </a>
 
-  <a class="hh-tile" href="/flujos">
+  <a class="hh-tile" href="{{ url_for('helios_entrar', to='/flujos') }}">
     <div class="hh-tile__top">
       <span class="hh-tile__ico">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4"></path><circle cx="12" cy="11" r="4"></circle><path d="M5 21c0-3 3.1-5.5 7-5.5s7 2.5 7 5.5"></path></svg>
@@ -90,7 +90,7 @@
     <span class="hh-tile__link">Abrir flujos <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
   </a>
 
-  <a class="hh-tile" href="/catalogos/datos">
+  <a class="hh-tile" href="{{ url_for('helios_entrar', to='/catalogos/datos') }}">
     <div class="hh-tile__top">
       <span class="hh-tile__ico">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="20"></line><rect x="6" y="11" width="3.5" height="9"></rect><rect x="14.5" y="6" width="3.5" height="14"></rect></svg>
@@ -104,7 +104,7 @@
     <span class="hh-tile__link">Abrir catálogo <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
   </a>
 
-  <a class="hh-tile" href="/admin/usuarios">
+  <a class="hh-tile" href="{{ url_for('helios_entrar', to='/admin/usuarios') }}">
     <div class="hh-tile__top">
       <span class="hh-tile__ico">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7.5a4 4 0 0 1 8 0V10"></path></svg>

@@ -102,24 +102,33 @@ def usuario_debe_cambiar_password(user: Usuario) -> bool:
     return bool(user.debe_cambiar_password) or password_expirada(user)
 
 
-def _login_location(request: Request) -> str:
+def _login_location(request: Request, *, sso_failed: bool = False) -> str:
     path = request.url.path or "/helios"
-    if path.startswith("/login") or path == "/":
-        return "/login?next=/helios"
     from urllib.parse import quote
-    return f"/login?next={quote(path, safe='/')}"
+
+    if path.startswith("/login") or path == "/":
+        base = "/login?next=/helios"
+    else:
+        base = f"/login?next={quote(path, safe='/')}"
+    # Evita bucle Flask↔Helios: si ya venía cookie SSO y falló, Flask no redirige otra vez
+    if sso_failed or request.cookies.get("nova_helios_sso"):
+        sep = "&" if "?" in base else "?"
+        base = f"{base}{sep}sso=fail"
+    return base
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> Usuario:
+    sso_present = bool(request.cookies.get("nova_helios_sso"))
     if _SSO_HOOK is not None:
         try:
             _SSO_HOOK(request, db)
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001
+            print(f"[helios auth] SSO hook error: {exc}")
     user_id = request.session.get("user_id")
     if not user_id:
         raise HTTPException(
-            status_code=status.HTTP_303_SEE_OTHER, headers={"Location": _login_location(request)}
+            status_code=status.HTTP_303_SEE_OTHER,
+            headers={"Location": _login_location(request, sso_failed=sso_present)},
         )
     user = db.get(Usuario, user_id)
     if not user or not user.activo:

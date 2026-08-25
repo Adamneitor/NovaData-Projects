@@ -76,6 +76,28 @@ def _evict_flask_app_module() -> dict:
     return evicted
 
 
+def _ensure_helios_db() -> None:
+    """
+    Railway: el release corre en otro filesystem efímero; hay que crear tablas
+    en el worker web (igual que Flask create_and_seed en el primer request).
+    """
+    from app import models  # noqa: F401
+    from app.database import Base, SessionLocal, engine  # type: ignore
+    from app.seed import seed  # type: ignore
+
+    print(f"[helios_bridge] BD Helios: {engine.url}")
+    Base.metadata.create_all(engine)
+    try:
+        from app.migrate import migrate  # type: ignore
+
+        migrate()
+    except Exception as exc:  # noqa: BLE001
+        print(f"[helios_bridge] migrate (opcional): {exc}")
+    with SessionLocal() as db:
+        seed(db)
+    print("[helios_bridge] Tablas + seed Helios OK")
+
+
 def get_helios_asgi():
     global _helios_asgi_cache
     if _helios_asgi_cache is not None:
@@ -101,6 +123,11 @@ def get_helios_asgi():
     if getattr(helios_app.state, "_nova_sso_ready", False):
         _helios_asgi_cache = helios_app
         return helios_app
+
+    try:
+        _ensure_helios_db()
+    except Exception as exc:  # noqa: BLE001
+        print(f"[helios_bridge] No se pudo inicializar BD Helios: {exc}")
 
     def apply_sso(request, db) -> None:
         if request.session.get("user_id"):
