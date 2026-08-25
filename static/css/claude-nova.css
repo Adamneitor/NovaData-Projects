@@ -1099,6 +1099,50 @@ a.nv-rail__link:hover { color: #CBD5E1; }
 .nv-launch__rule {
   background: var(--nova-gradient) !important;
 }
-.page-shell a { color: var(--nova-accent-ink); }
-.page-shell a:hover { color: var(--nova-primary-hover); }
-.nv-modal .nova-lockup { margin-bottom: 4px; }
+.page-shell {
+  background: var(--nova-canvas);
+  color: var(--nova-ink);
+  min-height: 100vh;
+}
+.page-shell .nv-topbar,
+.page-shell .nv-rail {
+  color: #E8E9F2;
+}
+.page-shell .nv-topbar a,
+.page-shell .nv-rail a,
+.page-shell .nv-topbar__brand,
+.page-shell .nv-rail__back {
+  color: #F7F8FC;
+}
+.page-shell .nv-topbar a:hover,
+.page-shell .nv-rail a:hover {
+  color: #A9A3FF;
+}
+.page-shell .nv-main,
+.page-shell .nv-content {
+  color: var(--nova-ink);
+}
+.page-shell .nv-content a,
+.page-shell .nv-crumb a {
+  color: var(--nova-accent-ink);
+}
+.page-shell .nv-content a:hover,
+.page-shell .nv-crumb a:hover {
+  color: var(--nova-primary-hover);
+}
+.page-shell .nv-crumb .cur,
+.page-shell .nv-crumb .sep {
+  color: #5D6478;
+}
+.hh-head h1,
+.casos-head h1,
+.hh-tile h3 {
+  color: var(--nova-ink);
+}
+.hh-head p,
+.casos-head p,
+.hh-tile p {
+  color: #5D6478;
+}
+.nv-input__prefix { display: none; }
+

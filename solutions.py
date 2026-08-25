@@ -10,7 +10,7 @@ SOLUTIONS = [
         "active": True,
         "home_endpoint": "helios_home",
         "icon": "sun",
-        "color": "#F59E0B",
+        "color": "#5B52E8",
     },
     {
         "id": "hermes",
@@ -21,7 +21,7 @@ SOLUTIONS = [
         "active": False,
         "home_endpoint": None,
         "icon": "gift",
-        "color": "#34D399",
+        "color": "#5FA98F",
     },
     {
         "id": "venus",
@@ -32,7 +32,7 @@ SOLUTIONS = [
         "active": False,
         "home_endpoint": None,
         "icon": "heart",
-        "color": "#FB7185",
+        "color": "#C4808F",
     },
     {
         "id": "zeus",
@@ -43,7 +43,7 @@ SOLUTIONS = [
         "active": False,
         "home_endpoint": None,
         "icon": "bolt",
-        "color": "#60A5FA",
+        "color": "#7B9BC9",
     },
     {
         "id": "ares",
@@ -54,7 +54,7 @@ SOLUTIONS = [
         "active": False,
         "home_endpoint": None,
         "icon": "box",
-        "color": "#A8A29E",
+        "color": "#9E9BA6",
     },
 ]
 
@@ -84,7 +84,21 @@ def sanitize_next_path(path: str | None, default: str = "/") -> str:
     p = path.strip()
     if not p.startswith("/") or p.startswith("//") or "://" in p:
         return default
-    allowed = ("/helios", "/home", "/portal/", "/admin/", "/module/", "/soluciones/")
+    allowed = (
+        "/helios",
+        "/casos",
+        "/flujos",
+        "/catalogos",
+        "/apis",
+        "/admin",
+        "/cambiar-password",
+        "/home",
+        "/portal/",
+        "/admin/",
+        "/module/",
+        "/soluciones/",
+        "/entrar/",
+    )
     if p == "/" or any(p == a.rstrip("/") or p.startswith(a) for a in allowed):
         return p
     return default

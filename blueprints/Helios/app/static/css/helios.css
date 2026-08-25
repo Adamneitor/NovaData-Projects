@@ -10,7 +10,7 @@
   --hx-line: var(--nova-line, #e1e3e8);
   --hx-bg: var(--nova-canvas, #eef0f5);
   --hx-surface: var(--nova-surface, #ffffff);
-  --hx-sidebar: var(--nova-void-deep, #0a0a14);
+  --hx-sidebar: var(--nova-void-deep, #14132B);
   --hx-sidebar-hover: rgba(255, 255, 255, 0.06);
   --hx-sidebar-active: rgba(91, 82, 232, 0.28);
   --hx-accent: var(--nova-primary, #5B52E8);
@@ -49,12 +49,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--hx-accent); }
-a:hover { color: var(--nova-primary-hover, #4A41D9); }
+a { color: var(--nova-primary-hover, #4A41D9); }
+a:hover { color: var(--nova-primary, #5B52E8); }
 
 /* ---------- Sidebar ---------- */
 .sidebar {
-  background: linear-gradient(180deg, #0b1220 0%, #0f1a2e 100%);
+  background: linear-gradient(180deg, #14132B 0%, #0B0A1F 100%);
   min-height: 100vh;
   width: var(--hx-sidebar-w);
   position: fixed;

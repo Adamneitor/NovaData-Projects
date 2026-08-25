@@ -10,7 +10,7 @@
   --hx-line: var(--nova-line, #e1e3e8);
   --hx-bg: var(--nova-canvas, #eef0f5);
   --hx-surface: var(--nova-surface, #ffffff);
-  --hx-sidebar: var(--nova-void-deep, #0a0a14);
+  --hx-sidebar: var(--nova-void-deep, #14132B);
   --hx-sidebar-hover: rgba(255, 255, 255, 0.06);
   --hx-sidebar-active: rgba(91, 82, 232, 0.28);
   --hx-accent: var(--nova-primary, #5B52E8);
@@ -49,12 +49,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--hx-accent); }
-a:hover { color: var(--nova-primary-hover, #4A41D9); }
+a { color: var(--nova-primary-hover, #4A41D9); }
+a:hover { color: var(--nova-primary, #5B52E8); }
 
 /* ---------- Sidebar ---------- */
 .sidebar {
-  background: linear-gradient(180deg, #0b1220 0%, #0f1a2e 100%);
+  background: linear-gradient(180deg, #14132B 0%, #0B0A1F 100%);
   min-height: 100vh;
   width: var(--hx-sidebar-w);
   position: fixed;
@@ -149,15 +149,16 @@ a:hover { color: var(--nova-primary-hover, #4A41D9); }
   position: sticky;
   top: 0;
   z-index: 1030;
-  background: var(--hx-surface);
-  border-bottom: 1px solid var(--hx-line);
+  background: #14132B;
+  color: #F7F8FC;
+  border-bottom: 1px solid rgba(255,255,255,.08);
   padding: 0.65rem 1rem;
   align-items: center;
   gap: 0.75rem;
 }
 
-.hx-topbar .brand { font-weight: 700; letter-spacing: 0.04em; }
-.hx-topbar .brand i { color: var(--hx-cta); }
+.hx-topbar .brand { font-weight: 700; letter-spacing: 0.04em; color: #F7F8FC; }
+.hx-topbar .brand i { color: #A9A3FF; }
 
 @media (max-width: 992px) {
   .sidebar {
