@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block titulo %}Usuarios{% endblock %}
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-person-badge"></i>Usuarios</h1>
+    <p class="page-subtitle">Cuentas APP y Active Directory · perfiles y grupos</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo usuario</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr>
+        <th>Login</th><th>Nombre</th><th>Autenticación</th><th>Vigencia</th><th>Perfil</th><th>Grupos</th><th>Activo</th><th></th>
+      </tr></thead>
+      <tbody>
+      {% for u in usuarios %}
+        <tr>
+          <td class="fw-semibold">{{ u.usuario_ad }}</td>
+          <td>
+            {{ u.nombre }}
+            {% if u.debe_cambiar_password and (u.tipo_autenticacion or 'APP') == 'APP' %}
+              <span class="badge text-bg-warning ms-1">Reset pendiente</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if (u.tipo_autenticacion or 'APP') == 'AD' %}
+              <span class="badge text-bg-primary"><i class="bi bi-building me-1"></i>Active Directory</span>
+            {% else %}
+              <span class="badge text-bg-secondary"><i class="bi bi-key me-1"></i>Aplicación</span>
+            {% endif %}
+          </td>
+          <td class="small">
+            {% if (u.tipo_autenticacion or 'APP') == 'APP' %}
+              {% if u.dias_vigencia_password %}
+                {{ u.dias_vigencia_password }} días
+                {% set d = vencimientos.get(u.id) %}
+                {% if d is not none %}
+                  {% if d < 0 %}<span class="badge text-bg-danger">Expirada</span>
+                  {% elif d <= 7 %}<span class="badge text-bg-warning">{{ d }}d</span>
+                  {% else %}<span class="text-muted">({{ d }}d)</span>{% endif %}
+                {% endif %}
+              {% else %}<span class="text-muted">Sin vencimiento</span>{% endif %}
+            {% else %}—{% endif %}
+          </td>
+          <td><span class="badge badge-etapa">{{ u.perfil.nombre }}</span></td>
+          <td>
+            {% for g in u.grupos %}<span class="badge text-bg-secondary me-1">{{ g.nombre }}</span>{% else %}<span class="text-muted small">Sin grupos</span>{% endfor %}
+          </td>
+          <td>{% if u.activo %}<span class="badge text-bg-success">Sí</span>{% else %}<span class="badge text-bg-danger">No</span>{% endif %}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#modalEditar{{ u.id }}" title="Editar"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#modalGrupos{{ u.id }}" title="Grupos"><i class="bi bi-people"></i></button>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalNuevo" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <form method="post" action="/admin/usuarios/crear" id="formNuevoUsuario">
+      <div class="modal-header"><h5 class="modal-title">Nuevo usuario</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2"><label class="form-label">Tipo de autenticación</label>
+          <select class="form-select" name="tipo_autenticacion" id="nuevoTipoAuth" onchange="togglePasswordNuevo()">
+            <option value="APP">Usuario de aplicación (contraseña en Helios)</option>
+            <option value="AD">Active Directory</option>
+          </select>
+        </div>
+        <div class="mb-2"><label class="form-label" id="lblLoginNuevo">Login</label><input class="form-control" name="usuario_ad" required placeholder="ej: jrosario"></div>
+        <div class="mb-2"><label class="form-label">Nombre completo</label><input class="form-control" name="nombre" required></div>
+        <div id="bloquePassNuevo">
+          <div class="mb-2">
+            <label class="form-label">Contraseña temporal</label>
+            <div class="input-group">
+              <input type="password" class="form-control" name="password" id="passNuevo" autocomplete="new-password">
+              <button class="btn btn-outline-secondary" type="button" data-toggle-pwd="#passNuevo"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="progress mt-2" style="height:7px;"><div id="barNuevo" class="progress-bar bg-danger" style="width:0%"></div></div>
+            <div class="small mt-1"><span id="nivelNuevo">—</span> <span id="crackNuevo" class="text-muted"></span></div>
+            <ul id="checkNuevo" class="list-unstyled small mt-1 mb-0"></ul>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="pedir_cambio_password" value="1" id="resetNuevo" checked>
+            <label class="form-check-label" for="resetNuevo">Pedir reinicio de contraseña en el próximo login</label>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Vigencia de contraseña (días, opcional)</label>
+            <input type="number" class="form-control" name="dias_vigencia_password" min="1" placeholder="Vacío = no expira" value="{{ politica.vigencia_default_dias or '' }}">
+          </div>
+        </div>
+        <div class="mb-2"><label class="form-label">Perfil</label>
+          <select class="form-select" name="perfil_id">{% for p in perfiles %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}</select>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-warning" id="btnCrearUsuario">Crear</button></div>
+    </form>
+  </div></div>
+</div>
+
+{% for u in usuarios %}
+<div class="modal fade" id="modalEditar{{ u.id }}" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="/admin/usuarios/{{ u.id }}/actualizar">
+      <div class="modal-header"><h5 class="modal-title">Editar: {{ u.usuario_ad }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2"><label class="form-label">Tipo de autenticación</label>
+          <select class="form-select" name="tipo_autenticacion" id="tipoAuth{{ u.id }}" onchange="togglePasswordEdit({{ u.id }})">
+            <option value="APP" {% if (u.tipo_autenticacion or 'APP') == 'APP' %}selected{% endif %}>Usuario de aplicación</option>
+            <option value="AD" {% if (u.tipo_autenticacion or 'APP') == 'AD' %}selected{% endif %}>Active Directory</option>
+          </select>
+        </div>
+        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" value="{{ u.nombre }}" required></div>
+        <div class="mb-2"><label class="form-label">Perfil</label>
+          <select class="form-select" name="perfil_id">{% for p in perfiles %}<option value="{{ p.id }}" {% if p.id == u.perfil_id %}selected{% endif %}>{{ p.nombre }}</option>{% endfor %}</select>
+        </div>
+        <div id="bloquePass{{ u.id }}">
+          <div class="mb-2">
+            <label class="form-label">Nueva contraseña temporal (opcional)</label>
+            <input type="password" class="form-control" name="password" autocomplete="new-password">
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="pedir_cambio_password" value="1" id="reset{{ u.id }}" {% if u.debe_cambiar_password %}checked{% endif %}>
+            <label class="form-check-label" for="reset{{ u.id }}">Pedir reinicio de contraseña en el próximo login</label>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Vigencia (días, vacío = no expira)</label>
+            <input type="number" class="form-control" name="dias_vigencia_password" min="1" value="{{ u.dias_vigencia_password or '' }}">
+          </div>
+        </div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="activo" value="1" id="act{{ u.id }}" {% if u.activo %}checked{% endif %}><label class="form-check-label" for="act{{ u.id }}">Activo</label></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-warning">Guardar</button></div>
+    </form>
+  </div></div>
+</div>
+<div class="modal fade" id="modalGrupos{{ u.id }}" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="/admin/usuarios/{{ u.id }}/grupos">
+      <div class="modal-header"><h5 class="modal-title">Grupos de {{ u.usuario_ad }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        {% set grupos_u = u.grupos | map(attribute='id') | list %}
+        {% for g in grupos %}
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="grupo_ids" value="{{ g.id }}" id="g{{ u.id }}_{{ g.id }}" {% if g.id in grupos_u %}checked{% endif %}>
+          <label class="form-check-label" for="g{{ u.id }}_{{ g.id }}">{{ g.nombre }}</label>
+        </div>
+        {% else %}<p class="text-muted">No hay grupos creados.</p>{% endfor %}
+      </div>
+      <div class="modal-footer"><button class="btn btn-warning">Guardar</button></div>
+    </form>
+  </div></div>
+</div>
+{% endfor %}
+
+<script>
+window.HELIOS_PWD_POLITICA = {{ {
+  'longitud_minima': politica.longitud_minima,
+  'mayusculas': politica.mayusculas,
+  'requiere_numero': politica.requiere_numero,
+  'requiere_especial': politica.requiere_especial,
+  'max_repetidos_consecutivos': politica.max_repetidos_consecutivos,
+  'permite_espacios': politica.permite_espacios,
+  'historial_no_reutilizar': politica.historial_no_reutilizar
+} | tojson }};
+</script>
+<script src="/static/js/password_widget.js"></script>
+<script>
+function togglePasswordNuevo() {
+  const esApp = document.getElementById('nuevoTipoAuth').value === 'APP';
+  document.getElementById('bloquePassNuevo').style.display = esApp ? '' : 'none';
+  document.getElementById('passNuevo').required = esApp;
+  document.getElementById('lblLoginNuevo').textContent = esApp ? 'Login' : 'Usuario AD (sin dominio)';
+}
+function togglePasswordEdit(id) {
+  const esApp = document.getElementById('tipoAuth' + id).value === 'APP';
+  document.getElementById('bloquePass' + id).style.display = esApp ? '' : 'none';
+}
+document.getElementById('modalNuevo')?.addEventListener('shown.bs.modal', () => {
+  togglePasswordNuevo();
+  HeliosPassword.bindLive('#passNuevo', {
+    bar: '#barNuevo', nivel: '#nivelNuevo', crack: '#crackNuevo', checklist: '#checkNuevo', submit: '#btnCrearUsuario'
+  });
+});
+{% for u in usuarios %}
+document.getElementById('modalEditar{{ u.id }}')?.addEventListener('shown.bs.modal', function () { togglePasswordEdit({{ u.id }}); });
+{% endfor %}
+document.querySelectorAll('[data-toggle-pwd]').forEach(btn => {
+  btn.addEventListener('click', () => HeliosPassword.toggle(btn.getAttribute('data-toggle-pwd'), btn));
+});
+</script>
+{% endblock %}

@@ -62,3 +62,8 @@ htmlcov/
 # Railway / deploy cache
 # ========================
 .railway/
+
+# Local SQLite / runtime
+instance/
+*.db
+

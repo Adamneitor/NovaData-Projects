@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block titulo %}Etapa {{ etapa.nombre }}{% endblock %}
+{% block contenido %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="/flujos">Flujos</a></li>
+  <li class="breadcrumb-item"><a href="/flujos/{{ flujo.id }}">{{ flujo.nombre }}</a></li>
+  <li class="breadcrumb-item active">{{ etapa.nombre }}</li>
+</ol></nav>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-signpost-2"></i>{{ etapa.nombre }}</h1>
+    <p class="page-subtitle">Grupos, estados, documentos, datos y reglas de la etapa</p>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Propiedades -->
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header fw-semibold"><i class="bi bi-gear me-1"></i>Propiedades de la etapa</div>
+      <div class="card-body">
+        <form method="post" action="/flujos/{{ flujo.id }}/etapas/{{ etapa.id }}/actualizar">
+          <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" value="{{ etapa.nombre }}" required></div>
+          <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2">{{ etapa.descripcion or '' }}</textarea></div>
+          <div class="mb-2"><label class="form-label">Orden</label><input type="number" class="form-control" name="orden" value="{{ etapa.orden }}" required></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="solicita_documentacion" value="1" id="e_docs" {% if etapa.solicita_documentacion %}checked{% endif %}><label class="form-check-label" for="e_docs">Solicita documentación al solicitante</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="permite_retroceso" value="1" id="e_retro" {% if etapa.permite_retroceso %}checked{% endif %}><label class="form-check-label" for="e_retro">Permite retroceso</label></div>
+          <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="es_final" value="1" id="e_final" {% if etapa.es_final %}checked{% endif %}><label class="form-check-label" for="e_final">Es etapa final</label></div>
+          <button class="btn btn-warning">Guardar</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Grupos -->
+    <div class="card mb-3">
+      <div class="card-header fw-semibold"><i class="bi bi-people me-1"></i>Grupos que intervienen</div>
+      <div class="card-body">
+        <form method="post" action="/flujos/{{ flujo.id }}/etapas/{{ etapa.id }}/grupos">
+          {% for g in grupos %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="grupo_ids" value="{{ g.id }}" id="gr{{ g.id }}" {% if g.id in grupos_asignados %}checked{% endif %}>
+            <label class="form-check-label" for="gr{{ g.id }}">{{ g.nombre }}</label>
+          </div>
+          {% else %}<p class="text-muted small">No hay grupos creados (Seguridad → Grupos).</p>{% endfor %}
+          <div class="form-text mb-2">Si no marca ninguno, cualquier usuario podrá actuar en la etapa.</div>
+          {% if grupos %}<button class="btn btn-sm btn-warning">Guardar grupos</button>{% endif %}
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estados y transiciones -->
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-circle-square me-1"></i>Estados de la etapa</span>
+        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#modalEstado"><i class="bi bi-plus-lg me-1"></i>Nuevo estado</button>
+      </div>
+      <div class="card-body">
+        {% for est in etapa.estados %}
+        <div class="border rounded p-3 mb-3">
+          <form method="post" action="/flujos/{{ flujo.id }}/etapas/{{ etapa.id }}/estados/{{ est.id }}/actualizar" class="row g-2 align-items-end">
+            <div class="col-md-4"><label class="form-label small">Nombre</label><input class="form-control form-control-sm" name="nombre" value="{{ est.nombre }}" required></div>
+            <div class="col-md-3"><label class="form-label small">API asociado (al entrar)</label>
+              <select class="form-select form-select-sm" name="api_call_id">
+                <option value="">— Ninguno —</option>
+                {% for a in apis %}<option value="{{ a.id }}" {% if a.id == est.api_call_id %}selected{% endif %}>{{ a.nombre }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <div class="form-check"><input class="form-check-input" type="checkbox" name="es_inicial" value="1" id="ini{{ est.id }}" {% if est.es_inicial %}checked{% endif %}><label class="form-check-label small" for="ini{{ est.id }}">Inicial</label></div>
+              <div class="form-check"><input class="form-check-input" type="checkbox" name="cierra_etapa" value="1" id="cie{{ est.id }}" {% if est.cierra_etapa %}checked{% endif %}><label class="form-check-label small" for="cie{{ est.id }}">Cierra etapa</label></div>
+            </div>
+            <div class="col-md-3 text-end">
+              <button class="btn btn-sm btn-outline-dark"><i class="bi bi-check-lg"></i> Guardar</button>
+              <button formaction="/flujos/{{ flujo.id }}/etapas/{{ etapa.id }}/estados/{{ est.id }}/eliminar" formnovalidate class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar el estado {{ est.nombre }}?');"><i class="bi bi-trash"></i></button>
+            </div>
+          </form>
+
+          <!-- Transiciones manuales del estado -->
+          <div class="mt-3 ps-2 border-start border-3 border-warning-subtle">
+            <div class="small fw-semibold mb-1"><i class="bi bi-arrow-right-circle me-1"></i>Transiciones manuales desde "{{ est.nombre }}"</div>
+            {% for t in est.transiciones %}
+              <div class="d-flex align-items-center gap-2 small mb-1">
+                <span class="badge badge-etapa">{{ t.etapa_destino.nombre }}</span> / <span>{{ t.estado_destino.nombre }}</span>
+                <form method="post" action="/flujos/{{ flujo.id }}/etapas/{{ etapa.id }}/transiciones/{{ t.id }}/eliminar" class="d-inline">
+                  <button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-x-circle"></i></button>
+                </form>
+              </div>
+            {% else %}<div class="text-muted small mb-1">Sin transiciones. El caso no podrá moverse manualmente desde este estado.</div>{% endfor %}
+            <form method="post" action="/flujos/{{ flujo.id }}/etapas/{{ etapa.id }}/transiciones/crear" class="d-flex gap-2 mt-1">
+              <input type="hidden" name="estado_origen_id" value="{{ est.id }}">
+              <select class="form-select form-select-sm w-auto" name="estado_destino_id" required>
+                <option value="" disabled selected>Destino (etapa / estado)...</option>
+                {% for et in flujo.etapas %}
+                  <optgroup label="{{ et.orden }}. {{ et.nombre }}">
+                    {% for es2 in et.estados %}{% if es2.id != est.id %}<option value="{{ es2.id }}">{{ es2.nombre }}</option>{% endif %}{% endfor %}
+                  </optgroup>
+                {% endfor %}
+              </select>
+              <button class="btn btn-sm btn-outline-warning">Agregar transición</button>
+            </form>
+          </div>
+
+          <!-- Reglas API -->
+          {% if est.api_call %}
+          <div class="mt-3 ps-2 border-start border-3 border-info-subtle">
+            <div class="small fw-semibold mb-1"><i class="bi bi-signpost-split me-1"></i>Direccionamiento según resultado del API "{{ est.api_call.nombre }}"</div>
+            {% for r in est.reglas_api | sort(attribute='prioridad') %}
+              <div class="d-flex align-items-center gap-2 small mb-1">
+                <span class="badge text-bg-light border">#{{ r.prioridad }}</span>
+                <span class="font-monospace">{{ r.output.nombre }} {{ r.operador }} {{ r.valor }}</span>
+                <i class="bi bi-arrow-right"></i>
+                <span class="badge badge-etapa">{{ r.etapa_destino.nombre }}</span> / <span>{{ r.estado_destino.nombre }}</span>
+                <form method="post" action="/flujos/{{ flujo.id }}/etapas/{{ etapa.id }}/reglas/{{ r.id }}/eliminar" class="d-inline">
+                  <button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-x-circle"></i></button>
+                </form>
+              </div>
+            {% else %}<div class="text-muted small mb-1">Sin reglas: el API se ejecutará pero el caso permanecerá en este estado.</div>{% endfor %}
+            {% if est.api_call.outputs %}
+            <form method="post" action="/flujos/{{ flujo.id }}/etapas/{{ etapa.id }}/estados/{{ est.id }}/reglas/crear" class="row g-2 align-items-end mt-1">
+              <div class="col-md-3"><label class="form-label small">Output</label>
+                <select class="form-select form-select-sm" name="output_id">{% for o in est.api_call.outputs %}<option value="{{ o.id }}">{{ o.nombre }}</option>{% endfor %}</select>
+              </div>
+              <div class="col-md-2"><label class="form-label small">Operador</label>
+                <select class="form-select form-select-sm" name="operador">
+                  {% for op in ['=','!=','>','>=','<','<=','contiene'] %}<option>{{ op }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="col-md-2"><label class="form-label small">Valor</label><input class="form-control form-control-sm" name="valor" required></div>
+              <div class="col-md-3"><label class="form-label small">Destino</label>
+                <select class="form-select form-select-sm" name="estado_destino_id" required>
+                  {% for et in flujo.etapas %}
+                    <optgroup label="{{ et.orden }}. {{ et.nombre }}">
+                      {% for es2 in et.estados %}{% if es2.id != est.id %}<option value="{{ es2.id }}">{{ es2.nombre }}</option>{% endif %}{% endfor %}
+                    </optgroup>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-1"><label class="form-label small">Prio.</label><input type="number" class="form-control form-control-sm" name="prioridad" value="{{ (est.reglas_api | length) + 1 }}"></div>
+              <div class="col-md-1"><button class="btn btn-sm btn-outline-info w-100"><i class="bi bi-plus"></i></button></div>
+            </form>
+            {% else %}
+            <div class="text-warning small">El API no tiene outputs definidos. <a href="/apis/{{ est.api_call.id }}">Configúrelos aquí</a> para crear reglas.</div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% else %}<p class="text-muted text-center py-3">No hay estados. Agregue al menos uno.</p>{% endfor %}
+      </div>
+    </div>
+
+    <!-- Documentos de la etapa -->
+    <div class="card mb-3">
+      <div class="card-header fw-semibold"><i class="bi bi-file-earmark-text me-1"></i>Documentos solicitados en la etapa</div>
+      <div class="card-body">
+        {% if documentos %}
+        <form method="post" action="/flujos/{{ flujo.id }}/etapas/{{ etapa.id }}/documentos">
+          <table class="table table-sm align-middle">
+            <thead class="table-light"><tr><th style="width:55%">Documento</th><th>Solicitar</th><th>Obligatorio</th></tr></thead>
+            <tbody>
+            {% for d in documentos %}
+              {% set asignacion = etapa.documentos | selectattr('documento_id', 'equalto', d.id) | first %}
+              <tr>
+                <td>{{ d.nombre }}<div class="text-muted small">{{ d.descripcion or '' }}</div></td>
+                <td><input class="form-check-input" type="checkbox" name="documento_ids" value="{{ d.id }}" {% if d.id in docs_asignados %}checked{% endif %}></td>
+                <td><input class="form-check-input" type="checkbox" name="obligatorio_ids" value="{{ d.id }}" {% if asignacion and asignacion.obligatorio %}checked{% endif %}></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          <button class="btn btn-sm btn-warning">Guardar documentos</button>
+        </form>
+        {% else %}<p class="text-muted">El catálogo de documentos está vacío. <a href="/catalogos/documentos">Cree documentos aquí</a>.</p>{% endif %}
+      </div>
+    </div>
+
+    <!-- Datos de la etapa -->
+    <div class="card">
+      <div class="card-header fw-semibold"><i class="bi bi-input-cursor-text me-1"></i>Datos solicitados en la etapa</div>
+      <div class="card-body">
+        {% if datos %}
+        <form method="post" action="/flujos/{{ flujo.id }}/etapas/{{ etapa.id }}/datos">
+          <table class="table table-sm align-middle">
+            <thead><tr><th style="width:40%">Dato</th><th>Tipo</th><th>Solicitar</th><th>Obligatorio</th><th style="width:90px">Orden</th></tr></thead>
+            <tbody>
+            {% for d in datos %}
+              {% set asignacion = etapa.datos | selectattr('dato_id', 'equalto', d.id) | first %}
+              <tr>
+                <td>{{ d.nombre }}<div class="text-muted small">{{ d.descripcion or '' }}</div></td>
+                <td><span class="badge badge-etapa">{{ d.tipo_dato.nombre }}</span>
+                  <div class="small text-muted">{{ resolve_formato(d) }}{% if resolve_decimales(d) and tipo_codigo(d.tipo_dato) in ['numero_decimal','moneda_decimal'] %} · {{ resolve_decimales(d) }} dec{% endif %}</div>
+                </td>
+                <td><input class="form-check-input" type="checkbox" name="dato_ids" value="{{ d.id }}" {% if d.id in datos_asignados %}checked{% endif %}></td>
+                <td><input class="form-check-input" type="checkbox" name="obligatorio_ids" value="{{ d.id }}" {% if asignacion and asignacion.obligatorio %}checked{% endif %}></td>
+                <td><input type="number" class="form-control form-control-sm" name="orden_{{ d.id }}" min="1" value="{{ asignacion.orden if asignacion and asignacion.orden else loop.index }}" title="Orden de captura"></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          <p class="form-text">El orden define cómo aparecen los campos en el caso (menor número = primero).</p>
+          <button class="btn btn-sm btn-warning">Guardar datos</button>
+        </form>
+        {% else %}<p class="text-muted">No hay datos complementarios. <a href="/catalogos/datos">Créelos aquí</a>.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalEstado" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="/flujos/{{ flujo.id }}/etapas/{{ etapa.id }}/estados/crear">
+      <div class="modal-header"><h5 class="modal-title">Nuevo estado</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" required placeholder="Ej: Aprobado"></div>
+        <div class="mb-2"><label class="form-label">API asociado (opcional)</label>
+          <select class="form-select" name="api_call_id"><option value="">— Ninguno —</option>{% for a in apis %}<option value="{{ a.id }}">{{ a.nombre }}</option>{% endfor %}</select>
+        </div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="es_inicial" value="1" id="ne_ini"><label class="form-check-label" for="ne_ini">Es el estado inicial de la etapa</label></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="cierra_etapa" value="1" id="ne_cie"><label class="form-check-label" for="ne_cie">Cierra la etapa</label></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-warning">Crear estado</button></div>
+    </form>
+  </div></div>
+</div>
+{% endblock %}

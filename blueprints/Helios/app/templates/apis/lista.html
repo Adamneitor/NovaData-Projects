@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titulo %}APIs{% endblock %}
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-plugin"></i>Integraciones API</h1>
+    <p class="page-subtitle">Llamadas reutilizables · asociables a estados o conclusión de flujo</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo API</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Nombre</th><th>Método</th><th>URL</th><th>Parámetros</th><th>Outputs</th><th>Activo</th><th></th></tr></thead>
+      <tbody>
+      {% for a in apis %}
+        <tr>
+          <td class="fw-semibold">{{ a.nombre }}</td>
+          <td><span class="badge text-bg-primary">{{ a.metodo }}</span></td>
+          <td class="col-url" title="{{ a.url }}">{{ a.url }}</td>
+          <td>{{ a.parametros | length }}</td>
+          <td>{{ a.outputs | length }}</td>
+          <td>{% if a.activo %}<span class="badge text-bg-success">Sí</span>{% else %}<span class="badge text-bg-danger">No</span>{% endif %}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-dark" href="/apis/{{ a.id }}"><i class="bi bi-gear"></i> Configurar</a></td>
+        </tr>
+      {% else %}<tr><td colspan="7"><div class="empty-state"><i class="bi bi-plugin"></i><p>No hay APIs configurados.</p></div></td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalNuevo" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="/apis/crear">
+      <div class="modal-header"><h5 class="modal-title">Nuevo API</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" required placeholder="Ej: Consulta buró de crédito"></div>
+        <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2"></textarea></div>
+        <div class="row">
+          <div class="col-4 mb-2"><label class="form-label">Método</label>
+            <select class="form-select" name="metodo"><option>POST</option><option>GET</option><option>PUT</option><option>PATCH</option></select>
+          </div>
+          <div class="col-8 mb-2"><label class="form-label">URL</label><input class="form-control" name="url" required placeholder="https://api.ejemplo.com/consulta/{id}"></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-warning">Crear y configurar</button></div>
+    </form>
+  </div></div>
+</div>
+{% endblock %}

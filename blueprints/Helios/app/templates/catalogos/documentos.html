@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block titulo %}Documentos{% endblock %}
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-file-earmark-text"></i>Documentos</h1>
+    <p class="page-subtitle">Catálogo reutilizable · se asocian a etapas como obligatorios u opcionales</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo documento</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Documento</th><th>Descripción</th><th>Activo</th><th></th></tr></thead>
+      <tbody>
+      {% for d in documentos %}
+        <tr>
+          <td class="fw-semibold">{{ d.nombre }}</td>
+          <td>{{ d.descripcion or '' }}</td>
+          <td>{% if d.activo %}<span class="badge text-bg-success">Sí</span>{% else %}<span class="badge text-bg-danger">No</span>{% endif %}</td>
+          <td class="text-end"><button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#modalEditar{{ d.id }}" title="Editar"><i class="bi bi-pencil"></i> Editar</button></td>
+        </tr>
+      {% else %}<tr><td colspan="4"><div class="empty-state"><i class="bi bi-folder2-open"></i><p>No hay documentos en el catálogo.</p></div></td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalNuevo" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="/catalogos/documentos/crear">
+      <div class="modal-header"><h5 class="modal-title">Nuevo documento</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" required placeholder="Ej: Cédula de identidad"></div>
+        <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2"></textarea></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-warning">Crear</button></div>
+    </form>
+  </div></div>
+</div>
+
+{% for d in documentos %}
+<div class="modal fade" id="modalEditar{{ d.id }}" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="/catalogos/documentos/{{ d.id }}/actualizar">
+      <div class="modal-header"><h5 class="modal-title">Editar documento</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" value="{{ d.nombre }}" required></div>
+        <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2">{{ d.descripcion or '' }}</textarea></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="activo" value="1" id="dact{{ d.id }}" {% if d.activo %}checked{% endif %}><label class="form-check-label" for="dact{{ d.id }}">Activo</label></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-warning">Guardar</button></div>
+    </form>
+  </div></div>
+</div>
+{% endfor %}
+{% endblock %}

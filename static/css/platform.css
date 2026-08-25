@@ -1,0 +1,490 @@
+/* =========================================================
+   NOVA Platform + Helios — Design tokens oficiales
+   Primary #5B52E8 · Secondary #4A9FF5 · Montserrat
+   ========================================================= */
+
+:root {
+  --nova-primary: #5B52E8;
+  --nova-primary-hover: #4A41D9;
+  --nova-primary-soft: rgba(91, 82, 232, 0.08);
+  --nova-primary-ring: rgba(91, 82, 232, 0.18);
+  --nova-secondary: #4A9FF5;
+  --nova-secondary-hover: #3A8DE3;
+  --nova-secondary-soft: rgba(74, 159, 245, 0.08);
+  --nova-gradient: linear-gradient(135deg, #5B52E8 0%, #4A9FF5 100%);
+  --nova-gradient-soft: linear-gradient(135deg, rgba(91, 82, 232, 0.06) 0%, rgba(74, 159, 245, 0.06) 100%);
+
+  --nova-ink: #1a1a2e;
+  --nova-ink-2: #2d2d44;
+  --nova-mist: #6b7280;
+  --nova-line: #e1e3e8;
+  --nova-canvas: #eef0f5;
+  --nova-surface: #ffffff;
+  --nova-void: #1a1a2e;
+  --nova-void-deep: #0a0a14;
+
+  --nova-ok: #15803d;
+  --nova-ok-soft: #f0fdf4;
+  --nova-warn: #a16207;
+  --nova-warn-soft: #fefce8;
+  --nova-danger: #d4183d;
+  --nova-danger-soft: #fef2f2;
+
+  --nova-shadow-brand: 0 8px 24px -8px rgba(91, 82, 232, 0.35);
+  --nova-radius: 12px;
+  --nova-font: "Montserrat", system-ui, -apple-system, sans-serif;
+  --nova-font-brand: "Varela Round", "Montserrat", sans-serif;
+
+  /* Alias Helios (compat) */
+  --hx-ink: var(--nova-ink);
+  --hx-muted: var(--nova-mist);
+  --hx-line: var(--nova-line);
+  --hx-bg: var(--nova-canvas);
+  --hx-surface: var(--nova-surface);
+  --hx-sidebar: var(--nova-void-deep);
+  --hx-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --hx-sidebar-active: rgba(91, 82, 232, 0.28);
+  --hx-accent: var(--nova-primary);
+  --hx-accent-soft: var(--nova-primary-soft);
+  --hx-cta: var(--nova-primary);
+  --hx-cta-ink: #ffffff;
+  --hx-ok: var(--nova-ok);
+  --hx-ok-soft: var(--nova-ok-soft);
+  --hx-warn: var(--nova-warn);
+  --hx-warn-soft: var(--nova-warn-soft);
+  --hx-danger: var(--nova-danger);
+  --hx-danger-soft: var(--nova-danger-soft);
+  --hx-info: var(--nova-secondary);
+  --hx-info-soft: var(--nova-secondary-soft);
+  --hx-radius: var(--nova-radius);
+  --hx-radius-sm: 8px;
+  --hx-shadow: 0 1px 2px rgba(26, 26, 46, 0.05), 0 4px 16px rgba(26, 26, 46, 0.06);
+  --hx-shadow-sm: 0 1px 2px rgba(26, 26, 46, 0.05);
+  --hx-font: var(--nova-font);
+  --hx-sidebar-w: 248px;
+}
+
+/* ---------- Brand lockup ---------- */
+.nova-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  color: inherit;
+  user-select: none;
+}
+.nova-brand__icon {
+  height: 2rem;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.nova-brand__divider {
+  width: 1px;
+  height: 1.6rem;
+  background: linear-gradient(to bottom, transparent, rgba(148, 163, 184, 0.7), transparent);
+  margin: 0 0.15rem;
+}
+.nova-brand__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+.nova-brand__name {
+  font-family: var(--nova-font-brand);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+}
+.nova-brand__sub {
+  font-family: var(--nova-font);
+  font-weight: 300;
+  font-size: 0.55rem;
+  letter-spacing: 0.22em;
+  opacity: 0.75;
+  margin-top: 0.2rem;
+}
+.nova-brand--light .nova-brand__name,
+.nova-brand--light .nova-brand__sub { color: #fff; }
+.nova-brand--light .nova-brand__divider {
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.35), transparent);
+}
+.nova-brand--dark .nova-brand__name { color: var(--nova-ink); }
+.nova-brand--dark .nova-brand__sub { color: var(--nova-mist); }
+.nova-brand--lg .nova-brand__icon { height: 3.5rem; }
+.nova-brand--lg .nova-brand__name { font-size: 1.85rem; }
+.nova-brand--lg .nova-brand__sub { font-size: 0.72rem; letter-spacing: 0.2em; }
+.nova-brand--lg .nova-brand__divider { height: 2.75rem; }
+
+/* ---------- Buttons ---------- */
+.btn-nova-brand,
+.btn-warning {
+  background: var(--nova-gradient) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 600;
+  box-shadow: var(--nova-shadow-brand);
+}
+.btn-nova-brand:hover,
+.btn-warning:hover {
+  filter: brightness(1.06);
+  color: #fff !important;
+}
+.btn-nova-primary,
+.btn-dark {
+  background: var(--nova-ink) !important;
+  border-color: var(--nova-ink) !important;
+  color: #fff !important;
+}
+.btn-nova-primary:hover,
+.btn-dark:hover {
+  background: var(--nova-ink-2) !important;
+  border-color: var(--nova-ink-2) !important;
+}
+.btn-outline-nova {
+  border: 1px solid rgba(91, 82, 232, 0.45);
+  color: var(--nova-primary);
+  background: transparent;
+}
+.btn-outline-nova:hover {
+  background: var(--nova-primary-soft);
+  color: var(--nova-primary-hover);
+}
+
+/* ---------- Catalog (público) ---------- */
+.nova-catalog {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(91, 82, 232, 0.35), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(74, 159, 245, 0.25), transparent 50%),
+    linear-gradient(165deg, #0a0a14 0%, #12122a 45%, #1a1a2e 100%);
+  color: #f8fafc;
+  padding: 2rem 1.25rem 3.5rem;
+}
+.nova-catalog__inner {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+.nova-catalog__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2.75rem;
+}
+.nova-catalog__hero {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+.nova-catalog__hero h1 {
+  font-family: var(--nova-font);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.75rem;
+}
+.nova-catalog__hero h1 span {
+  background: var(--nova-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.nova-catalog__hero p {
+  margin: 0 auto;
+  max-width: 36rem;
+  color: rgba(226, 232, 240, 0.78);
+  font-size: 1rem;
+  font-weight: 400;
+}
+.nova-catalog__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.15rem;
+}
+.sol-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.35rem 1.35rem 1.2rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  min-height: 220px;
+}
+.sol-card:hover {
+  color: inherit;
+  transform: translateY(-3px);
+  border-color: rgba(91, 82, 232, 0.55);
+  box-shadow: 0 16px 40px -16px rgba(91, 82, 232, 0.45);
+  background: rgba(255, 255, 255, 0.07);
+}
+.sol-card.is-locked {
+  opacity: 0.72;
+  cursor: pointer;
+}
+.sol-card.is-locked:hover {
+  border-color: rgba(148, 163, 184, 0.35);
+  box-shadow: none;
+}
+.sol-card__badge {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+}
+.sol-card__badge--on {
+  background: rgba(91, 82, 232, 0.25);
+  color: #c4bfff;
+  border: 1px solid rgba(91, 82, 232, 0.45);
+}
+.sol-card__badge--off {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+.sol-card__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--nova-gradient);
+  color: #fff;
+  font-size: 1.15rem;
+}
+.sol-card.is-locked .sol-card__icon {
+  background: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+}
+.sol-card__name {
+  font-weight: 700;
+  font-size: 1.2rem;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.sol-card__sub {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.95);
+  margin: 0;
+}
+.sol-card__tag {
+  font-size: 0.875rem;
+  color: rgba(226, 232, 240, 0.8);
+  margin: 0;
+  line-height: 1.45;
+  flex: 1;
+}
+.sol-card__cta {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #c4bfff;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.sol-card.is-locked .sol-card__cta { color: #94a3b8; }
+.nova-catalog__foot {
+  text-align: center;
+  margin-top: 2.75rem;
+  color: rgba(148, 163, 184, 0.75);
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+/* Modal próximamente */
+.nova-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 20, 0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+.nova-modal-backdrop.is-open { display: flex; }
+.nova-modal {
+  width: min(420px, 100%);
+  background: #16162a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+}
+.nova-modal h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: #fff;
+}
+.nova-modal p {
+  margin: 0 0 1.25rem;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* ---------- Auth ---------- */
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  background: var(--nova-canvas);
+}
+@media (max-width: 900px) {
+  .auth-shell { grid-template-columns: 1fr; }
+}
+.auth-brand-panel {
+  background:
+    radial-gradient(ellipse 70% 50% at 30% 20%, rgba(91, 82, 232, 0.4), transparent 55%),
+    linear-gradient(160deg, #0a0a14, #1a1a2e 60%, #12122a);
+  color: #fff;
+  padding: 2.5rem 2.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.5rem;
+}
+.auth-brand-panel h2 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.25;
+}
+.auth-brand-panel h2 .gw {
+  background: var(--nova-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.auth-brand-panel p {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.75);
+  max-width: 26rem;
+  line-height: 1.55;
+}
+.auth-form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+.auth-form-card {
+  width: min(400px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid var(--nova-line);
+  box-shadow: var(--hx-shadow);
+  padding: 1.75rem;
+}
+.auth-form-card h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+  color: var(--nova-ink);
+}
+.auth-form-card .auth-lead {
+  color: var(--nova-mist);
+  font-size: 0.875rem;
+  margin-bottom: 1.35rem;
+}
+
+/* ---------- Helios home ---------- */
+.helios-hero {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2a2460 55%, #1e3a5f 100%);
+  color: #fff;
+  border-radius: 16px;
+  padding: 1.75rem 1.85rem;
+  margin-bottom: 1.35rem;
+}
+.helios-hero h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+}
+.helios-hero p {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.8);
+  max-width: 36rem;
+}
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.tile {
+  background: var(--nova-surface);
+  border: 1px solid var(--nova-line);
+  border-radius: 14px;
+  padding: 1.15rem;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-height: 150px;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+a.tile:hover {
+  color: inherit;
+  border-color: rgba(91, 82, 232, 0.45);
+  box-shadow: var(--hx-shadow);
+  transform: translateY(-2px);
+}
+.tile.is-disabled {
+  opacity: 0.65;
+  cursor: default;
+  pointer-events: none;
+}
+.tile__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--nova-gradient);
+  color: #fff;
+}
+.tile__title { font-weight: 700; font-size: 0.95rem; margin: 0; }
+.tile__desc { font-size: 0.8rem; color: var(--nova-mist); margin: 0; flex: 1; }
+.tile__status {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--nova-primary);
+}
+.tile__status--pronto { color: var(--nova-mist); }
+.tile__status--parcial { color: var(--nova-secondary-hover); }
+
+/* Sidebar brand tweak */
+.sidebar .brand.nova-brand {
+  padding: 1.1rem 1rem 0.85rem;
+}
+.sidebar .product-chip {
+  margin: 0 0.65rem 0.75rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(91, 82, 232, 0.2);
+  border: 1px solid rgba(91, 82, 232, 0.35);
+  color: #c4bfff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}

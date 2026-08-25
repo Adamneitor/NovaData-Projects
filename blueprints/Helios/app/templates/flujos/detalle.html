@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block titulo %}Flujo {{ flujo.nombre }}{% endblock %}
+{% block contenido %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="/flujos">Flujos</a></li>
+  <li class="breadcrumb-item active">{{ flujo.nombre }}</li>
+</ol></nav>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-diagram-3"></i>{{ flujo.nombre }}</h1>
+    <p class="page-subtitle">Propiedades del flujo y pipeline de etapas</p>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header fw-semibold"><i class="bi bi-gear me-1"></i>Propiedades del flujo</div>
+      <div class="card-body">
+        <form method="post" action="/flujos/{{ flujo.id }}/actualizar">
+          <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" value="{{ flujo.nombre }}" required></div>
+          <div class="mb-2"><label class="form-label">Tipo</label>
+            <select class="form-select" name="tipo_flujo_id">{% for t in tipos %}<option value="{{ t.id }}" {% if t.id == flujo.tipo_flujo_id %}selected{% endif %}>{{ t.nombre }}</option>{% endfor %}</select>
+          </div>
+          <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2">{{ flujo.descripcion or '' }}</textarea></div>
+          <div class="mb-2"><label class="form-label">API al concluir el flujo (integración)</label>
+            <select class="form-select" name="api_conclusion_id">
+              <option value="">— Ninguno —</option>
+              {% for a in apis %}<option value="{{ a.id }}" {% if a.id == flujo.api_conclusion_id %}selected{% endif %}>{{ a.nombre }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="activo" value="1" id="flact" {% if flujo.activo %}checked{% endif %}><label class="form-check-label" for="flact">Activo</label></div>
+          <button class="btn btn-warning">Guardar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-signpost-2 me-1"></i>Etapas del flujo</span>
+        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#modalEtapa"><i class="bi bi-plus-lg me-1"></i>Nueva etapa</button>
+      </div>
+      <div class="card-body">
+        {% if flujo.etapas %}
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+          {% for e in flujo.etapas %}
+            <span class="badge {% if e.es_final %}text-bg-success{% else %}text-bg-dark{% endif %} p-2">{{ e.orden }}. {{ e.nombre }}</span>
+            {% if not loop.last %}<i class="bi bi-arrow-right text-muted"></i>{% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+        <table class="table table-hover align-middle">
+          <thead class="table-light"><tr><th>Orden</th><th>Etapa</th><th>Estados</th><th>Docs</th><th>Datos</th><th>Grupos</th><th>Marcas</th><th></th></tr></thead>
+          <tbody>
+          {% for e in flujo.etapas %}
+            <tr>
+              <td>{{ e.orden }}</td>
+              <td class="fw-semibold">{{ e.nombre }}</td>
+              <td>{{ e.estados | length }}</td>
+              <td>{{ e.documentos | length }}</td>
+              <td>{{ e.datos | length }}</td>
+              <td>{{ e.grupos | length }}</td>
+              <td>
+                {% if e.es_final %}<span class="badge text-bg-success">Final</span>{% endif %}
+                {% if e.solicita_documentacion %}<span class="badge text-bg-info">Solicita docs</span>{% endif %}
+                {% if e.permite_retroceso %}<span class="badge text-bg-secondary">Retroceso</span>{% endif %}
+              </td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-dark" href="/flujos/{{ flujo.id }}/etapas/{{ e.id }}"><i class="bi bi-pencil-square"></i> Configurar</a>
+                <form method="post" action="/flujos/{{ flujo.id }}/etapas/{{ e.id }}/eliminar" class="d-inline" onsubmit="return confirm('¿Eliminar la etapa {{ e.nombre }}?');">
+                  <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+          {% else %}<tr><td colspan="8" class="text-center text-muted py-4">Aún no hay etapas. Agregue la primera.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalEtapa" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="/flujos/{{ flujo.id }}/etapas/crear">
+      <div class="modal-header"><h5 class="modal-title">Nueva etapa</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" required placeholder="Ej: Análisis de crédito"></div>
+        <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2"></textarea></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="solicita_documentacion" value="1" id="ne_docs"><label class="form-check-label" for="ne_docs">Solicita documentación al solicitante</label></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="permite_retroceso" value="1" id="ne_retro"><label class="form-check-label" for="ne_retro">Permite retroceso</label></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="es_final" value="1" id="ne_final"><label class="form-check-label" for="ne_final">Es etapa final</label></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-warning">Crear etapa</button></div>
+    </form>
+  </div></div>
+</div>
+{% endblock %}

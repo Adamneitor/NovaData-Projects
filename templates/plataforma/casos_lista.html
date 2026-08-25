@@ -1,0 +1,134 @@
+{% extends "shell_claude.html" %}
+{% block page_title %}Casos · Helios · NOVA{% endblock %}
+{% block breadcrumb %}
+<a href="{{ url_for('launcher') }}">NOVA</a><span class="sep">/</span>
+<a href="{{ url_for('helios_home') }}">Helios</a><span class="sep">/</span>
+<span class="cur">Casos</span>
+{% endblock %}
+{% block content %}
+<div class="casos-head">
+  <div>
+    <h1>Casos</h1>
+    <p>Solicitudes en curso de la fábrica de crédito</p>
+  </div>
+  <div class="casos-tools">
+    <div class="casos-search" aria-hidden="true">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+      Caso, cliente o identificación
+    </div>
+    <button type="button" class="nv-btn-amber" disabled title="Mock — próximamente">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      Nuevo caso
+    </button>
+  </div>
+</div>
+
+<div class="casos-filters">
+  <div class="casos-chips" id="casosChips">
+    <button type="button" class="casos-chip is-active" data-filter="activo">
+      Activo <span class="casos-chip__n">{{ counts.activo }}</span>
+    </button>
+    <button type="button" class="casos-chip" data-filter="cerrado">
+      Cerrado <span class="casos-chip__n">{{ counts.cerrado }}</span>
+    </button>
+    <button type="button" class="casos-chip" data-filter="cancelado">
+      Cancelado <span class="casos-chip__n">{{ counts.cancelado }}</span>
+    </button>
+    <button type="button" class="casos-chip" data-filter="todos">
+      Todos <span class="casos-chip__n">{{ counts.todos }}</span>
+    </button>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span class="casos-dd">Tipo de flujo: Todos <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg></span>
+    <span class="casos-dd">Etapa: Todas <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg></span>
+    <span class="casos-dd">Últimos 30 días <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg></span>
+  </div>
+</div>
+
+<div class="casos-table-wrap">
+  <table class="casos-table">
+    <thead>
+      <tr>
+        <th>Caso</th>
+        <th>Tipo de flujo</th>
+        <th>Cliente</th>
+        <th>Etapa</th>
+        <th class="num">Monto</th>
+        <th>Creado</th>
+        <th class="num">Req.</th>
+        <th>Situación</th>
+      </tr>
+    </thead>
+    <tbody id="casosBody">
+      {% for c in casos %}
+      <tr data-sit="{{ c.situacion }}">
+        <td><a class="casos-id" href="#">{{ c.id }}</a></td>
+        <td>{{ c.flujo }}</td>
+        <td class="casos-cli">
+          <strong>{{ c.cliente }}</strong>
+          <span>{{ c.ident }}</span>
+        </td>
+        <td><span class="casos-etapa">{{ c.etapa }}</span></td>
+        <td class="casos-monto">{{ c.monto }}</td>
+        <td>{{ c.creado }}</td>
+        <td>
+          {% if c.pend > 0 %}
+          <span class="casos-req is-warn">{{ c.pend }}</span>
+          {% else %}
+          <span class="casos-req is-ok">0</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="casos-sit casos-sit--{{ c.situacion }}">
+            {% if c.situacion == 'activo' %}Activo
+            {% elif c.situacion == 'cerrado' %}Cerrado
+            {% else %}Cancelado{% endif %}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="casos-empty" id="casosEmpty">
+    <h3>Sin casos en este filtro</h3>
+    <p>Nada que revisar aquí. Cambia el filtro de situación o crea un caso nuevo.</p>
+  </div>
+  <div class="casos-foot">
+    <span>Datos de demostración · sin conexión a motor BPM</span>
+    <div class="casos-pager">
+      <span aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="14,6 8,12 14,18"></polyline></svg></span>
+      <span class="is-cur">1</span>
+      <span>2</span>
+      <span>3</span>
+      <span aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="10,6 16,12 10,18"></polyline></svg></span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block page_scripts %}
+<script>
+(function () {
+  var chips = document.querySelectorAll('#casosChips .casos-chip');
+  var rows = document.querySelectorAll('#casosBody tr');
+  var empty = document.getElementById('casosEmpty');
+  function apply(filter) {
+    var visible = 0;
+    rows.forEach(function (row) {
+      var sit = row.getAttribute('data-sit');
+      var show = filter === 'todos' || sit === filter;
+      row.classList.toggle('is-hidden', !show);
+      if (show) visible++;
+    });
+    empty.classList.toggle('is-show', visible === 0);
+  }
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      chips.forEach(function (c) { c.classList.remove('is-active'); });
+      chip.classList.add('is-active');
+      apply(chip.dataset.filter);
+    });
+  });
+  apply('activo');
+})();
+</script>
+{% endblock %}

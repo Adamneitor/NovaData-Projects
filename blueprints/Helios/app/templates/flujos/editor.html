@@ -1,0 +1,1306 @@
+{% extends "base.html" %}
+{% block titulo %}Diseñar · {{ flujo.nombre }}{% endblock %}
+{% block contenido %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="/flujos">Flujos</a></li>
+  <li class="breadcrumb-item active">{{ flujo.nombre }}</li>
+</ol></nav>
+
+<div class="fb-shell" id="flowBuilder">
+  <div class="fb-top">
+    <div>
+      <h1 class="page-title mb-1"><i class="bi bi-diagram-3"></i><span id="fbTitle">{{ flujo.nombre }}</span></h1>
+      <p class="page-subtitle mb-0">Diseño unificado · un solo guardado para flujo, etapas, estados, transiciones y reglas</p>
+    </div>
+  </div>
+
+  <div class="fb-savebar" id="fbSavebar" data-status="clean">
+    <div class="fb-savebar__status" id="fbStatus"><i class="bi bi-check-circle"></i> Guardado</div>
+    <div class="fb-savebar__actions">
+      <button type="button" class="btn btn-outline-dark btn-sm" id="fbReload" title="Descartar cambios y recargar">Descartar</button>
+      <button type="button" class="btn btn-warning" id="fbSave" disabled>
+        <i class="bi bi-cloud-upload me-1"></i><span id="fbSaveLabel">Guardar Cambios</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-3">
+      <div class="card fb-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong>Etapas</strong>
+          <button type="button" class="btn btn-sm btn-warning" id="fbAddEtapa"><i class="bi bi-plus-lg"></i></button>
+        </div>
+        <div class="list-group list-group-flush" id="fbEtapaList"></div>
+      </div>
+    </div>
+
+    <div class="col-lg-9">
+      <div class="card fb-card mb-3">
+        <div class="card-header fw-semibold">Propiedades del flujo</div>
+        <div class="card-body row g-2" id="fbFlowProps"></div>
+      </div>
+
+      <div class="card fb-card" id="fbEtapaPanel">
+        <div class="card-header">
+          <ul class="nav nav-tabs card-header-tabs" id="fbTabs">
+            <li class="nav-item"><button type="button" class="nav-link active" data-tab="props">Etapa</button></li>
+            <li class="nav-item"><button type="button" class="nav-link" data-tab="grupos">Grupos</button></li>
+            <li class="nav-item"><button type="button" class="nav-link" data-tab="docs">Documentos</button></li>
+            <li class="nav-item"><button type="button" class="nav-link" data-tab="datos">Datos</button></li>
+            <li class="nav-item"><button type="button" class="nav-link" data-tab="estados">Estados / Transiciones</button></li>
+          </ul>
+        </div>
+        <div class="card-body" id="fbEtapaBody">
+          <div class="empty-state"><i class="bi bi-signpost-2"></i><p>Seleccione o cree una etapa.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .fb-shell { padding-bottom: 5rem; }
+  .fb-savebar {
+    position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center;
+    gap: 1rem; padding: .75rem 1rem; margin: 0 0 1rem; border-radius: 12px;
+    border: 1px solid var(--hx-line, #e2e8f0); background: #fff; box-shadow: 0 4px 16px rgba(15,23,42,.06);
+  }
+  .fb-savebar[data-status="dirty"] { border-color: #fbbf24; background: #fffbeb; }
+  .fb-savebar[data-status="saving"] { border-color: #93c5fd; background: #eff6ff; }
+  .fb-savebar[data-status="error"] { border-color: #fca5a5; background: #fef2f2; }
+  .fb-savebar[data-status="clean"] { border-color: #86efac; background: #f0fdf4; }
+  .fb-savebar__status { font-weight: 600; font-size: .9rem; display: flex; align-items: center; gap: .4rem; }
+  .fb-card .list-group-item { cursor: pointer; border-left: 3px solid transparent; }
+  .fb-card .list-group-item.active { background: #f0fdfa; border-left-color: var(--hx-accent, #0f766e); color: inherit; }
+  .fb-etapa-actions { display: flex; gap: .25rem; }
+  .fb-etapa-actions .btn { padding: .1rem .35rem; }
+  .fb-check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .5rem; }
+  .fb-check { display: flex; gap: .5rem; align-items: flex-start; padding: .55rem .65rem; border: 1px solid var(--hx-line,#e2e8f0); border-radius: 8px; background: #fff; }
+  .fb-estado { border: 1px solid var(--hx-line,#e2e8f0); border-radius: 12px; padding: 1rem; margin-bottom: .85rem; background: #f8fafc; }
+  .fb-datos-toolbar {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+    gap: .75rem; margin-bottom: .85rem; padding: .65rem .8rem;
+    background: #f8fafc; border: 1px solid var(--hx-line,#e2e8f0); border-radius: 10px;
+  }
+  .fb-datos-next { font-size: .8rem; color: var(--hx-muted,#64748b); white-space: nowrap; }
+  .fb-dato-row.is-used { background: #fff; }
+  .fb-dato-row.is-dragging { opacity: .55; }
+  .fb-dato-row.fb-dato-drop { outline: 2px dashed var(--hx-accent,#0f766e); outline-offset: -2px; }
+  .fb-dato-drag { color: #94a3b8; cursor: grab; width: 28px; text-align: center; }
+  .fb-dato-row.is-used .fb-dato-drag:active { cursor: grabbing; }
+  .fb-dato-flash { animation: fbDatoFlash .55s ease; }
+  @keyframes fbDatoFlash {
+    0% { background: #ccfbf1; }
+    100% { background: transparent; }
+  }
+  .fb-dato-rule { color: var(--hx-muted, #64748b); display: block; margin-top: .15rem; }
+  .fb-dato-cond { margin-top: .25rem; }
+  .data-field.is-cond-disabled,
+  .df-field.is-cond-disabled { opacity: .55; transition: opacity .2s ease; }
+  .data-field.is-cond-disabled .df-input,
+  .df-field.is-cond-disabled .df-input { background: #f8fafc; }
+  .fb-estado__head { display: flex; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
+  .nav-tabs .nav-link { cursor: pointer; color: var(--hx-muted,#64748b); border: 0; }
+  .nav-tabs .nav-link.active { color: var(--hx-ink,#0f172a); border-bottom: 2px solid var(--hx-accent,#0f766e); background: transparent; font-weight: 600; }
+</style>
+
+<script>
+  window.HELIOS_FLOW_ID = {{ flujo.id }};
+  window.HELIOS_FLOW_SNAPSHOT = {{ snapshot | tojson }};
+  window.HELIOS_FLOW_CATALOGOS = {{ catalogos | tojson }};
+  window.HELIOS_BOOL_DATO_IDS = {{ catalogos.booleano_ids | tojson }};
+</script>
+<script src="/static/js/dato_orden.js?v=20260721b"></script>
+<script src="/static/js/flujo_builder.js?v=20260721b"></script>
+<script>
+(function () {
+  let cat = window.HELIOS_FLOW_CATALOGOS;
+  const store = HeliosFlowBuilder.createStore(window.HELIOS_FLOW_SNAPSHOT, cat, window.HELIOS_FLOW_ID);
+
+  async function reloadCatalogos() {
+    if (typeof store.refreshCatalogos === 'function') {
+      return store.refreshCatalogos();
+    }
+    // JS en caché antiguo: forzar recarga de página para tomar flujo_builder.js nuevo
+    location.reload();
+  }
+
+  const elList = document.getElementById('fbEtapaList');
+  const elBody = document.getElementById('fbEtapaBody');
+  const elFlow = document.getElementById('fbFlowProps');
+  const elSave = document.getElementById('fbSave');
+  const elSaveLabel = document.getElementById('fbSaveLabel');
+  const elStatus = document.getElementById('fbStatus');
+  const elBar = document.getElementById('fbSavebar');
+  const elTitle = document.getElementById('fbTitle');
+
+  // hash #etapa-123 → select by id
+  function applyHash() {
+    const m = (location.hash || '').match(/etapa-([\w-]+)/);
+    if (!m) return;
+    const pub = store.getPublic();
+    const found = pub.state.etapas.find(e => String(e.id) === m[1] || e.key === m[1]);
+    if (found) store.selectEtapa(found.key);
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function nid(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  const boolDatoIds = new Set((window.HELIOS_BOOL_DATO_IDS || []).map(nid));
+
+  function catalogMeta(datoId) {
+    const id = nid(datoId);
+    if (id == null) return null;
+    return (cat.datos || []).find(x => nid(x.id) === id) || null;
+  }
+
+  function datoKey(d) {
+    if (!d) return null;
+    return nid(d.dato_id) ?? nid(d.id);
+  }
+
+  function isBooleanMeta(meta) {
+    if (!meta) return false;
+    if (boolDatoIds.has(nid(meta.id))) return true;
+    if (meta.es_booleano === true) return true;
+    const codigo = String(meta.codigo || '').toLowerCase();
+    if (codigo === 'booleano') return true;
+    const tipo = String(meta.tipo || '').toLowerCase();
+    return tipo.includes('boolean');
+  }
+
+  function renderFlowProps(pub) {
+    const f = pub.state.flujo;
+    elFlow.innerHTML = `
+      <div class="col-md-6"><label class="form-label">Nombre</label>
+        <input class="form-control" id="fNombre" value="${esc(f.nombre)}"></div>
+      <div class="col-md-3"><label class="form-label">Tipo</label>
+        <select class="form-select" id="fTipo">${cat.tipos_flujo.map(t =>
+          `<option value="${t.id}" ${t.id==f.tipo_flujo_id?'selected':''}>${esc(t.nombre)}</option>`).join('')}</select></div>
+      <div class="col-md-3"><label class="form-label">API conclusión</label>
+        <select class="form-select" id="fApi">
+          <option value="">— Ninguno —</option>
+          ${cat.apis.map(a => `<option value="${a.id}" ${a.id==f.api_conclusion_id?'selected':''}>${esc(a.nombre)}</option>`).join('')}
+        </select></div>
+      <div class="col-12"><label class="form-label">Descripción</label>
+        <textarea class="form-control" id="fDesc" rows="2">${esc(f.descripcion||'')}</textarea></div>
+      <div class="col-12"><div class="form-check">
+        <input class="form-check-input" type="checkbox" id="fActivo" ${f.activo?'checked':''}>
+        <label class="form-check-label" for="fActivo">Flujo activo</label></div></div>`;
+    elFlow.querySelector('#fNombre').onchange = e => { store.setFlowField('nombre', e.target.value); elTitle.textContent = e.target.value; };
+    elFlow.querySelector('#fTipo').onchange = e => store.setFlowField('tipo_flujo_id', parseInt(e.target.value,10));
+    elFlow.querySelector('#fApi').onchange = e => store.setFlowField('api_conclusion_id', e.target.value ? parseInt(e.target.value,10) : null);
+    elFlow.querySelector('#fDesc').onchange = e => store.setFlowField('descripcion', e.target.value);
+    elFlow.querySelector('#fActivo').onchange = e => store.setFlowField('activo', e.target.checked);
+  }
+
+  function renderEtapaList(pub) {
+    elList.innerHTML = pub.state.etapas.map(e => `
+      <div class="list-group-item ${e.key===pub.selectedEtapaKey?'active':''}" data-key="${esc(e.key)}">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <div class="fw-semibold">${e.orden}. ${esc(e.nombre)}</div>
+            <div class="small text-muted">${e.estados.length} estado(s)</div>
+          </div>
+          <div class="fb-etapa-actions" onclick="event.stopPropagation()">
+            <button type="button" class="btn btn-sm btn-outline-dark" data-act="up" data-key="${esc(e.key)}" title="Subir">↑</button>
+            <button type="button" class="btn btn-sm btn-outline-dark" data-act="down" data-key="${esc(e.key)}" title="Bajar">↓</button>
+            <button type="button" class="btn btn-sm btn-outline-danger" data-act="del" data-key="${esc(e.key)}" title="Eliminar">×</button>
+          </div>
+        </div>
+      </div>`).join('') || '<div class="p-3 text-muted small">Sin etapas</div>';
+
+    elList.querySelectorAll('.list-group-item').forEach(item => {
+      item.onclick = () => store.selectEtapa(item.dataset.key);
+    });
+    elList.querySelectorAll('[data-act]').forEach(btn => {
+      btn.onclick = (ev) => {
+        ev.stopPropagation();
+        const k = btn.dataset.key;
+        if (btn.dataset.act === 'up') store.moveEtapa(k, -1);
+        if (btn.dataset.act === 'down') store.moveEtapa(k, 1);
+        if (btn.dataset.act === 'del') store.removeEtapa(k);
+      };
+    });
+  }
+
+  function renderTabs(pub) {
+    document.querySelectorAll('#fbTabs .nav-link').forEach(a => {
+      a.classList.toggle('active', a.dataset.tab === pub.tab);
+    });
+  }
+
+  function renderEtapaBody(pub) {
+    const e = pub.selectedEtapa;
+    if (!e) {
+      elBody.innerHTML = '<div class="empty-state"><i class="bi bi-signpost-2"></i><p>Seleccione o cree una etapa.</p></div>';
+      return;
+    }
+    if (pub.tab === 'props') {
+      elBody.innerHTML = `
+        <div class="row g-2">
+          <div class="col-md-8"><label class="form-label">Nombre</label>
+            <input class="form-control" id="eNombre" value="${esc(e.nombre)}"></div>
+          <div class="col-md-4"><label class="form-label">Orden</label>
+            <input type="number" class="form-control" id="eOrden" value="${e.orden}" min="1"></div>
+          <div class="col-12"><label class="form-label">Descripción</label>
+            <textarea class="form-control" id="eDesc" rows="2">${esc(e.descripcion||'')}</textarea></div>
+          <div class="col-12 d-flex flex-wrap gap-3">
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="eDocs" ${e.solicita_documentacion?'checked':''}><label class="form-check-label" for="eDocs">Solicita documentación</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="eRetro" ${e.permite_retroceso?'checked':''}><label class="form-check-label" for="eRetro">Permite retroceso</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" id="eFinal" ${e.es_final?'checked':''}><label class="form-check-label" for="eFinal">Etapa final</label></div>
+          </div>
+        </div>`;
+      const bind = (id, field, cast=v=>v) => elBody.querySelector('#'+id).onchange = ev => {
+        const val = ev.target.type === 'checkbox' ? ev.target.checked : cast(ev.target.value);
+        store.updateEtapa(e.key, { [field]: val });
+      };
+      bind('eNombre','nombre'); bind('eOrden','orden', v=>parseInt(v,10)||1); bind('eDesc','descripcion');
+      bind('eDocs','solicita_documentacion'); bind('eRetro','permite_retroceso'); bind('eFinal','es_final');
+      return;
+    }
+
+    if (pub.tab === 'grupos') {
+      elBody.innerHTML = `<p class="text-muted small mb-2">Si no selecciona grupos, cualquier usuario operativo puede actuar.</p>
+        <div class="fb-check-grid">${cat.grupos.map(g => `
+          <label class="fb-check"><input type="checkbox" value="${g.id}" ${e.grupo_ids.includes(g.id)?'checked':''}>
+            <span>${esc(g.nombre)}</span></label>`).join('') || '<div class="text-muted">No hay grupos.</div>'}</div>`;
+      elBody.querySelectorAll('input[type=checkbox]').forEach(cb => {
+        cb.onchange = () => {
+          const ids = [...elBody.querySelectorAll('input:checked')].map(x => parseInt(x.value,10));
+          store.updateEtapa(e.key, { grupo_ids: ids });
+        };
+      });
+      return;
+    }
+
+    if (pub.tab === 'docs') {
+      const map = Object.fromEntries((e.documentos||[]).map(d => [d.documento_id, d]));
+      elBody.innerHTML = `<div class="fb-check-grid">${cat.documentos.map(d => {
+        const asg = map[d.id];
+        return `<label class="fb-check"><input type="checkbox" data-doc="${d.id}" ${asg?'checked':''}>
+          <span><strong>${esc(d.nombre)}</strong><br>
+          <label class="small"><input type="checkbox" data-obl="${d.id}" ${asg&&asg.obligatorio?'checked':''} ${asg?'':'disabled'}> Obligatorio</label></span></label>`;
+      }).join('') || '<div class="text-muted">Catálogo vacío.</div>'}</div>`;
+      const sync = () => {
+        const docs = [];
+        elBody.querySelectorAll('[data-doc]').forEach(cb => {
+          if (!cb.checked) return;
+          const id = parseInt(cb.dataset.doc,10);
+          const obl = elBody.querySelector(`[data-obl="${id}"]`);
+          docs.push({ documento_id: id, obligatorio: !!(obl && obl.checked) });
+        });
+        store.updateEtapa(e.key, { documentos: docs });
+      };
+      elBody.querySelectorAll('[data-doc]').forEach(cb => cb.onchange = () => {
+        const obl = elBody.querySelector(`[data-obl="${cb.dataset.doc}"]`);
+        if (obl) obl.disabled = !cb.checked;
+        sync();
+      });
+      elBody.querySelectorAll('[data-obl]').forEach(cb => cb.onchange = sync);
+      return;
+    }
+
+    if (pub.tab === 'datos') {
+      let flashIds = window.__fbDatoFlash || [];
+      window.__fbDatoFlash = [];
+      const map = Object.fromEntries(
+        (e.datos || [])
+          .map(d => {
+            const id = datoKey(d);
+            return id != null ? [id, d] : null;
+          })
+          .filter(Boolean)
+      );
+      const assignedIds = new Set(Object.keys(map).map(k => Number(k)));
+      const assignedOrdenes = (e.datos || []).map(d => d.orden).filter(n => n != null && n > 0);
+      const nextLibre = assignedOrdenes.length ? Math.max(...assignedOrdenes) + 1 : 1;
+      const boolControllers = (cat.datos || [])
+        .filter(d => assignedIds.has(nid(d.id)) && isBooleanMeta(d))
+        .map(d => ({ id: nid(d.id), nombre: d.nombre }));
+      const sortedCat = cat.datos.slice().sort((a, b) => {
+        const aa = map[a.id], bb = map[b.id];
+        if (!!aa !== !!bb) return aa ? -1 : 1;
+        const ao = aa && aa.orden != null ? aa.orden : 9999;
+        const bo = bb && bb.orden != null ? bb.orden : 9999;
+        if (ao !== bo) return ao - bo;
+        return String(a.nombre).localeCompare(String(b.nombre), 'es');
+      });
+
+      const ruleSummary = (asg, selfId) => {
+        if (!asg || !asg.depends_on) return '<span class="text-muted small">—</span>';
+        const ctrl = catalogMeta(asg.depends_on);
+        const bits = [];
+        bits.push(`Depende de: <strong>${esc(ctrl ? ctrl.nombre : ('#'+asg.depends_on))}</strong>`);
+        if (asg.required_when) bits.push('obligatorio si Sí');
+        if (asg.disable_when_false) bits.push('deshabilita si No');
+        return `<span class="fb-dato-rule small">${bits.join(' · ')}</span>`;
+      };
+
+      elBody.innerHTML = `
+        <div class="fb-datos-toolbar">
+          <p class="text-muted small mb-0">Al marcar <strong>Usar</strong> se asigna el índice. Puede configurar dependencias sobre campos <strong>booleanos</strong> de la misma etapa.</p>
+          <span class="fb-datos-next">Siguiente: <strong>${nextLibre}</strong></span>
+        </div>
+        <div class="table-responsive"><table class="table table-sm align-middle mb-0" id="fbDatosTable">
+          <thead><tr>
+            <th style="width:28px"></th><th>Dato</th><th>Usar</th><th>Oblig.</th>
+            <th style="width:110px">Orden</th><th>Condición</th>
+          </tr></thead>
+          <tbody>${sortedCat.map(d => {
+            const asg = map[d.id];
+            const used = !!asg;
+            const ordVal = asg && asg.orden != null ? asg.orden : '';
+            const dep = asg && asg.depends_on ? nid(asg.depends_on) : '';
+            const ctrlOpts = boolControllers
+              .filter(c => nid(c.id) !== nid(d.id))
+              .map(c => `<option value="${c.id}" ${dep === nid(c.id) ? 'selected' : ''}>${esc(c.nombre)}</option>`)
+              .join('');
+            return `<tr class="fb-dato-row ${used ? 'is-used' : ''} ${flashIds.includes(d.id) ? 'fb-dato-flash' : ''}"
+                        data-dato-id="${d.id}" draggable="${used ? 'true' : 'false'}">
+              <td class="fb-dato-drag">${used ? '<i class="bi bi-grip-vertical"></i>' : ''}</td>
+              <td>
+                <div>${esc(d.nombre)}</div>
+                ${used ? ruleSummary(asg, d.id) : ''}
+              </td>
+              <td><input type="checkbox" data-dato="${d.id}" ${used ? 'checked' : ''}></td>
+              <td><input type="checkbox" data-dobl="${d.id}" ${asg && asg.obligatorio ? 'checked' : ''} ${used ? '' : 'disabled'}
+                   title="Obligatorio fijo (si no usa regla condicional)"></td>
+              <td>
+                <div class="input-group input-group-sm">
+                  <input type="number" class="form-control fb-dato-orden" data-dord="${d.id}"
+                    min="1" value="${ordVal}" ${used ? '' : 'disabled'}>
+                  <button type="button" class="btn btn-outline-secondary" data-dsuggest="${d.id}"
+                    ${used ? '' : 'disabled'} title="Mover al final"><i class="bi bi-arrow-down-square"></i></button>
+                </div>
+              </td>
+              <td style="min-width:220px">
+                ${used ? `
+                <select class="form-select form-select-sm mb-1" data-ddep="${d.id}" ${boolControllers.length ? '' : 'disabled'} title="${boolControllers.length ? 'Campo booleano controlador' : 'Marque al menos un dato booleano en esta etapa'}">
+                  <option value="">Sin dependencia</option>
+                  ${ctrlOpts}
+                </select>
+                ${!boolControllers.length ? '<div class="form-text mb-0">No hay campos booleanos activos en esta etapa.</div>' : ''}
+                <div class="fb-dato-cond ${dep ? '' : 'd-none'}" data-dcond-wrap="${d.id}">
+                  <label class="form-check form-check-inline small mb-0">
+                    <input class="form-check-input" type="checkbox" data-dreq="${d.id}" ${asg && asg.required_when ? 'checked' : ''}>
+                    Oblig. si Sí
+                  </label>
+                  <label class="form-check form-check-inline small mb-0">
+                    <input class="form-check-input" type="checkbox" data-ddis="${d.id}" ${asg && asg.disable_when_false ? 'checked' : ''}>
+                    Deshab. si No
+                  </label>
+                </div>` : '<span class="text-muted small">—</span>'}
+              </td>
+            </tr>`;
+          }).join('') || '<tr><td colspan="6" class="text-muted">Sin datos en catálogo.</td></tr>'}
+          </tbody></table></div>
+        <p class="form-text mb-0 mt-2">Arrastre para reordenar. La obligatoriedad condicional solo aplica cuando el booleano controlador es «Sí».</p>`;
+
+      const rulesFromStore = () => Object.fromEntries(
+        (e.datos || [])
+          .map(d => {
+            const id = datoKey(d);
+            return id != null ? [id, d] : null;
+          })
+          .filter(Boolean)
+      );
+
+      const collect = () => {
+        const prev = rulesFromStore();
+        const datos = [];
+        elBody.querySelectorAll('[data-dato]').forEach(cb => {
+          if (!cb.checked) return;
+          const id = parseInt(cb.dataset.dato, 10);
+          const obl = elBody.querySelector(`[data-dobl="${id}"]`);
+          const ordEl = elBody.querySelector(`[data-dord="${id}"]`);
+          const depEl = elBody.querySelector(`[data-ddep="${id}"]`);
+          const reqEl = elBody.querySelector(`[data-dreq="${id}"]`);
+          const disEl = elBody.querySelector(`[data-ddis="${id}"]`);
+          const orden = HeliosDatoOrden.parseOrden(ordEl?.value);
+          const dep = depEl && depEl.value ? parseInt(depEl.value, 10) : null;
+          const old = prev[id] || {};
+          datos.push({
+            dato_id: id,
+            obligatorio: !!(obl && obl.checked),
+            orden,
+            depends_on: dep,
+            condition: 'true',
+            required_when: !!(dep && reqEl && reqEl.checked),
+            disable_when_false: !!(dep && disEl && disEl.checked),
+          });
+        });
+        return datos;
+      };
+
+      const commit = (datos, flash) => {
+        window.__fbDatoFlash = flash || [];
+        store.updateEtapa(e.key, { datos });
+      };
+
+      const mergeRules = (updated) => {
+        const cur = Object.fromEntries(collect().map(d => [d.dato_id, d]));
+        return updated.map(u => {
+          const c = cur[u.id] || cur[u.dato_id] || {};
+          return {
+            dato_id: u.id != null ? u.id : u.dato_id,
+            obligatorio: u.obligatorio != null ? !!u.obligatorio : !!c.obligatorio,
+            orden: u.orden,
+            depends_on: c.depends_on ?? null,
+            condition: c.condition || 'true',
+            required_when: !!c.required_when,
+            disable_when_false: !!c.disable_when_false,
+          };
+        });
+      };
+
+      const toPayload = (updated) => mergeRules(updated);
+
+      const commitOrden = (datoId, raw) => {
+        const current = collect();
+        const items = current.map(d => ({ id: d.dato_id, orden: d.orden, obligatorio: d.obligatorio }));
+        const updated = HeliosDatoOrden.aplicarCambio(items, datoId, raw);
+        commit(toPayload(updated), [datoId]);
+      };
+
+      elBody.querySelectorAll('[data-dato]').forEach(cb => {
+        cb.onchange = () => {
+          const id = parseInt(cb.dataset.dato, 10);
+          if (!cb.checked) {
+            const rest = collect();
+            const items = rest.map(d => ({ id: d.dato_id, orden: d.orden, obligatorio: d.obligatorio }));
+            commit(toPayload(HeliosDatoOrden.compactar(items)));
+            return;
+          }
+          const others = collect().filter(d => d.dato_id !== id);
+          const items = others.map(d => ({ id: d.dato_id, orden: d.orden, obligatorio: d.obligatorio }));
+          const updated = HeliosDatoOrden.asignarAlSeleccionar(items, id, false);
+          const payload = toPayload(updated).map(d => {
+            if (d.dato_id === id) {
+              return { ...d, depends_on: null, required_when: false, disable_when_false: false, condition: 'true' };
+            }
+            return d;
+          });
+          commit(payload, [id]);
+        };
+      });
+
+      elBody.querySelectorAll('[data-dobl],[data-ddep],[data-dreq],[data-ddis]').forEach(n => {
+        n.onchange = () => {
+          if (n.dataset.ddep) {
+            const wrap = elBody.querySelector(`[data-dcond-wrap="${n.dataset.ddep}"]`);
+            if (wrap) wrap.classList.toggle('d-none', !n.value);
+            // Default útil al elegir dependencia
+            if (n.value) {
+              const id = n.dataset.ddep;
+              const req = elBody.querySelector(`[data-dreq="${id}"]`);
+              const dis = elBody.querySelector(`[data-ddis="${id}"]`);
+              if (req && !req.dataset.touched) { req.checked = true; req.dataset.touched = '1'; }
+              if (dis && !dis.dataset.touched) { dis.checked = true; dis.dataset.touched = '1'; }
+            }
+          }
+          if (n.dataset.dreq) n.dataset.touched = '1';
+          if (n.dataset.ddis) n.dataset.touched = '1';
+          commit(collect());
+        };
+      });
+
+      elBody.querySelectorAll('[data-dord]').forEach(inp => {
+        inp.addEventListener('change', () => commitOrden(parseInt(inp.dataset.dord, 10), inp.value));
+        inp.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); }
+        });
+      });
+
+      elBody.querySelectorAll('[data-dsuggest]').forEach(btn => {
+        btn.onclick = () => commitOrden(parseInt(btn.dataset.dsuggest, 10), String(nextLibre));
+      });
+
+      let dragId = null;
+      elBody.querySelectorAll('tr.fb-dato-row.is-used').forEach(row => {
+        row.addEventListener('dragstart', (ev) => {
+          dragId = row.dataset.datoId;
+          row.classList.add('is-dragging');
+          ev.dataTransfer.effectAllowed = 'move';
+        });
+        row.addEventListener('dragend', () => {
+          row.classList.remove('is-dragging');
+          dragId = null;
+        });
+        row.addEventListener('dragover', (ev) => { ev.preventDefault(); row.classList.add('fb-dato-drop'); });
+        row.addEventListener('dragleave', () => row.classList.remove('fb-dato-drop'));
+        row.addEventListener('drop', (ev) => {
+          ev.preventDefault();
+          row.classList.remove('fb-dato-drop');
+          const targetId = row.dataset.datoId;
+          if (!dragId || dragId === targetId) return;
+          const ids = [...elBody.querySelectorAll('tr.fb-dato-row.is-used')].map(r => r.dataset.datoId);
+          const from = ids.indexOf(String(dragId));
+          const to = ids.indexOf(String(targetId));
+          if (from < 0 || to < 0) return;
+          ids.splice(from, 1);
+          ids.splice(to, 0, String(dragId));
+          const current = collect();
+          const next = current.map(d => ({ ...d, orden: null }));
+          ids.forEach((id, idx) => {
+            const rowD = next.find(x => String(x.dato_id) === id);
+            if (rowD) rowD.orden = idx + 1;
+          });
+          commit(next, ids.map(Number));
+        });
+      });
+      return;
+    }
+
+    // estados
+    const destOpts = pub.allEstados.map(s =>
+      `<option value="${esc(s.key)}">${esc(s.label)}</option>`).join('');
+    const datoOpts = (cat.datos || []).map(d =>
+      `<option value="${d.id}">${esc(d.nombre)} (${esc(d.codigo || d.tipo || '')})</option>`).join('');
+
+    function opsForDato(datoId) {
+      const d = (cat.datos || []).find(x => Number(x.id) === Number(datoId));
+      if (d?.operadores?.length) return d.operadores;
+      const cod = String(d?.codigo || '').toLowerCase();
+      if (['numero','numero_decimal','moneda','moneda_decimal'].includes(cod))
+        return (cat.operadores_datos?.numero) || ['>','<','>=','<=','==','!=','between'];
+      if (cod === 'booleano') return (cat.operadores_datos?.booleano) || ['==','!='];
+      return (cat.operadores_datos?.texto) || ['==','!=','contains','startswith','endswith'];
+    }
+
+    function previewReglaApi(r, api) {
+      const outs = Object.fromEntries((api?.outputs || []).map(o => [String(o.id), o.nombre]));
+      const conds = (r.condiciones && r.condiciones.length)
+        ? r.condiciones
+        : (r.output_id ? [{ output_id: r.output_id, operador: r.operador || '=', valor: r.valor || '' }] : []);
+      const bits = conds.map(c => {
+        const nom = outs[String(c.output_id)] || ('#' + (c.output_id || '?'));
+        return `${nom} ${c.operador || '='} ${c.valor ?? '…'}`;
+      });
+      if (!bits.length) return r.nombre || 'Sin condiciones';
+      const join = (r.logica || 'AND') === 'OR' ? ' o ' : ' y ';
+      const modo = (r.modo_ejecucion || 'AUTO') === 'MANUAL' ? ' [manual]' : ' [auto]';
+      return (r.nombre ? r.nombre + ': ' : '') + 'Si ' + bits.join(join) + modo;
+    }
+
+    function previewReglaDatos(r) {
+      if (r.es_default && !(r.condiciones || []).length) {
+        return (r.nombre ? r.nombre + ' · ' : '') + 'por defecto (si ninguna otra aplica)';
+      }
+      const bits = (r.condiciones || []).map(c => {
+        const d = (cat.datos || []).find(x => Number(x.id) === Number(c.dato_id));
+        const nom = d ? d.nombre : ('#' + (c.dato_id || '?'));
+        if (c.operador === 'between') return `${nom} entre ${c.valor || '…'} y ${c.valor_hasta || '…'}`;
+        return `${nom} ${c.operador || '=='} ${c.valor ?? '…'}`;
+      });
+      if (!bits.length) return r.nombre || 'Sin condiciones';
+      const join = (r.logica || 'AND') === 'OR' ? ' o ' : ' y ';
+      return (r.nombre ? r.nombre + ': ' : '') + 'Si ' + bits.join(join);
+    }
+
+    function renderValorInput(rIdx, cIdx, c, datoId) {
+      const d = (cat.datos || []).find(x => Number(x.id) === Number(datoId));
+      const cod = String(d?.codigo || '').toLowerCase();
+      const op = c.operador || '==';
+      if (cod === 'booleano') {
+        return `<select class="form-select form-select-sm" data-rd="${rIdx}" data-rdc="${cIdx}" data-rdf="valor">
+          <option value="Si" ${c.valor==='Si'||c.valor==='true'?'selected':''}>Sí</option>
+          <option value="No" ${c.valor==='No'||c.valor==='false'?'selected':''}>No</option>
+        </select>`;
+      }
+      if (op === 'between') {
+        return `<div class="d-flex gap-1">
+          <input class="form-control form-control-sm" data-rd="${rIdx}" data-rdc="${cIdx}" data-rdf="valor" value="${esc(c.valor||'')}" placeholder="Desde">
+          <input class="form-control form-control-sm" data-rd="${rIdx}" data-rdc="${cIdx}" data-rdf="valor_hasta" value="${esc(c.valor_hasta||'')}" placeholder="Hasta">
+        </div>`;
+      }
+      return `<input class="form-control form-control-sm" data-rd="${rIdx}" data-rdc="${cIdx}" data-rdf="valor" value="${esc(c.valor||'')}" placeholder="Valor">`;
+    }
+
+    function renderApiMapeos(s, api) {
+      if (!s.api_call_id || !api) {
+        return `<div class="mb-3"><div class="form-text">Asocie un API para configurar mapeo de inputs/outputs.</div></div>`;
+      }
+      const camposCaso = cat.campos_caso || [];
+      const paramsById = Object.fromEntries((api.parametros || []).map(p => [String(p.id), p]));
+      const outsById = Object.fromEntries((api.outputs || []).map(o => [String(o.id), o]));
+      const inputs = s.mapeos_input || [];
+      const outputs = s.mapeos_output || [];
+
+      const inputRows = inputs.map((m, mi) => {
+        const p = paramsById[String(m.parametro_id)] || {};
+        const origen = m.origen || 'fijo';
+        let valorUi = '';
+        if (origen === 'fijo') {
+          valorUi = `<input class="form-control form-control-sm" data-mi="${mi}" data-mf="valor_fijo" value="${esc(m.valor_fijo||'')}" placeholder="Valor fijo">`;
+        } else if (origen === 'dato') {
+          valorUi = `<select class="form-select form-select-sm" data-mi="${mi}" data-mf="dato_id">
+            <option value="">— Dato adicional —</option>
+            ${(cat.datos||[]).map(d => `<option value="${d.id}" ${Number(d.id)===Number(m.dato_id)?'selected':''}>${esc(d.nombre)}</option>`).join('')}
+          </select>`;
+        } else {
+          valorUi = `<select class="form-select form-select-sm" data-mi="${mi}" data-mf="campo_caso">
+            <option value="">— Campo —</option>
+            ${camposCaso.map(c => `<option value="${esc(c.id)}" ${c.id===m.campo_caso?'selected':''}>${esc(c.nombre)}</option>`).join('')}
+          </select>`;
+        }
+        return `<tr>
+          <td><code class="small">${esc(p.nombre || ('#'+m.parametro_id))}</code>
+            <div class="form-text mb-0">${esc(p.ubicacion || 'body')}</div></td>
+          <td><select class="form-select form-select-sm" data-mi="${mi}" data-mf="origen">
+            <option value="dato" ${origen==='dato'?'selected':''}>Dato adicional</option>
+            <option value="caso" ${origen==='caso'||origen==='cliente'?'selected':''}>Cliente / caso</option>
+            <option value="fijo" ${origen==='fijo'?'selected':''}>Valor fijo</option>
+          </select></td>
+          <td>${valorUi}</td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="3" class="text-muted small">
+        Este API no tiene parámetros en el catálogo cargado.
+        <button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-refresh-cat>Recargar catálogo</button>
+        o defínalos en Catálogo → APIs y vuelva a abrir el editor.
+      </td></tr>`;
+
+      const outputRows = outputs.map((m, oi) => {
+        const o = outsById[String(m.output_id)] || {};
+        const mapped = m.dato_id != null && m.dato_id !== '';
+        return `<tr>
+          <td><code class="small">${esc(o.nombre || ('#'+m.output_id))}</code>
+            <div class="form-text mb-0">${esc(o.json_path || '')} · ${esc(o.formato || 'texto')}</div></td>
+          <td><select class="form-select form-select-sm" data-mo="${oi}" data-mf="dato_id">
+            <option value="">— No mapear —</option>
+            ${(cat.datos||[]).map(d => `<option value="${d.id}" ${Number(d.id)===Number(m.dato_id)?'selected':''}>${esc(d.nombre)}</option>`).join('')}
+          </select></td>
+          <td>${mapped
+            ? '<span class="badge text-bg-info"><i class="bi bi-magic"></i> Autocompletado por API</span>'
+            : '<span class="text-muted small">Sin destino</span>'}</td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="3" class="text-muted small">
+        Este API no tiene outputs en el catálogo cargado.
+        <button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-refresh-cat>Recargar catálogo</button>
+      </td></tr>`;
+
+      return `<div class="mb-3 border rounded p-2 bg-light">
+        <strong class="small d-block mb-1"><i class="bi bi-plug"></i> Configuración del API · ${esc(api.nombre)}</strong>
+        <p class="form-text mb-2">${esc(api.metodo || 'POST')} ${esc(api.url || '')}</p>
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="small fw-semibold mb-1">Inputs (Request Mapping)</div>
+            <div class="table-responsive"><table class="table table-sm align-middle mb-0 bg-white">
+              <thead><tr><th>Campo API</th><th>Origen</th><th>Valor / campo</th></tr></thead>
+              <tbody>${inputRows}</tbody>
+            </table></div>
+          </div>
+          <div class="col-lg-6">
+            <div class="small fw-semibold mb-1">Outputs (Response Mapping)</div>
+            <div class="table-responsive"><table class="table table-sm align-middle mb-0 bg-white">
+              <thead><tr><th>Campo response</th><th>Dato adicional</th><th></th></tr></thead>
+              <tbody>${outputRows}</tbody>
+            </table></div>
+            <p class="form-text mb-0 mt-1">Los datos mapeados como output quedan <strong>bloqueados</strong> en el formulario del caso.</p>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function ensureMapeosSynced(s, api) {
+      if (!api) return s;
+      const inputs = [...(s.mapeos_input || [])];
+      const outputs = [...(s.mapeos_output || [])];
+      let changed = false;
+      const knownIn = new Set(inputs.map(m => Number(m.parametro_id)));
+      (api.parametros || []).forEach(p => {
+        if (!knownIn.has(Number(p.id))) {
+          inputs.push({
+            parametro_id: p.id, origen: p.origen || 'fijo', valor_fijo: p.valor_fijo || '',
+            dato_id: p.dato_id || null, campo_caso: p.campo_caso || '',
+          });
+          changed = true;
+        }
+      });
+      const knownOut = new Set(outputs.map(m => Number(m.output_id)));
+      (api.outputs || []).forEach(o => {
+        if (!knownOut.has(Number(o.id))) {
+          outputs.push({ output_id: o.id, dato_id: null });
+          changed = true;
+        }
+      });
+      if (changed) {
+        s.mapeos_input = inputs;
+        s.mapeos_output = outputs;
+      }
+      return s;
+    }
+
+    elBody.innerHTML = `
+      <div class="d-flex justify-content-between mb-3">
+        <p class="text-muted small mb-0">Estados, transiciones manuales, reglas API y reglas por datos adicionales.</p>
+        <button type="button" class="btn btn-sm btn-warning" id="btnAddEstado"><i class="bi bi-plus-lg me-1"></i>Estado</button>
+      </div>
+      ${e.estados.map(s => {
+        const api = (cat.apis || []).find(a => Number(a.id) === Number(s.api_call_id));
+        if (api) ensureMapeosSynced(s, api);
+        const rdatos = s.reglas_datos || [];
+        return `<div class="fb-estado" data-skey="${esc(s.key)}">
+          <div class="fb-estado__head">
+            <div class="row g-2 flex-grow-1">
+              <div class="col-md-4"><label class="form-label">Nombre</label>
+                <input class="form-control form-control-sm" data-f="nombre" value="${esc(s.nombre)}"></div>
+              <div class="col-md-4"><label class="form-label">API asociado</label>
+                <select class="form-select form-select-sm" data-f="api_call_id">
+                  <option value="">— Ninguno —</option>
+                  ${(cat.apis || []).map(a => `<option value="${a.id}" ${Number(a.id)===Number(s.api_call_id)?'selected':''}>${esc(a.nombre)}</option>`).join('')}
+                </select></div>
+              <div class="col-md-4 d-flex align-items-end gap-3 pb-1">
+                <label class="form-check"><input class="form-check-input" type="checkbox" data-f="es_inicial" ${s.es_inicial?'checked':''}> Inicial</label>
+                <label class="form-check"><input class="form-check-input" type="checkbox" data-f="cierra_etapa" ${s.cierra_etapa?'checked':''}> Cierra etapa</label>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" data-del-estado="${esc(s.key)}">Eliminar</button>
+          </div>
+          <div class="mb-2"><strong class="small">Transiciones manuales</strong>
+            <div class="d-flex flex-wrap gap-2 align-items-center mt-1">
+              ${(s.transiciones||[]).map((t,ti) => `
+                <span class="badge text-bg-secondary">${esc((pub.allEstados.find(x=>x.key===t.estado_destino_key)||{}).label || t.estado_destino_key)}
+                  <a href="#" data-rm-tr="${ti}" class="text-white ms-1">×</a></span>`).join('')}
+              <select class="form-select form-select-sm" style="width:auto;min-width:180px" data-add-tr>
+                <option value="">+ Destino…</option>${destOpts}</select>
+            </div>
+          </div>
+          ${renderApiMapeos(s, api)}
+          <div class="mb-3"><strong class="small">Reglas API</strong>
+            ${s.api_call_id ? `
+            <p class="form-text mb-2">Combine condiciones con AND/OR. <em>Automático</em> avanza sin click si no hay obligatorios pendientes; <em>Manual</em> requiere confirmación.</p>
+            ${(s.reglas||[]).length ? (s.reglas||[]).map((r, ri) => `
+              <div class="border rounded p-2 mb-2 bg-white" data-rg-box="${ri}">
+                <div class="row g-2 align-items-end mb-2">
+                  <div class="col-md-3"><label class="form-label small mb-0">Nombre</label>
+                    <input class="form-control form-control-sm" data-rg="${ri}" data-rf="nombre" value="${esc(r.nombre||'')}" placeholder="Ej. Aprobado"></div>
+                  <div class="col-md-2"><label class="form-label small mb-0">Lógica</label>
+                    <select class="form-select form-select-sm" data-rg="${ri}" data-rf="logica">
+                      <option value="AND" ${(r.logica||'AND')!=='OR'?'selected':''}>AND</option>
+                      <option value="OR" ${r.logica==='OR'?'selected':''}>OR</option>
+                    </select></div>
+                  <div class="col-md-2"><label class="form-label small mb-0">Modo</label>
+                    <select class="form-select form-select-sm" data-rg="${ri}" data-rf="modo_ejecucion">
+                      <option value="AUTO" ${(r.modo_ejecucion||'AUTO')!=='MANUAL'?'selected':''}>Automático</option>
+                      <option value="MANUAL" ${r.modo_ejecucion==='MANUAL'?'selected':''}>Manual</option>
+                    </select></div>
+                  <div class="col-md-1"><label class="form-label small mb-0">Pri.</label>
+                    <input type="number" class="form-control form-control-sm" data-rg="${ri}" data-rf="prioridad" value="${r.prioridad||ri+1}" min="1"></div>
+                  <div class="col-md-3"><label class="form-label small mb-0">Destino</label>
+                    <select class="form-select form-select-sm" data-rg="${ri}" data-rf="estado_destino_key">
+                      ${pub.allEstados.map(x => `<option value="${esc(x.key)}" ${x.key===r.estado_destino_key?'selected':''}>${esc(x.label)}</option>`).join('')}
+                    </select></div>
+                  <div class="col-md-1 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-rm-rg="${ri}" title="Eliminar regla">×</button>
+                  </div>
+                </div>
+                <div class="small text-muted mb-2"><i class="bi bi-chat-left-quote"></i> ${esc(previewReglaApi(r, api))}</div>
+                <div class="table-responsive"><table class="table table-sm mb-1 align-middle">
+                  <thead><tr><th>Output</th><th>Op</th><th>Valor</th><th></th></tr></thead>
+                  <tbody>
+                  ${(r.condiciones && r.condiciones.length ? r.condiciones : [{output_id: r.output_id, operador: r.operador||'=', valor: r.valor||''}]).map((c, ci) => `
+                    <tr>
+                      <td><select class="form-select form-select-sm" data-rg="${ri}" data-rgc="${ci}" data-rf="output_id">
+                        ${(api?.outputs||[]).map(o=>`<option value="${o.id}" ${Number(o.id)===Number(c.output_id)?'selected':''}>${esc(o.nombre)}</option>`).join('')}
+                      </select></td>
+                      <td><select class="form-select form-select-sm" data-rg="${ri}" data-rgc="${ci}" data-rf="operador">
+                        ${cat.operadores.map(op=>`<option value="${op}" ${op===(c.operador||'=')?'selected':''}>${op}</option>`).join('')}
+                      </select></td>
+                      <td><input class="form-control form-control-sm" data-rg="${ri}" data-rgc="${ci}" data-rf="valor" value="${esc(c.valor||'')}"></td>
+                      <td><button type="button" class="btn btn-sm btn-outline-danger" data-rm-rgc="${ri}:${ci}">×</button></td>
+                    </tr>`).join('')}
+                  </tbody>
+                </table></div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-add-rgc="${ri}">
+                  <i class="bi bi-plus"></i> Condición
+                </button>
+              </div>`).join('') : '<div class="form-text mb-2">Sin reglas API. Agregue una para direccionar según la respuesta.</div>'}
+              <button type="button" class="btn btn-sm btn-outline-dark" data-add-rg>Agregar regla API</button>
+            ` : `<div class="form-text">Asocie un API para definir reglas de direccionamiento.</div>`}
+          </div>
+          <div class="fb-dato-reglas">
+            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+              <strong class="small mb-0">Reglas por datos adicionales</strong>
+              <button type="button" class="btn btn-sm btn-outline-dark" data-add-rd>Agregar regla</button>
+            </div>
+            <p class="form-text mb-2">Se evalúan por prioridad. La primera que cumple mueve el caso; si ninguna aplica, usa la marcada como default.</p>
+            ${rdatos.length ? rdatos.map((r, ri) => `
+              <div class="border rounded p-2 mb-2 bg-white" data-rd-box="${ri}">
+                <div class="row g-2 align-items-end mb-2">
+                  <div class="col-md-3"><label class="form-label small mb-0">Nombre</label>
+                    <input class="form-control form-control-sm" data-rd="${ri}" data-rdf="nombre" value="${esc(r.nombre||'')}" placeholder="Ej. Monto alto"></div>
+                  <div class="col-md-2"><label class="form-label small mb-0">Lógica</label>
+                    <select class="form-select form-select-sm" data-rd="${ri}" data-rdf="logica">
+                      <option value="AND" ${r.logica!=='OR'?'selected':''}>AND</option>
+                      <option value="OR" ${r.logica==='OR'?'selected':''}>OR</option>
+                    </select></div>
+                  <div class="col-md-1"><label class="form-label small mb-0">Pri.</label>
+                    <input type="number" class="form-control form-control-sm" data-rd="${ri}" data-rdf="prioridad" value="${r.prioridad||ri+1}" min="1"></div>
+                  <div class="col-md-3"><label class="form-label small mb-0">Destino</label>
+                    <select class="form-select form-select-sm" data-rd="${ri}" data-rdf="estado_destino_key">
+                      ${pub.allEstados.map(x => `<option value="${esc(x.key)}" ${x.key===r.estado_destino_key?'selected':''}>${esc(x.label)}</option>`).join('')}
+                    </select></div>
+                  <div class="col-md-2"><label class="form-check mt-3 mb-0">
+                    <input class="form-check-input" type="checkbox" data-rd="${ri}" data-rdf="es_default" ${r.es_default?'checked':''}>
+                    <span class="form-check-label small">Default</span></label></div>
+                  <div class="col-md-1 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-rm-rd="${ri}" title="Eliminar regla">×</button>
+                  </div>
+                </div>
+                <div class="small text-muted mb-2"><i class="bi bi-chat-left-quote"></i> ${esc(previewReglaDatos(r))}</div>
+                <div class="table-responsive"><table class="table table-sm mb-1 align-middle">
+                  <thead><tr><th>Campo</th><th>Operador</th><th>Valor</th><th></th></tr></thead>
+                  <tbody>
+                  ${(r.condiciones||[]).map((c, ci) => {
+                    const ops = opsForDato(c.dato_id);
+                    return `<tr>
+                      <td><select class="form-select form-select-sm" data-rd="${ri}" data-rdc="${ci}" data-rdf="dato_id">
+                        <option value="">— Campo —</option>
+                        ${(cat.datos||[]).map(d => `<option value="${d.id}" ${Number(d.id)===Number(c.dato_id)?'selected':''}>${esc(d.nombre)}</option>`).join('')}
+                      </select></td>
+                      <td><select class="form-select form-select-sm" data-rd="${ri}" data-rdc="${ci}" data-rdf="operador">
+                        ${ops.map(op => `<option value="${op}" ${op===c.operador?'selected':''}>${op}</option>`).join('')}
+                      </select></td>
+                      <td>${renderValorInput(ri, ci, c, c.dato_id)}</td>
+                      <td><button type="button" class="btn btn-sm btn-outline-danger" data-rm-rdc="${ri}:${ci}">×</button></td>
+                    </tr>`;
+                  }).join('') || '<tr><td colspan="4" class="text-muted small">Sin condiciones (útil solo si es Default).</td></tr>'}
+                  </tbody>
+                </table></div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-add-rdc="${ri}">
+                  <i class="bi bi-plus"></i> Condición
+                </button>
+              </div>`).join('') : '<div class="form-text">Sin reglas de datos. Agregue una para direccionar según montos, booleanos o textos.</div>'}
+            ${rdatos.length ? `
+            <details class="mt-2 border rounded p-2 bg-light">
+              <summary class="small fw-semibold" style="cursor:pointer">Simulador de condiciones</summary>
+              <p class="form-text mb-2">Ingrese valores de prueba; se evalúa en el mismo orden de prioridad que en runtime.</p>
+              <div class="row g-2 mb-2" data-rd-sim-fields>
+                ${(() => {
+                  const ids = new Set();
+                  rdatos.forEach(r => (r.condiciones||[]).forEach(c => { if (c.dato_id) ids.add(Number(c.dato_id)); }));
+                  return [...ids].map(id => {
+                    const d = (cat.datos||[]).find(x => Number(x.id)===id);
+                    const cod = String(d?.codigo||'').toLowerCase();
+                    if (cod === 'booleano') {
+                      return `<div class="col-md-4"><label class="form-label small mb-0">${esc(d?.nombre||('#'+id))}</label>
+                        <select class="form-select form-select-sm" data-sim-dato="${id}">
+                          <option value="Si">Sí</option><option value="No">No</option>
+                        </select></div>`;
+                    }
+                    return `<div class="col-md-4"><label class="form-label small mb-0">${esc(d?.nombre||('#'+id))}</label>
+                      <input class="form-control form-control-sm" data-sim-dato="${id}" placeholder="Valor de prueba"></div>`;
+                  }).join('') || '<div class="col-12 form-text">Agregue condiciones con campos para simular.</div>';
+                })()}
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-primary" data-rd-sim>Evaluar</button>
+              <div class="small mt-2 text-muted" data-rd-sim-out></div>
+            </details>` : ''}
+          </div>
+        </div>`;
+      }).join('')}`;
+
+    elBody.querySelector('#btnAddEstado').onclick = () => store.addEstado(e.key);
+    elBody.querySelectorAll('[data-del-estado]').forEach(btn => {
+      btn.onclick = () => store.removeEstado(e.key, btn.dataset.delEstado);
+    });
+    elBody.querySelectorAll('.fb-estado').forEach(box => {
+      const skey = box.dataset.skey;
+      box.querySelectorAll('[data-f]').forEach(inp => {
+        inp.onchange = () => {
+          let val = inp.type === 'checkbox' ? inp.checked : inp.value;
+          if (inp.dataset.f === 'api_call_id') val = val ? parseInt(val,10) : null;
+          store.updateEstado(e.key, skey, { [inp.dataset.f]: val });
+        };
+      });
+      const st = e.estados.find(x => x.key === skey);
+
+      // Mapeos API input/output
+      const patchMi = (mutator) => {
+        const mapeos_input = deepClone(st.mapeos_input || []);
+        mutator(mapeos_input);
+        store.updateEstado(e.key, skey, { mapeos_input });
+      };
+      const patchMo = (mutator) => {
+        const mapeos_output = deepClone(st.mapeos_output || []);
+        mutator(mapeos_output);
+        store.updateEstado(e.key, skey, { mapeos_output });
+      };
+      box.querySelectorAll('[data-mi]').forEach(inp => {
+        inp.onchange = () => {
+          const mi = parseInt(inp.dataset.mi, 10);
+          const field = inp.dataset.mf;
+          patchMi(list => {
+            if (!list[mi]) return;
+            let val = inp.value;
+            if (field === 'dato_id') val = val ? parseInt(val, 10) : null;
+            if (field === 'origen') {
+              list[mi].origen = val;
+              list[mi].valor_fijo = '';
+              list[mi].dato_id = null;
+              list[mi].campo_caso = '';
+              return;
+            }
+            list[mi][field] = val;
+          });
+        };
+      });
+      box.querySelectorAll('[data-mo]').forEach(inp => {
+        inp.onchange = () => {
+          const oi = parseInt(inp.dataset.mo, 10);
+          patchMo(list => {
+            if (!list[oi]) return;
+            list[oi].dato_id = inp.value ? parseInt(inp.value, 10) : null;
+          });
+        };
+      });
+
+      box.querySelectorAll('[data-add-tr]').forEach(sel => {
+        sel.onchange = () => {
+          if (!sel.value) return;
+          const tr = [...(st.transiciones||[])];
+          if (!tr.some(t => t.estado_destino_key === sel.value)) tr.push({ estado_destino_key: sel.value });
+          store.updateEstado(e.key, skey, { transiciones: tr });
+        };
+      });
+      box.querySelectorAll('[data-rm-tr]').forEach(a => {
+        a.onclick = (ev) => {
+          ev.preventDefault();
+          const tr = [...(st.transiciones||[])];
+          tr.splice(parseInt(a.dataset.rmTr,10), 1);
+          store.updateEstado(e.key, skey, { transiciones: tr });
+        };
+      });
+      box.querySelectorAll('[data-add-rg]').forEach(btn => {
+        btn.onclick = () => {
+          const api = cat.apis.find(a => a.id === st.api_call_id);
+          const firstOut = api?.outputs?.[0]?.id;
+          if (!firstOut) { alert('El API no tiene outputs definidos.'); return; }
+          const reglas = deepClone(st.reglas||[]);
+          reglas.push({
+            nombre: '',
+            logica: 'AND',
+            modo_ejecucion: 'AUTO',
+            prioridad: reglas.length + 1,
+            estado_destino_key: pub.allEstados[0]?.key || '',
+            condiciones: [{ output_id: firstOut, operador: '=', valor: '' }],
+            output_id: firstOut,
+            operador: '=',
+            valor: '',
+          });
+          store.updateEstado(e.key, skey, { reglas });
+        };
+      });
+      box.querySelectorAll('[data-rm-rg]').forEach(btn => {
+        btn.onclick = () => {
+          const reglas = [...(st.reglas||[])];
+          reglas.splice(parseInt(btn.dataset.rmRg,10), 1);
+          store.updateEstado(e.key, skey, { reglas });
+        };
+      });
+      const patchRg = (mutator) => {
+        const reglas = deepClone(st.reglas || []);
+        mutator(reglas);
+        // Sincronizar campos legado con primera condición
+        reglas.forEach(r => {
+          const c0 = (r.condiciones || [])[0];
+          if (c0) {
+            r.output_id = c0.output_id;
+            r.operador = c0.operador;
+            r.valor = c0.valor;
+          }
+        });
+        store.updateEstado(e.key, skey, { reglas });
+      };
+      box.querySelectorAll('[data-add-rgc]').forEach(btn => {
+        btn.onclick = () => patchRg(list => {
+          const ri = parseInt(btn.dataset.addRgc, 10);
+          if (!list[ri]) return;
+          const api = cat.apis.find(a => a.id === st.api_call_id);
+          list[ri].condiciones = list[ri].condiciones || [];
+          list[ri].condiciones.push({
+            output_id: api?.outputs?.[0]?.id || null,
+            operador: '=',
+            valor: '',
+          });
+        });
+      });
+      box.querySelectorAll('[data-rm-rgc]').forEach(btn => {
+        btn.onclick = () => {
+          const [ri, ci] = String(btn.dataset.rmRgc || '').split(':').map(Number);
+          patchRg(list => {
+            if (!list[ri]) return;
+            list[ri].condiciones = list[ri].condiciones || [];
+            list[ri].condiciones.splice(ci, 1);
+          });
+        };
+      });
+      box.querySelectorAll('[data-rg]').forEach(inp => {
+        inp.onchange = () => {
+          const ri = parseInt(inp.dataset.rg,10);
+          const ci = inp.dataset.rgc != null ? parseInt(inp.dataset.rgc, 10) : null;
+          patchRg(list => {
+            if (!list[ri]) return;
+            let val = inp.value;
+            if (inp.dataset.rf === 'output_id' || inp.dataset.rf === 'prioridad') val = parseInt(val,10);
+            if (ci != null) {
+              list[ri].condiciones = list[ri].condiciones || [];
+              if (!list[ri].condiciones[ci]) {
+                list[ri].condiciones[ci] = { output_id: null, operador: '=', valor: '' };
+              }
+              list[ri].condiciones[ci][inp.dataset.rf] = val;
+            } else {
+              list[ri][inp.dataset.rf] = val;
+            }
+          });
+        };
+      });
+
+      // --- Reglas por datos ---
+      const patchRd = (mutator) => {
+        const reglas_datos = deepClone(st.reglas_datos || []);
+        mutator(reglas_datos);
+        store.updateEstado(e.key, skey, { reglas_datos });
+      };
+      box.querySelectorAll('[data-add-rd]').forEach(btn => {
+        btn.onclick = () => patchRd(list => {
+          list.push({
+            nombre: '',
+            logica: 'AND',
+            prioridad: list.length + 1,
+            es_default: false,
+            estado_destino_key: pub.allEstados[0]?.key || '',
+            condiciones: [{ dato_id: cat.datos?.[0]?.id || null, operador: '==', valor: '', valor_hasta: '' }],
+          });
+        });
+      });
+      box.querySelectorAll('[data-rm-rd]').forEach(btn => {
+        btn.onclick = () => patchRd(list => { list.splice(parseInt(btn.dataset.rmRd, 10), 1); });
+      });
+      box.querySelectorAll('[data-add-rdc]').forEach(btn => {
+        btn.onclick = () => patchRd(list => {
+          const ri = parseInt(btn.dataset.addRdc, 10);
+          if (!list[ri]) return;
+          list[ri].condiciones = list[ri].condiciones || [];
+          list[ri].condiciones.push({
+            dato_id: cat.datos?.[0]?.id || null,
+            operador: '==',
+            valor: '',
+            valor_hasta: '',
+          });
+        });
+      });
+      box.querySelectorAll('[data-rm-rdc]').forEach(btn => {
+        btn.onclick = () => {
+          const [ri, ci] = String(btn.dataset.rmRdc || '').split(':').map(Number);
+          patchRd(list => {
+            if (!list[ri]) return;
+            list[ri].condiciones.splice(ci, 1);
+          });
+        };
+      });
+      box.querySelectorAll('[data-rd]').forEach(inp => {
+        const handler = () => {
+          const ri = parseInt(inp.dataset.rd, 10);
+          const ci = inp.dataset.rdc != null ? parseInt(inp.dataset.rdc, 10) : null;
+          const field = inp.dataset.rdf;
+          patchRd(list => {
+            if (!list[ri]) return;
+            let val = inp.type === 'checkbox' ? inp.checked : inp.value;
+            if (field === 'prioridad') val = parseInt(val, 10) || 1;
+            if (field === 'dato_id') val = val ? parseInt(val, 10) : null;
+            if (field === 'es_default' && val) {
+              list.forEach((x, i) => { if (i !== ri) x.es_default = false; });
+            }
+            if (ci != null && !Number.isNaN(ci)) {
+              list[ri].condiciones = list[ri].condiciones || [];
+              if (!list[ri].condiciones[ci]) return;
+              list[ri].condiciones[ci][field] = val;
+              if (field === 'dato_id') {
+                const ops = opsForDato(val);
+                if (!ops.includes(list[ri].condiciones[ci].operador)) {
+                  list[ri].condiciones[ci].operador = ops[0] || '==';
+                }
+                const d = (cat.datos || []).find(x => Number(x.id) === Number(val));
+                const cod = String(d?.codigo || '').toLowerCase();
+                list[ri].condiciones[ci].valor = cod === 'booleano' ? 'Si' : '';
+                list[ri].condiciones[ci].valor_hasta = '';
+              }
+            } else {
+              list[ri][field] = val;
+            }
+          });
+        };
+        inp.onchange = handler;
+        if (inp.tagName === 'INPUT' && inp.type === 'text') inp.onblur = handler;
+      });
+
+      // Simulador de reglas por datos (misma prioridad / fallback que runtime)
+      const simBtn = box.querySelector('[data-rd-sim]');
+      if (simBtn) {
+        simBtn.onclick = () => {
+          const out = box.querySelector('[data-rd-sim-out]');
+          const valores = {};
+          box.querySelectorAll('[data-sim-dato]').forEach(inp => {
+            valores[Number(inp.dataset.simDato)] = inp.value;
+          });
+          const reglas = deepClone(st.reglas_datos || []).sort((a, b) => {
+            const da = a.es_default ? 1 : 0, dbv = b.es_default ? 1 : 0;
+            if (da !== dbv) return da - dbv;
+            return (a.prioridad || 999) - (b.prioridad || 999);
+          });
+          const evalCond = (c) => {
+            const d = (cat.datos || []).find(x => Number(x.id) === Number(c.dato_id));
+            const cod = String(d?.codigo || 'texto').toLowerCase();
+            const left = valores[Number(c.dato_id)];
+            const op = c.operador || '==';
+            const right = c.valor;
+            const toNum = (v) => {
+              const n = parseFloat(String(v ?? '').replace(/[$,\s]/g, ''));
+              return Number.isFinite(n) ? n : null;
+            };
+            const toBool = (v) => {
+              const s = String(v ?? '').trim().toLowerCase();
+              if (['si','sí','true','1','yes','s','verdadero'].includes(s)) return true;
+              if (['no','false','0','n','falso'].includes(s)) return false;
+              return null;
+            };
+            if (['numero','numero_decimal','moneda','moneda_decimal'].includes(cod) || (d?.codigo && /numero|moneda/.test(String(d.codigo)))) {
+              const L = toNum(left), R = toNum(right);
+              if (op === 'between') {
+                const H = toNum(c.valor_hasta);
+                if (L == null || R == null || H == null) return false;
+                const lo = Math.min(R, H), hi = Math.max(R, H);
+                return L >= lo && L <= hi;
+              }
+              if (L == null || R == null) return false;
+              if (op === '>') return L > R;
+              if (op === '<') return L < R;
+              if (op === '>=') return L >= R;
+              if (op === '<=') return L <= R;
+              if (op === '==') return L === R;
+              if (op === '!=') return L !== R;
+              return false;
+            }
+            if (cod === 'booleano') {
+              const L = toBool(left), R = toBool(right);
+              if (L == null || R == null) return false;
+              return op === '!=' ? L !== R : L === R;
+            }
+            const L = String(left ?? '').toLowerCase(), R = String(right ?? '').toLowerCase();
+            if (op === '==') return L === R;
+            if (op === '!=') return L !== R;
+            if (op === 'contains') return R ? L.includes(R) : false;
+            if (op === 'startswith') return R ? L.startsWith(R) : false;
+            if (op === 'endswith') return R ? L.endsWith(R) : false;
+            return false;
+          };
+          const cumple = (r) => {
+            const conds = r.condiciones || [];
+            if (r.es_default && !conds.length) return true;
+            if (!conds.length) return false;
+            const bits = conds.map(evalCond);
+            return (r.logica || 'AND') === 'OR' ? bits.some(Boolean) : bits.every(Boolean);
+          };
+          let match = reglas.find(r => !r.es_default && cumple(r));
+          if (!match) match = reglas.find(r => r.es_default);
+          if (!match) {
+            out.innerHTML = '<span class="text-danger">Ninguna regla aplica (sin fallback).</span>';
+            return;
+          }
+          const dest = pub.allEstados.find(x => x.key === match.estado_destino_key);
+          out.innerHTML = `<span class="text-success"><i class="bi bi-check2-circle"></i> ${esc(previewReglaDatos(match))} → <strong>${esc(dest?.label || match.estado_destino_key)}</strong>${match.es_default ? ' <em>(default)</em>' : ''}</span>`;
+        };
+      }
+    });
+  }
+
+  function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  function updateSavebar(pub) {
+    elSave.disabled = !pub.dirty || pub.saving;
+    if (pub.saving) {
+      elBar.dataset.status = 'saving';
+      elStatus.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Guardando…';
+      elSaveLabel.textContent = 'Guardando…';
+    } else if (pub.dirty) {
+      elBar.dataset.status = 'dirty';
+      elStatus.innerHTML = '<i class="bi bi-pencil-square"></i> Cambios pendientes';
+      elSaveLabel.textContent = 'Guardar Cambios';
+    } else {
+      elBar.dataset.status = 'clean';
+      elStatus.innerHTML = '<i class="bi bi-check-circle"></i> Guardado';
+      elSaveLabel.textContent = 'Guardar Cambios';
+    }
+  }
+
+  store.subscribe(pub => {
+    cat = pub.catalogos || cat;
+    window.HELIOS_FLOW_CATALOGOS = cat;
+    elTitle.textContent = pub.state.flujo.nombre || 'Flujo';
+    renderFlowProps(pub);
+    renderEtapaList(pub);
+    renderTabs(pub);
+    renderEtapaBody(pub);
+    updateSavebar(pub);
+    elBody.querySelectorAll('[data-refresh-cat]').forEach(btn => {
+      btn.onclick = async () => {
+        try {
+          btn.disabled = true;
+          btn.textContent = 'Recargando…';
+          await reloadCatalogos();
+        } catch (err) {
+          alert(err.message || String(err));
+        }
+      };
+    });
+  });
+
+  document.getElementById('fbAddEtapa').onclick = () => store.addEtapa();
+  document.querySelectorAll('#fbTabs .nav-link').forEach(btn => {
+    btn.onclick = async () => {
+      const tab = btn.dataset.tab;
+      store.setTab(tab);
+      // Al abrir Estados, refrescar APIs/params por si se editaron en otra pestaña
+      if (tab === 'estados') {
+        try { await reloadCatalogos(); } catch (_) { /* silencioso */ }
+      }
+    };
+  });
+  elSave.onclick = async () => {
+    const res = await store.save();
+    if (res.ok) {
+      elBar.dataset.status = 'clean';
+      elStatus.innerHTML = '<i class="bi bi-check-circle"></i> ' + (res.message || 'Guardado');
+      try { await reloadCatalogos(); } catch (_) {}
+    } else {
+      elBar.dataset.status = 'error';
+      elStatus.innerHTML = '<i class="bi bi-x-circle"></i> ' + (res.error || 'Error');
+      alert(res.error || 'No se pudo guardar');
+    }
+  };
+  document.getElementById('fbReload').onclick = () => {
+    if (store.getPublic().dirty && !confirm('¿Descartar cambios no guardados?')) return;
+    location.reload();
+  };
+
+  window.addEventListener('beforeunload', (ev) => {
+    if (store.getPublic().dirty) {
+      ev.preventDefault();
+      ev.returnValue = 'Tienes cambios sin guardar';
+    }
+  });
+
+  store.loadDraft();
+  applyHash();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block titulo %}{{ cliente.nombre_completo }}{% endblock %}
+{% block contenido %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="/catalogos/clientes">Clientes</a></li>
+  <li class="breadcrumb-item active">{{ cliente.nombre_completo }}</li>
+</ol></nav>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ cliente.nombre_completo }}</h1>
+    <p class="page-subtitle">
+      {{ cliente.tipo_identificacion }}: <strong>{{ cliente.identificacion }}</strong>
+      · Código {{ cliente.id }}
+    </p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalCaso">
+      <i class="bi bi-briefcase me-1"></i>Crear caso
+    </button>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="card h-100 stat-card"><div class="card-body">
+      <div class="stat-label">Teléfono</div>
+      <div class="stat-value">{{ cliente.telefono or '—' }}</div>
+    </div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100 stat-card"><div class="card-body">
+      <div class="stat-label">Correo</div>
+      <div class="stat-value text-break fs-6">{{ cliente.correo or '—' }}</div>
+    </div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100 stat-card"><div class="card-body">
+      <div class="stat-label">Casos registrados</div>
+      <div class="stat-value">{{ casos|length }}{% if casos|length >= 100 %}+{% endif %}</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header fw-semibold"><i class="bi bi-clock-history me-1"></i>Historial de casos</div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr>
+        <th>#</th><th>Flujo</th><th>Etapa</th><th>Estado</th><th>Situación</th><th>Creado</th><th></th>
+      </tr></thead>
+      <tbody>
+      {% for c in casos %}
+        <tr>
+          <td class="fw-semibold">{{ c.id }}</td>
+          <td>{{ c.flujo.nombre }}</td>
+          <td><span class="badge badge-etapa">{{ c.etapa_actual.nombre }}</span></td>
+          <td>{{ c.estado_actual.nombre }}</td>
+          <td>
+            {% if c.estado_general == 'ACTIVO' %}<span class="badge text-bg-primary">Activo</span>
+            {% elif c.estado_general == 'CERRADO' %}<span class="badge text-bg-success">Cerrado</span>
+            {% else %}<span class="badge text-bg-danger">Cancelado</span>{% endif %}
+          </td>
+          <td class="small text-muted">{{ c.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-dark" href="/casos/{{ c.id }}">Abrir</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-briefcase"></i><p>Este cliente aún no tiene casos. Cree el primero.</p></div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalCaso" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="/casos/crear">
+      <div class="modal-header"><h5 class="modal-title">Nuevo caso · {{ cliente.nombre_completo }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" name="cliente_id" value="{{ cliente.id }}">
+        <div class="alert alert-info small mb-3">
+          Cliente asociado automáticamente: <strong>{{ cliente.nombre_completo }}</strong>
+          ({{ cliente.identificacion }})
+        </div>
+        <div class="mb-2"><label class="form-label">Flujo</label>
+          <select class="form-select" name="flujo_id" required>
+            {% for f in flujos %}<option value="{{ f.id }}">{{ f.nombre }} ({{ f.tipo_flujo.nombre }})</option>{% else %}
+            <option value="" disabled>No hay flujos activos</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-warning" {% if not flujos %}disabled{% endif %}>Crear caso</button>
+      </div>
+    </form>
+  </div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titulo %}Tipos de flujo{% endblock %}
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-tags"></i>Tipos de flujo</h1>
+    <p class="page-subtitle">Clasificación de procesos (crédito, cobranza, etc.)</p>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card">
+      <ul class="list-group list-group-flush">
+        {% for t in tipos %}
+        <li class="list-group-item d-flex align-items-center gap-2">
+          <span class="badge badge-etapa">{{ loop.index }}</span>
+          <span class="fw-semibold">{{ t.nombre }}</span>
+        </li>
+        {% else %}
+        <li class="list-group-item"><div class="empty-state py-4"><i class="bi bi-tags"></i><p>No hay tipos definidos.</p></div></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header">Agregar tipo</div>
+      <div class="card-body">
+        <form method="post" action="/catalogos/tipos-flujo/crear" class="d-flex gap-2">
+          <input class="form-control" name="nombre" placeholder="Ej: Cobranza" required>
+          <button class="btn btn-warning flex-shrink-0">Crear</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -123,6 +123,19 @@
   margin-top: 0.25rem;
 }
 
+.nova-brand--sidebar .nova-brand__divider {
+  display: inline-block;
+  width: 1px;
+  height: 1.75rem;
+  margin: 0 0.15rem;
+  background: linear-gradient(to bottom, transparent 0%, var(--border-medium) 50%, transparent 100%);
+}
+
+/* Product chip en brand bar */
+.app-brand .product-chip {
+  width: calc(100% - 1.5rem);
+}
+
 /* Variante para el sidebar - centrado y más grande */
 .nova-brand--sidebar {
   display: inline-flex;

@@ -1,0 +1,147 @@
+{% extends "base_claude.html" %}
+{% from "macros/nova_mark.html" import nova_mark, icon_helios, icon_hermes, icon_venus, icon_zeus, icon_ares, icon_lock, user_initials %}
+{% block title %}NOVA · Elige tu impulso{% endblock %}
+{% block body_class %}page-launcher{% endblock %}
+{% block body %}
+<div class="nv-launch">
+  <div class="nv-launch__atmos" aria-hidden="true">
+    <div class="nv-launch__grid"></div>
+    <div class="nv-launch__glow--amber"></div>
+    <div class="nv-launch__glow--cyan"></div>
+  </div>
+
+  <header class="nv-launch__top">
+    <a href="{{ url_for('launcher') }}" class="nv-launch__brand" aria-label="NOVA">
+      {{ nova_mark(28, with_wordmark=true, variant='chrome') }}
+    </a>
+    <div class="nv-launch__user">
+      {% if logged and user %}
+      <span class="nv-launch__env">Producción</span>
+      <span class="nv-launch__sep" aria-hidden="true"></span>
+      <span class="nv-avatar">{{ user_initials(user.name) }}</span>
+      <div class="nv-launch__uname">
+        <strong>{{ user.name }}</strong>
+        <span>{{ user.role|capitalize }}</span>
+      </div>
+      <a class="nv-launch__out" href="{{ url_for('logout') }}">Salir</a>
+      {% else %}
+      <a class="nv-launch__in" href="{{ url_for('login', next='/') }}">Ingresar</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="nv-launch__copy">
+    <h1>Elige tu impulso</h1>
+    <p class="lead">Una plataforma. Cinco soluciones.</p>
+    <div class="nv-launch__rule"></div>
+    <p class="body">Hoy está encendido <strong>Helios</strong>, la fábrica de crédito. Los demás astros están en construcción y se activarán por fases — su lugar en la órbita ya está reservado.</p>
+  </div>
+
+  <div class="nv-launch__foot">
+    <span class="label">Nova Data Solutions</span>
+    <p class="quote">La meta no es hacer más. Es hacerlo mejor.</p>
+  </div>
+
+  <div class="nv-constellation">
+    <svg class="nv-constellation__orbits" width="760" height="700" viewBox="0 0 760 700" fill="none" aria-hidden="true">
+      <ellipse cx="380" cy="350" rx="318" ry="292" stroke="rgba(148,163,184,.15)"></ellipse>
+      <ellipse cx="380" cy="350" rx="228" ry="208" stroke="rgba(148,163,184,.10)"></ellipse>
+      <line x1="380" y1="350" x2="104" y2="124" stroke="rgba(148,163,184,.14)" stroke-dasharray="3 6"></line>
+      <line x1="380" y1="350" x2="656" y2="104" stroke="rgba(148,163,184,.14)" stroke-dasharray="3 6"></line>
+      <line x1="380" y1="350" x2="84" y2="564" stroke="rgba(148,163,184,.14)" stroke-dasharray="3 6"></line>
+      <line x1="380" y1="350" x2="664" y2="584" stroke="rgba(148,163,184,.14)" stroke-dasharray="3 6"></line>
+    </svg>
+
+    <a class="nv-astro nv-astro--helios" href="{{ url_for('entrar_solucion', solution_id='helios') }}">
+      <div class="nv-astro__head">
+        <span class="nv-astro__icon">{{ icon_helios(40) }}</span>
+        <span class="nv-pill-on"><i></i><span>Disponible</span></span>
+      </div>
+      <span class="nv-astro__name">HELIOS</span>
+      <span class="nv-astro__sub">Fábrica de Crédito</span>
+      <p class="nv-astro__desc">Originación, BPM operativo, buró y decisión en un solo flujo de trabajo.</p>
+      <span class="nv-astro__cta">
+        Entrar
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
+      </span>
+    </a>
+
+    {% for s in solutions if not s.active %}
+    <button type="button"
+      class="nv-astro nv-astro--locked nv-astro--{{ s.id }}"
+      data-locked="{{ s.id }}"
+      data-name="{{ s.name }}"
+      data-sub="{{ s.subtitle }}"
+      data-tag="{{ s.tagline }}">
+      <div class="nv-astro__locked-head">
+        <span class="nv-astro__mini-icon">
+          {% if s.id == 'hermes' %}{{ icon_hermes(24) }}
+          {% elif s.id == 'venus' %}{{ icon_venus(24) }}
+          {% elif s.id == 'zeus' %}{{ icon_zeus(24) }}
+          {% else %}{{ icon_ares(24) }}{% endif %}
+        </span>
+        {{ icon_lock(13) }}
+      </div>
+      <div class="nv-astro__locked-name">{{ s.name }}</div>
+      <div class="nv-astro__locked-sub">{{ s.subtitle }}</div>
+      <span class="nv-pill-lock">Próximamente</span>
+    </button>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="nv-modal-backdrop" id="lockedModal" role="dialog" aria-modal="true" aria-labelledby="lockedTitle">
+  <div class="nv-modal">
+    <div class="nv-modal__top">
+      <span class="nv-modal__icon" id="lockedIcon">{{ icon_hermes(28) }}</span>
+      <span class="nv-modal__badge">{{ icon_lock(11) }} Próximamente</span>
+    </div>
+    <div>
+      <div class="nv-modal__title-row">
+        <span class="nv-modal__dot nv-modal__dot--hermes" id="lockedDot"></span>
+        <h2 id="lockedTitle">Producto</h2>
+      </div>
+      <span class="nv-modal__sub" id="lockedSub"></span>
+    </div>
+    <p class="nv-modal__desc" id="lockedBody"></p>
+    <div class="nv-modal__foot">
+      <span class="nv-modal__hint">Este producto no está habilitado todavía. Te avisaremos al activarse.</span>
+      <div class="nv-modal__actions">
+        <a class="nv-btn-ghost" href="{{ url_for('entrar_solucion', solution_id='helios') }}">Ver Helios</a>
+        <button type="button" class="nv-btn-solid" id="lockedClose">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(function () {
+  var modal = document.getElementById('lockedModal');
+  var title = document.getElementById('lockedTitle');
+  var sub = document.getElementById('lockedSub');
+  var body = document.getElementById('lockedBody');
+  var dot = document.getElementById('lockedDot');
+  function openLocked(name, subtitle, tag, id) {
+    title.textContent = name;
+    sub.textContent = subtitle || '';
+    body.textContent = (tag || '') + ' Se habilitará en una fase posterior.';
+    if (dot) dot.className = 'nv-modal__dot nv-modal__dot--' + (id || 'hermes');
+    modal.classList.add('is-open');
+  }
+  function closeLocked() { modal.classList.remove('is-open'); }
+  document.querySelectorAll('[data-locked]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      openLocked(el.dataset.name, el.dataset.sub, el.dataset.tag, el.dataset.locked);
+    });
+  });
+  document.getElementById('lockedClose')?.addEventListener('click', closeLocked);
+  modal?.addEventListener('click', function (e) { if (e.target === modal) closeLocked(); });
+  var locked = new URLSearchParams(location.search).get('locked');
+  if (locked) {
+    var btn = document.querySelector('[data-locked="' + locked + '"]');
+    if (btn) openLocked(btn.dataset.name, btn.dataset.sub, btn.dataset.tag, locked);
+  }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titulo %}Helios{% endblock %}
+{% block contenido %}
+<div class="helios-hero">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <div class="mb-2" style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.7">NOVA / Helios</div>
+      <h1>{{ solution.name if solution else 'Helios' }}</h1>
+      <p>{{ solution.tagline if solution else 'Fábrica de Crédito' }}</p>
+    </div>
+    <a class="btn btn-nova-brand" href="/casos"><i class="bi bi-briefcase me-1"></i>Ir a Casos</a>
+  </div>
+</div>
+
+<div class="page-header mb-3">
+  <div>
+    <h2 class="page-title" style="font-size:1.1rem">Módulos</h2>
+    <p class="page-subtitle mb-0">Operación y diseño dentro de la fábrica de crédito</p>
+  </div>
+</div>
+
+<div class="tile-grid">
+  {% for t in tiles %}
+    {% if t.href %}
+    <a class="tile" href="{{ t.href }}">
+      <div class="tile__icon"><i class="bi {{ t.icon }}"></i></div>
+      <h3 class="tile__title">{{ t.title }}</h3>
+      <p class="tile__desc">{{ t.desc }}</p>
+      <span class="tile__status {% if t.status == 'parcial' %}tile__status--parcial{% endif %}">
+        {% if t.status == 'parcial' %}Parcial{% else %}Activo{% endif %}
+      </span>
+    </a>
+    {% else %}
+    <div class="tile is-disabled">
+      <div class="tile__icon"><i class="bi {{ t.icon }}"></i></div>
+      <h3 class="tile__title">{{ t.title }}</h3>
+      <p class="tile__desc">{{ t.desc }}</p>
+      <span class="tile__status tile__status--pronto">Próximamente</span>
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

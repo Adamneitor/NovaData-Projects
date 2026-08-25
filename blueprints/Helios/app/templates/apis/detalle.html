@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block titulo %}API {{ api.nombre }}{% endblock %}
+{% block contenido %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="/apis">APIs</a></li>
+  <li class="breadcrumb-item active">{{ api.nombre }}</li>
+</ol></nav>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-plugin"></i>{{ api.nombre }}</h1>
+    <p class="page-subtitle">Definición, parámetros y outputs</p>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header fw-semibold"><i class="bi bi-gear me-1"></i>Definición del API</div>
+      <div class="card-body">
+        <form method="post" action="/apis/{{ api.id }}/actualizar">
+          <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" value="{{ api.nombre }}" required></div>
+          <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2">{{ api.descripcion or '' }}</textarea></div>
+          <div class="row">
+            <div class="col-4 mb-2"><label class="form-label">Método</label>
+              <select class="form-select" name="metodo">
+                {% for m in ['POST','GET','PUT','PATCH'] %}<option {% if api.metodo == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-8 mb-2"><label class="form-label">URL</label><input class="form-control" name="url" value="{{ api.url }}" required></div>
+          </div>
+          <div class="mb-2"><label class="form-label">Headers fijos (JSON)</label><textarea class="form-control font-monospace" name="headers_json" rows="2" placeholder='{"Authorization": "Bearer XXX"}'>{{ api.headers_json or '' }}</textarea></div>
+          <div class="row align-items-end">
+            <div class="col-6 mb-2"><label class="form-label">Timeout (seg)</label><input type="number" class="form-control" name="timeout_seg" value="{{ api.timeout_seg }}"></div>
+            <div class="col-6 mb-3 form-check ms-2"><input class="form-check-input" type="checkbox" name="activo" value="1" id="apiact" {% if api.activo %}checked{% endif %}><label class="form-check-label" for="apiact">Activo</label></div>
+          </div>
+          <button class="btn btn-warning">Guardar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card mb-3">
+      <div class="card-header fw-semibold"><i class="bi bi-box-arrow-in-right me-1"></i>Parámetros de entrada</div>
+      <div class="card-body">
+        <table class="table table-sm align-middle">
+          <thead class="table-light"><tr><th>Nombre</th><th>Ubicación</th><th>Origen</th><th>Valor</th><th></th></tr></thead>
+          <tbody>
+          {% for p in api.parametros %}
+            <tr>
+              <td class="fw-semibold">{{ p.nombre }}</td>
+              <td><span class="badge badge-etapa">{{ p.ubicacion }}</span></td>
+              <td>{{ p.origen }}</td>
+              <td class="small text-muted">
+                {% if p.origen == 'fijo' %}{{ p.valor_fijo }}
+                {% elif p.origen == 'dato' %}{{ p.dato.nombre if p.dato else '?' }}
+                {% else %}{{ p.campo_caso }}{% endif %}
+              </td>
+              <td class="text-end">
+                <form method="post" action="/apis/{{ api.id }}/parametros/{{ p.id }}/eliminar" class="d-inline">
+                  <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+          {% else %}<tr><td colspan="5" class="text-muted text-center">Sin parámetros.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+        <form method="post" action="/apis/{{ api.id }}/parametros/crear" class="row g-2 align-items-end border-top pt-3">
+          <div class="col-md-3"><label class="form-label small">Nombre</label><input class="form-control form-control-sm" name="nombre" required></div>
+          <div class="col-md-2"><label class="form-label small">Ubicación</label>
+            <select class="form-select form-select-sm" name="ubicacion"><option value="body">body</option><option value="query">query</option><option value="path">path</option><option value="header">header</option></select>
+          </div>
+          <div class="col-md-2"><label class="form-label small">Origen</label>
+            <select class="form-select form-select-sm" name="origen" onchange="cambiarOrigen(this)"><option value="fijo">Valor fijo</option><option value="dato">Dato compl.</option><option value="caso">Campo del caso</option></select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small">Valor</label>
+            <input class="form-control form-control-sm origen-fijo" name="valor_fijo" placeholder="valor fijo">
+            <select class="form-select form-select-sm origen-dato d-none" name="dato_id">
+              {% for d in datos %}<option value="{{ d.id }}">{{ d.nombre }}</option>{% endfor %}
+            </select>
+            <select class="form-select form-select-sm origen-caso d-none" name="campo_caso">
+              {% for v, lbl in campos_caso %}<option value="{{ v }}">{{ lbl }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2"><button class="btn btn-sm btn-warning w-100">Agregar</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header fw-semibold"><i class="bi bi-box-arrow-right me-1"></i>Outputs (respuesta)</div>
+      <div class="card-body">
+        <table class="table table-sm align-middle">
+          <thead class="table-light"><tr><th>Nombre</th><th>Ruta JSON</th><th>Formato</th><th></th></tr></thead>
+          <tbody>
+          {% for o in api.outputs %}
+            <tr>
+              <td class="fw-semibold">{{ o.nombre }}</td>
+              <td class="font-monospace small">{{ o.json_path }}</td>
+              <td><span class="badge badge-etapa">{{ o.formato }}</span></td>
+              <td class="text-end">
+                <form method="post" action="/apis/{{ api.id }}/outputs/{{ o.id }}/eliminar" class="d-inline">
+                  <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+          {% else %}<tr><td colspan="4" class="text-muted text-center">Sin outputs. Defina los valores que se extraen de la respuesta.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+        <form method="post" action="/apis/{{ api.id }}/outputs/crear" class="row g-2 align-items-end border-top pt-3">
+          <div class="col-md-4"><label class="form-label small">Nombre</label><input class="form-control form-control-sm" name="nombre" required placeholder="Ej: score"></div>
+          <div class="col-md-4"><label class="form-label small">Ruta JSON (con puntos)</label><input class="form-control form-control-sm font-monospace" name="json_path" required placeholder="resultado.score"></div>
+          <div class="col-md-2"><label class="form-label small">Formato</label>
+            <select class="form-select form-select-sm" name="formato"><option value="texto">texto</option><option value="numero">número</option><option value="booleano">booleano</option></select>
+          </div>
+          <div class="col-md-2"><button class="btn btn-sm btn-warning w-100">Agregar</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-header fw-semibold"><i class="bi bi-play-circle me-1"></i>Probar API</div>
+      <div class="card-body">
+        <p class="form-text">Ejecuta el API contra un caso real y muestra preview del request / outputs. Queda registrado en el log del caso.</p>
+        <div class="row g-2 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label small">Id de caso</label>
+            <input type="number" class="form-control form-control-sm" id="testCasoId" min="1" placeholder="Ej. 2">
+          </div>
+          <div class="col-md-3">
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnTestApi">
+              <i class="bi bi-lightning"></i> Test API
+            </button>
+          </div>
+        </div>
+        <pre class="small bg-light border rounded p-2 mt-3 mb-0 d-none" id="testApiOut" style="max-height:320px;overflow:auto"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function cambiarOrigen(sel) {
+  const fila = sel.closest('form');
+  fila.querySelector('.origen-fijo').classList.toggle('d-none', sel.value !== 'fijo');
+  fila.querySelector('.origen-dato').classList.toggle('d-none', sel.value !== 'dato');
+  fila.querySelector('.origen-caso').classList.toggle('d-none', sel.value !== 'caso');
+}
+document.getElementById('btnTestApi')?.addEventListener('click', async () => {
+  const casoId = document.getElementById('testCasoId').value;
+  const out = document.getElementById('testApiOut');
+  if (!casoId) { alert('Indique un Id de caso'); return; }
+  out.classList.remove('d-none');
+  out.textContent = 'Ejecutando…';
+  const fd = new FormData();
+  fd.append('caso_id', casoId);
+  try {
+    const r = await fetch('/apis/{{ api.id }}/probar', { method: 'POST', body: fd });
+    const data = await r.json();
+    out.textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    out.textContent = String(e);
+  }
+});
+</script>
+{% endblock %}

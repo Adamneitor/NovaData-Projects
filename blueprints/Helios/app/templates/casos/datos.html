@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+{% from "partials/datos_macros.html" import campo_dato %}
+{% block titulo %}Datos · Caso #{{ caso.id }}{% endblock %}
+{% block head_extra %}
+<style>
+  .hx-datos { max-width: 840px; margin: 0 auto 2.5rem; width: 100%; }
+  .hx-datos-crumb { margin-bottom: .75rem; }
+  .hx-datos-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1rem; margin-bottom: 1.15rem;
+  }
+  .hx-datos-kicker {
+    margin: 0 0 .3rem; font-size: .72rem; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase; color: #0f766e;
+  }
+  .hx-datos-title {
+    margin: 0; font-size: 1.5rem; font-weight: 750; letter-spacing: -.02em;
+    color: #0f172a; line-height: 1.2;
+  }
+  .hx-datos-sub {
+    margin: .35rem 0 0; font-size: .875rem; color: #64748b;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+  }
+  .hx-datos-dot {
+    width: 4px; height: 4px; border-radius: 50%; background: #cbd5e1; display: inline-block;
+  }
+  .hx-datos-back {
+    display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap;
+    border-radius: 10px !important; padding: .5rem .9rem !important;
+  }
+  .hx-datos-progress { margin-bottom: 1.1rem; }
+  .hx-datos-progress__track {
+    height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden;
+  }
+  .hx-datos-progress__fill {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, #0f766e, #14b8a6);
+    border-radius: 999px; transition: width .35s cubic-bezier(.22,1,.36,1);
+  }
+  .hx-datos-progress__meta {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: .4rem; font-size: .75rem; color: #64748b;
+  }
+  .hx-datos-progress__meta strong {
+    color: #0f172a; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .hx-datos-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.04);
+    padding: 1.5rem 1.6rem 1.65rem;
+  }
+  .hx-datos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.15rem 1.25rem;
+  }
+  .hx-datos .df-field,
+  .hx-datos .data-field {
+    display: flex; flex-direction: column; min-width: 0;
+    transition: opacity .2s ease;
+  }
+  .hx-datos .df-label-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .5rem; margin-bottom: .4rem; min-height: 1.1rem;
+  }
+  .hx-datos .df-label {
+    margin: 0; font-size: .8rem; font-weight: 600; color: #334155; line-height: 1.3;
+  }
+  .hx-datos .df-req { color: #b91c1c; font-weight: 700; margin-left: .12rem; }
+  .hx-datos .df-label-meta { display: inline-flex; align-items: center; gap: .3rem; }
+  .hx-datos .df-chip {
+    display: inline-flex; align-items: center; gap: .12rem;
+    font-size: .65rem; font-weight: 700; padding: .12rem .45rem;
+    border-radius: 999px; max-width: 8.5rem; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+  .hx-datos .df-chip--pend { background: #fef3c7; color: #b45309; }
+  .hx-datos .df-chip--cond { background: #f1f5f9; color: #64748b; }
+  .hx-datos .df-hint {
+    margin: 0 0 .35rem; font-size: .74rem; color: #94a3b8; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .hx-datos .df-hint--cond { font-style: italic; }
+  .hx-datos .df-input,
+  .hx-datos .caso-input,
+  .hx-datos select.df-input,
+  .hx-datos input.df-input {
+    width: 100% !important;
+    min-height: 42px;
+    box-sizing: border-box;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    padding: .55rem .8rem !important;
+    font-size: .9rem !important;
+    color: #0f172a;
+    background: #fff !important;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .hx-datos select.df-input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%2394a3b8' d='M4.5 6l3.5 3.5L11.5 6'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right .7rem center !important;
+    padding-right: 2rem !important;
+  }
+  .hx-datos .df-input:hover:not(:disabled),
+  .hx-datos .caso-input:hover:not(:disabled) { border-color: #cbd5e1 !important; }
+  .hx-datos .df-input:focus,
+  .hx-datos .caso-input:focus {
+    outline: 0 !important;
+    border-color: #0f766e !important;
+    box-shadow: 0 0 0 3px #ccfbf1 !important;
+  }
+  .hx-datos .df-input:disabled,
+  .hx-datos .caso-input:disabled,
+  .hx-datos .is-cond-disabled .df-input {
+    background: #f8fafc !important; color: #94a3b8; cursor: not-allowed;
+  }
+  .hx-datos .is-cond-disabled { opacity: .62; }
+  .hx-datos .is-error .df-label { color: #b91c1c; }
+  .hx-datos .is-error .df-input,
+  .hx-datos .is-error .caso-input {
+    border-color: #fca5a5 !important;
+    box-shadow: 0 0 0 3px rgba(239,68,68,.1) !important;
+    background: #fffafa !important;
+  }
+  .hx-datos .field-error {
+    display: flex; align-items: flex-start; gap: .35rem;
+    margin-top: .35rem; font-size: .78rem; color: #b91c1c; line-height: 1.35;
+  }
+  .hx-datos .field-error.d-none { display: none !important; }
+  .hx-datos-footer {
+    position: sticky; bottom: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap; margin-top: 1rem;
+    padding: .85rem 1.1rem;
+    background: rgba(255,255,255,.94); backdrop-filter: blur(10px);
+    border: 1px solid #e2e8f0; border-radius: 14px;
+    box-shadow: 0 -4px 24px rgba(15,23,42,.06);
+  }
+  .hx-datos-footer__hint {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .78rem; color: #64748b;
+  }
+  .hx-datos-footer__hint i { color: #0f766e; }
+  .hx-datos-footer__actions {
+    display: flex; align-items: center; gap: .55rem; margin-left: auto;
+  }
+  .hx-datos-footer__actions .btn {
+    border-radius: 10px !important; padding: .55rem 1rem !important; font-weight: 600;
+  }
+  @media (max-width: 720px) {
+    .hx-datos-grid { grid-template-columns: 1fr; }
+    .hx-datos-card { padding: 1.15rem 1.05rem 1.25rem; }
+    .hx-datos-head { flex-direction: column; }
+    .hx-datos-back { align-self: stretch; justify-content: center; }
+  }
+</style>
+{% endblock %}
+{% block contenido %}
+{% set total = datos_etapa|length %}
+{% set pct = ((datos_completados / total * 100)|round|int) if total else 100 %}
+
+<nav aria-label="breadcrumb" class="hx-datos-crumb">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item"><a href="/casos">Casos</a></li>
+    <li class="breadcrumb-item"><a href="/casos/{{ caso.id }}">Caso #{{ caso.id }}</a></li>
+    <li class="breadcrumb-item active">Datos adicionales</li>
+  </ol>
+</nav>
+
+<div class="hx-datos">
+  <header class="hx-datos-head">
+    <div>
+      <p class="hx-datos-kicker">Etapa · {{ caso.etapa_actual.nombre }}</p>
+      <h1 class="hx-datos-title">Datos adicionales</h1>
+      <p class="hx-datos-sub">
+        Caso #{{ caso.id }}
+        <span class="hx-datos-dot" aria-hidden="true"></span>
+        <span data-datos-count>{{ datos_completados }} de {{ total }} completados</span>
+      </p>
+    </div>
+    <a class="btn btn-outline-dark hx-datos-back" href="/casos/{{ caso.id }}">
+      <i class="bi bi-arrow-left"></i>
+      <span>Volver al caso</span>
+    </a>
+  </header>
+
+  <div class="hx-datos-progress" data-datos-progress role="progressbar"
+       aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pct }}"
+       aria-label="Progreso del formulario">
+    <div class="hx-datos-progress__track">
+      <span class="hx-datos-progress__fill" data-datos-progress-fill style="width: {{ pct }}%"></span>
+    </div>
+    <div class="hx-datos-progress__meta">
+      <span>Progreso</span>
+      <strong data-datos-progress-pct>{{ pct }}%</strong>
+    </div>
+  </div>
+
+  {% if intent_errs %}
+  <div class="alert alert-danger" id="panel-errores-datos">
+    <strong><i class="bi bi-exclamation-triangle-fill"></i> Complete los campos obligatorios</strong>
+    <ul class="mb-0 mt-2">
+      {% for err in intent_errs if err.campo and err.campo.startswith('dato_') %}
+      <li>{% if err.ancla %}<a href="{{ err.ancla }}">{{ err.mensaje }}</a>{% else %}{{ err.mensaje }}{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if datos_etapa %}
+  <form method="post"
+        action="/casos/{{ caso.id }}/datos"
+        class="hx-datos-form js-datos-ajax"
+        id="formDatosAdicionales"
+        data-datos-total="{{ total }}"
+        novalidate>
+    <input type="hidden" name="return_to" value="form">
+
+    <div class="hx-datos-card">
+      <div class="hx-datos-grid">
+        {% for ed in datos_etapa %}
+          {{ campo_dato(ed, datos_valores.get(ed.dato_id, ''), puede_actuar, datos_pendientes, intent_errs, field_errors|default({}), valor_es_ui|default(false), 'half', datos_api_readonly) }}
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if puede_actuar %}
+    <div class="hx-datos-footer">
+      <div class="hx-datos-footer__hint">
+        <i class="bi bi-shield-check"></i>
+        Los cambios se guardan en la etapa actual.
+      </div>
+      <div class="hx-datos-footer__actions">
+        <a class="btn btn-outline-dark" href="/casos/{{ caso.id }}">Cancelar</a>
+        <button type="submit" class="btn btn-warning">
+          <i class="bi bi-check2 me-1"></i>Guardar datos
+        </button>
+      </div>
+    </div>
+    {% endif %}
+  </form>
+  {% else %}
+  <div class="hx-datos-card">
+    <div class="empty-state py-5">
+      <i class="bi bi-inbox"></i>
+      <p>Esta etapa no solicita datos adicionales.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script src="/static/js/dato_formato.js"></script>
+<script src="/static/js/dato_condicion.js"></script>
+<script src="/static/js/datos_form.js"></script>
+<script>
+(function () {
+  const form = document.getElementById('formDatosAdicionales');
+  if (!form) return;
+  const total = Number(form.dataset.datosTotal || 0) || 0;
+  const fill = document.querySelector('[data-datos-progress-fill]');
+  const pctEl = document.querySelector('[data-datos-progress-pct]');
+  const countEl = document.querySelector('[data-datos-count]');
+  const bar = document.querySelector('[data-datos-progress]');
+
+  function filledCount() {
+    let n = 0;
+    form.querySelectorAll('[name^="dato_"]').forEach((el) => {
+      if (el.disabled) return;
+      const field = el.closest('.data-field, .df-field');
+      if (field && field.classList.contains('is-cond-disabled')) return;
+      if ((el.value || '').trim()) n += 1;
+    });
+    return n;
+  }
+
+  function refreshProgress() {
+    if (!total) return;
+    const done = filledCount();
+    const pct = Math.min(100, Math.round((done / total) * 100));
+    if (fill) fill.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = pct + '%';
+    if (countEl) countEl.textContent = done + ' de ' + total + ' completados';
+    if (bar) bar.setAttribute('aria-valuenow', String(pct));
+  }
+
+  form.addEventListener('input', refreshProgress);
+  form.addEventListener('change', refreshProgress);
+  refreshProgress();
+})();
+</script>
+{% endblock %}

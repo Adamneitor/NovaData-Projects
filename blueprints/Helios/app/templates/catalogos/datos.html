@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block titulo %}Datos complementarios{% endblock %}
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-input-cursor-text"></i>Datos complementarios</h1>
+    <p class="page-subtitle">Campos de captura por etapa · almacenamiento raw + formato visual configurable</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo dato</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Dato</th><th>Descripción</th><th>Tipo</th><th>Formato visual</th><th>Decimales</th><th>Activo</th><th></th></tr></thead>
+      <tbody>
+      {% for d in datos %}
+        <tr>
+          <td class="fw-semibold">{{ d.nombre }}</td>
+          <td>{{ d.descripcion or '' }}</td>
+          <td><span class="badge badge-etapa">{{ d.tipo_dato.nombre }}</span></td>
+          <td class="small"><code>{{ resolve_formato(d) }}</code></td>
+          <td class="small text-muted">{% if resolve_decimales(d) and tipo_codigo(d.tipo_dato) in ['numero_decimal','moneda_decimal'] %}{{ resolve_decimales(d) }}{% else %}—{% endif %}</td>
+          <td>{% if d.activo %}<span class="badge text-bg-success">Sí</span>{% else %}<span class="badge text-bg-danger">No</span>{% endif %}</td>
+          <td class="text-end"><button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#modalEditar{{ d.id }}" title="Editar"><i class="bi bi-pencil"></i> Editar</button></td>
+        </tr>
+      {% else %}<tr><td colspan="7"><div class="empty-state"><i class="bi bi-input-cursor-text"></i><p>No hay datos complementarios definidos.</p></div></td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% macro campos_dato(prefijo, d=None) %}
+  <div class="mb-2"><label class="form-label">Nombre</label>
+    <input class="form-control" name="nombre" required placeholder="Ej: Monto solicitado" value="{{ d.nombre if d else '' }}">
+  </div>
+  <div class="mb-2"><label class="form-label">Descripción</label>
+    <textarea class="form-control" name="descripcion" rows="2">{{ d.descripcion if d and d.descripcion else '' }}</textarea>
+  </div>
+  <div class="mb-2"><label class="form-label">Tipo de dato</label>
+    <select class="form-select js-tipo-dato" name="tipo_dato_id" data-prefix="{{ prefijo }}" required>
+      {% for t in tipos %}
+      <option value="{{ t.id }}"
+              data-codigo="{{ tipo_codigo(t) }}"
+              {% if d and t.id == d.tipo_dato_id %}selected{% elif not d and loop.first %}selected{% endif %}>
+        {{ t.nombre }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mb-2 js-formato-wrap" id="{{ prefijo }}-formato-wrap">
+    <label class="form-label">Formato de visualización</label>
+    <select class="form-select js-formato" name="formato_visualizacion" id="{{ prefijo }}-formato"
+            data-selected="{{ resolve_formato(d) if d else '' }}"></select>
+    <div class="form-text">El valor se guarda siempre en crudo (sin $ ni separadores). Este formato solo afecta cómo se muestra.</div>
+  </div>
+  <div class="mb-2 js-decimales-wrap d-none" id="{{ prefijo }}-decimales-wrap">
+    <label class="form-label">Cantidad de decimales</label>
+    <select class="form-select" name="decimales" id="{{ prefijo }}-decimales">
+      {% for n in range(0, 7) %}
+      <option value="{{ n }}" {% if d and resolve_decimales(d) == n %}selected{% elif not d and n == 2 %}selected{% endif %}>{{ n }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mb-2 js-opciones-wrap d-none" id="{{ prefijo }}-opciones-wrap">
+    <label class="form-label">Opciones (Lista, separadas por ";")</label>
+    <input class="form-control" name="opciones" value="{{ d.opciones if d and d.opciones else '' }}" placeholder="Opción A;Opción B;Opción C">
+  </div>
+  {% if d %}
+  <div class="form-check"><input class="form-check-input" type="checkbox" name="activo" value="1" id="dtact{{ d.id }}" {% if d.activo %}checked{% endif %}><label class="form-check-label" for="dtact{{ d.id }}">Activo</label></div>
+  {% endif %}
+{% endmacro %}
+
+<div class="modal fade" id="modalNuevo" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="/catalogos/datos/crear">
+      <div class="modal-header"><h5 class="modal-title">Nuevo dato complementario</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">{{ campos_dato('nuevo') }}</div>
+      <div class="modal-footer"><button class="btn btn-warning">Crear</button></div>
+    </form>
+  </div></div>
+</div>
+
+{% for d in datos %}
+<div class="modal fade" id="modalEditar{{ d.id }}" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="/catalogos/datos/{{ d.id }}/actualizar">
+      <div class="modal-header"><h5 class="modal-title">Editar dato</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">{{ campos_dato('edit' ~ d.id, d) }}</div>
+      <div class="modal-footer"><button class="btn btn-warning">Guardar</button></div>
+    </form>
+  </div></div>
+</div>
+{% endfor %}
+
+<script>
+window.HELIOS_FORMATOS_POR_TIPO = {{ FORMATOS_POR_TIPO | tojson }};
+
+function syncFormatoUI(selectTipo) {
+  const prefix = selectTipo.dataset.prefix;
+  const opt = selectTipo.selectedOptions[0];
+  const codigo = opt?.dataset.codigo || 'texto';
+  const formatoSel = document.getElementById(prefix + '-formato');
+  const wrapDec = document.getElementById(prefix + '-decimales-wrap');
+  const wrapOpt = document.getElementById(prefix + '-opciones-wrap');
+  const opciones = window.HELIOS_FORMATOS_POR_TIPO[codigo] || [['texto', 'Texto (sin formato)']];
+  const preferred = formatoSel?.dataset.selected || '';
+  if (formatoSel) {
+    formatoSel.innerHTML = opciones.map(([v, label]) =>
+      `<option value="${v}" ${v === preferred || (!preferred && v === opciones[0][0]) ? 'selected' : ''}>${label}</option>`
+    ).join('');
+  }
+  if (wrapDec) wrapDec.classList.toggle('d-none', !['numero_decimal', 'moneda_decimal'].includes(codigo));
+  if (wrapOpt) wrapOpt.classList.toggle('d-none', codigo !== 'lista');
+}
+
+document.querySelectorAll('.js-tipo-dato').forEach(sel => {
+  sel.addEventListener('change', () => syncFormatoUI(sel));
+  syncFormatoUI(sel);
+});
+document.querySelectorAll('.modal').forEach(modal => {
+  modal.addEventListener('shown.bs.modal', () => {
+    const sel = modal.querySelector('.js-tipo-dato');
+    if (sel) syncFormatoUI(sel);
+  });
+});
+</script>
+{% endblock %}

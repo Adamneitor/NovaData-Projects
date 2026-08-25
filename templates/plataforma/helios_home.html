@@ -1,0 +1,126 @@
+{% extends "shell_claude.html" %}
+{% from "macros/nova_mark.html" import icon_helios %}
+{% block page_title %}Helios · NOVA{% endblock %}
+{% block breadcrumb %}
+<a href="{{ url_for('launcher') }}">NOVA</a><span class="sep">/</span>
+<span class="cur">Helios</span>
+{% endblock %}
+{% block content %}
+<div class="hh-head">
+  <div class="hh-title-row">
+    <span class="hh-icon">{{ icon_helios(28) }}</span>
+    <div>
+      <h1>Helios</h1>
+      <p>{{ solution.tagline if solution else 'Núcleo que energiza y orquesta la originación' }}</p>
+    </div>
+  </div>
+  <div class="hh-actions">
+    <button type="button" class="nv-btn-sec" disabled title="Próximamente">Diseñar flujos</button>
+    <a class="nv-btn-amber" href="{{ url_for('helios_casos') }}">
+      Ir a Casos
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
+    </a>
+  </div>
+</div>
+
+<div class="hh-stats">
+  <span class="lbl">Hoy</span>
+  <span class="sep"></span>
+  <span><strong>18</strong> casos activos</span>
+  <span class="dot">·</span>
+  <span><strong class="warn">6</strong> con requisitos pendientes</span>
+  <span class="dot">·</span>
+  <span><strong>3</strong> en comité</span>
+  <span class="dot">·</span>
+  <span>SLA promedio <strong>2.4</strong> días</span>
+</div>
+
+<div class="hh-tiles">
+  <a class="hh-tile hh-tile--active" href="{{ url_for('helios_casos') }}">
+    <div class="hh-tile__top">
+      <span class="hh-tile__ico">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="6" rx="1.5"></rect><rect x="3.5" y="14" width="17" height="6" rx="1.5"></rect></svg>
+      </span>
+      <span class="hh-badge hh-badge--activo">Activo</span>
+    </div>
+    <div>
+      <h3>BPM operativo</h3>
+      <p>Flujos, casos, documentos y datos. Es la app en producción hoy.</p>
+    </div>
+    <span class="hh-tile__link">Abrir casos <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
+  </a>
+
+  <div class="hh-tile">
+    <div class="hh-tile__top">
+      <span class="hh-tile__ico">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"></path><path d="M16 6.5a3 3 0 0 1 0 6"></path><path d="M17.5 20c0-2.4-.9-4.2-2.3-5.2"></path></svg>
+      </span>
+      <span class="hh-badge hh-badge--ok">Disponible</span>
+    </div>
+    <div>
+      <h3>Captación &amp; Ventas</h3>
+      <p>Prospectos y canales de originación conectados al flujo de solicitud.</p>
+    </div>
+    <span class="hh-tile__link">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
+  </div>
+
+  <div class="hh-tile">
+    <div class="hh-tile__top">
+      <span class="hh-tile__ico">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v5"></path><path d="M15 3v5"></path><rect x="6.5" y="8" width="11" height="7" rx="2"></rect><path d="M12 15v6"></path></svg>
+      </span>
+      <span class="hh-badge hh-badge--api">Vía APIs</span>
+    </div>
+    <div>
+      <h3>Preaprobaciones &amp; Buró</h3>
+      <p>Consultas y dictámenes que ya se ejecutan dentro de las etapas del flujo.</p>
+    </div>
+    <span class="hh-tile__link">Ver APIs <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
+  </div>
+
+  <div class="hh-tile hh-tile--soon">
+    <div class="hh-tile__top">
+      <span class="hh-tile__ico">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4"></path><circle cx="12" cy="11" r="4"></circle><path d="M5 21c0-3 3.1-5.5 7-5.5s7 2.5 7 5.5"></path></svg>
+      </span>
+      <span class="hh-badge hh-badge--soon">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+        Próximamente
+      </span>
+    </div>
+    <div>
+      <h3>Motor de decisión</h3>
+      <p>Políticas y ruteo de aprobación centralizados. Hoy la decisión vive en las reglas del flujo.</p>
+    </div>
+    <span class="hh-tile__phase">Fase 2 · interno</span>
+  </div>
+
+  <div class="hh-tile hh-tile--soon">
+    <div class="hh-tile__top">
+      <span class="hh-tile__ico">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="20"></line><rect x="6" y="11" width="3.5" height="9"></rect><rect x="14.5" y="6" width="3.5" height="14"></rect></svg>
+      </span>
+      <span class="hh-badge hh-badge--soon">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+        Próximamente
+      </span>
+    </div>
+    <div>
+      <h3>Analítica de originación</h3>
+      <p>Embudo por etapa, SLA por analista y tasas de aprobación.</p>
+    </div>
+    <span class="hh-tile__phase">Fase 2</span>
+  </div>
+
+  <div class="hh-feed">
+    <div class="hh-feed__title">Últimos movimientos</div>
+    {% for m in movimientos %}
+    <div class="hh-feed__row">
+      <span class="hh-feed__id">{{ m.id }}</span>
+      <span class="hh-feed__txt">{{ m.txt }}</span>
+      <span class="hh-feed__time">{{ m.time }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

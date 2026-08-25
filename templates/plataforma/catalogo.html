@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Soluciones · Nova Data Solutions{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/platform.css') }}">
+{% endblock %}
+{% block body %}
+<div class="nova-catalog">
+  <div class="nova-catalog__inner">
+    <div class="nova-catalog__top">
+      <a href="{{ url_for('catalogo') }}" class="nova-brand nova-brand--light nova-brand--lg" aria-label="Nova Data Solutions">
+        <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="Nova" class="nova-brand__icon">
+        <span class="nova-brand__divider"></span>
+        <span class="nova-brand__text">
+          <span class="nova-brand__name">NOVA</span>
+          <span class="nova-brand__sub">DATA SOLUTIONS</span>
+        </span>
+      </a>
+      {% if logged %}
+      <a class="btn btn-brand btn-sm" href="{{ url_for('helios_home') }}">Ir a Helios</a>
+      {% else %}
+      <a class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.35)" href="{{ url_for('login', next='/helios') }}">Ingresar</a>
+      {% endif %}
+    </div>
+
+    <div class="nova-catalog__hero">
+      <h1>El impulso <span>inteligente</span> de tu crecimiento</h1>
+      <p>Catálogo de soluciones. Elija un producto para continuar. Helios está disponible; el resto se activará por fases.</p>
+    </div>
+
+    <div class="nova-catalog__grid">
+      {% for s in solutions %}
+        {% if s.active %}
+        <a class="sol-card" href="{{ url_for('entrar_solucion', solution_id=s.id) }}">
+          <span class="sol-card__badge sol-card__badge--on">Disponible</span>
+          <div class="sol-card__icon"><i class="fa-solid fa-{{ s.icon }}"></i></div>
+          <h2 class="sol-card__name">{{ s.name }}</h2>
+          <p class="sol-card__sub">{{ s.subtitle }}</p>
+          <p class="sol-card__tag">{{ s.tagline }}</p>
+          <span class="sol-card__cta">Entrar <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+        {% else %}
+        <button type="button" class="sol-card is-locked" data-locked="{{ s.id }}" data-name="{{ s.name }}" data-sub="{{ s.subtitle }}" data-tag="{{ s.tagline }}">
+          <span class="sol-card__badge sol-card__badge--off">Próximamente</span>
+          <div class="sol-card__icon"><i class="fa-solid fa-{{ s.icon }}"></i></div>
+          <h2 class="sol-card__name">{{ s.name }}</h2>
+          <p class="sol-card__sub">{{ s.subtitle }}</p>
+          <p class="sol-card__tag">{{ s.tagline }}</p>
+          <span class="sol-card__cta"><i class="fa-solid fa-lock"></i> Próximamente</span>
+        </button>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <p class="nova-catalog__foot">La meta no es hacer más. Es hacerlo mejor.</p>
+  </div>
+</div>
+
+<div class="nova-modal-backdrop" id="lockedModal" role="dialog" aria-modal="true">
+  <div class="nova-modal">
+    <h2 id="lockedTitle">Próximamente</h2>
+    <p id="lockedBody">Esta solución se activará en una fase posterior.</p>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button type="button" class="btn btn-ghost btn-sm" id="lockedClose" style="color:#fff;border:1px solid rgba(255,255,255,.2)">Cerrar</button>
+      <a class="btn btn-brand btn-sm" href="{{ url_for('entrar_solucion', solution_id='helios') }}">Ver Helios</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(function () {
+  const modal = document.getElementById('lockedModal');
+  const title = document.getElementById('lockedTitle');
+  const body = document.getElementById('lockedBody');
+  function openLocked(name, sub, tag) {
+    title.textContent = name + ' · Próximamente';
+    body.textContent = (sub ? sub + '. ' : '') + (tag || '') + ' Se habilitará en una fase posterior.';
+    modal.classList.add('is-open');
+  }
+  function closeLocked() { modal.classList.remove('is-open'); }
+  document.querySelectorAll('[data-locked]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      openLocked(el.dataset.name, el.dataset.sub, el.dataset.tag);
+    });
+  });
+  document.getElementById('lockedClose')?.addEventListener('click', closeLocked);
+  modal?.addEventListener('click', function (e) { if (e.target === modal) closeLocked(); });
+  const locked = new URLSearchParams(location.search).get('locked');
+  if (locked) {
+    const btn = document.querySelector('[data-locked="' + locked + '"]');
+    if (btn) openLocked(btn.dataset.name, btn.dataset.sub, btn.dataset.tag);
+  }
+})();
+</script>
+{% endblock %}

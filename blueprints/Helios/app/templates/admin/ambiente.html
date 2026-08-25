@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titulo %}Ambiente de prueba{% endblock %}
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-arrow-counterclockwise"></i>Reiniciar ambiente</h1>
+    <p class="page-subtitle">Operación destructiva · solo Super Usuario · ambiente de prueba</p>
+  </div>
+</div>
+
+<div class="card border-danger" style="max-width: 640px;">
+  <div class="card-body">
+    <p class="mb-2">Esta acción borra la configuración BPM y deja la base lista para volver a armar flujos desde cero.</p>
+    <p class="fw-semibold mb-1">Se elimina:</p>
+    <ul class="small">
+      <li>Flujos, etapas, estados, transiciones y reglas de API</li>
+      <li>APIs configuradas</li>
+      <li>Catálogo de documentos y datos complementarios</li>
+      <li>Casos, historial, archivos cargados y bitácora de APIs</li>
+    </ul>
+    <p class="fw-semibold mb-1 text-success">Se conserva:</p>
+    <ul class="small mb-3">
+      <li>Usuarios y perfiles</li>
+      <li>Grupos de usuarios y sus asignaciones</li>
+      <li>Clientes</li>
+    </ul>
+    <form method="post" action="/admin/ambiente/reiniciar"
+          onsubmit="return confirm('¿Reiniciar el ambiente de prueba?\n\nSe borrarán flujos, APIs, documentos, datos y casos.\nSe conservarán usuarios, grupos y clientes.');">
+      <button type="submit" class="btn btn-danger">
+        <i class="bi bi-exclamation-triangle me-1"></i>Reiniciar ambiente de prueba
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

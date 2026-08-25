@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block titulo %}Soluciones{% endblock %}
+{% block contenido %}
+<div class="nova-catalog">
+  <div class="nova-catalog__inner">
+    <div class="nova-catalog__top">
+      <a href="/" class="nova-brand nova-brand--light nova-brand--lg" aria-label="Nova Data Solutions">
+        <img src="/static/img/icon-n.png" alt="Nova" class="nova-brand__icon">
+        <span class="nova-brand__divider"></span>
+        <span class="nova-brand__text">
+          <span class="nova-brand__name">NOVA</span>
+          <span class="nova-brand__sub">DATA SOLUTIONS</span>
+        </span>
+      </a>
+      {% if logged %}
+      <a class="btn btn-sm btn-nova-brand" href="/helios">Ir a Helios</a>
+      {% else %}
+      <a class="btn btn-sm btn-outline-light" href="/login?next=/helios">Ingresar</a>
+      {% endif %}
+    </div>
+
+    <div class="nova-catalog__hero">
+      <h1>El impulso <span>inteligente</span> de tu crecimiento</h1>
+      <p>Catálogo de soluciones. Elija un producto para continuar. Helios está disponible; el resto se activará por fases.</p>
+    </div>
+
+    <div class="nova-catalog__grid">
+      {% for s in solutions %}
+        {% if s.active %}
+        <a class="sol-card" href="/entrar/{{ s.id }}">
+          <span class="sol-card__badge sol-card__badge--on">Disponible</span>
+          <div class="sol-card__icon"><i class="bi {{ s.icon }}"></i></div>
+          <h2 class="sol-card__name">{{ s.name }}</h2>
+          <p class="sol-card__sub">{{ s.subtitle }}</p>
+          <p class="sol-card__tag">{{ s.tagline }}</p>
+          <span class="sol-card__cta">Entrar <i class="bi bi-arrow-right"></i></span>
+        </a>
+        {% else %}
+        <button type="button" class="sol-card is-locked text-start" data-locked="{{ s.id }}" data-name="{{ s.name }}" data-sub="{{ s.subtitle }}" data-tag="{{ s.tagline }}">
+          <span class="sol-card__badge sol-card__badge--off">Próximamente</span>
+          <div class="sol-card__icon"><i class="bi {{ s.icon }}"></i></div>
+          <h2 class="sol-card__name">{{ s.name }}</h2>
+          <p class="sol-card__sub">{{ s.subtitle }}</p>
+          <p class="sol-card__tag">{{ s.tagline }}</p>
+          <span class="sol-card__cta"><i class="bi bi-lock"></i> Próximamente</span>
+        </button>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <p class="nova-catalog__foot">La meta no es hacer más. Es hacerlo mejor.</p>
+  </div>
+</div>
+
+<div class="nova-modal-backdrop" id="lockedModal" role="dialog" aria-modal="true" aria-labelledby="lockedTitle">
+  <div class="nova-modal">
+    <h2 id="lockedTitle">Próximamente</h2>
+    <p id="lockedBody">Esta solución forma parte de la suite Nova y se activará en una fase posterior.</p>
+    <div class="d-flex gap-2 justify-content-end">
+      <button type="button" class="btn btn-sm btn-outline-light" id="lockedClose">Cerrar</button>
+      <a class="btn btn-sm btn-nova-brand" href="/entrar/helios">Ver Helios</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const modal = document.getElementById('lockedModal');
+  const title = document.getElementById('lockedTitle');
+  const body = document.getElementById('lockedBody');
+  const closeBtn = document.getElementById('lockedClose');
+
+  function openLocked(name, sub, tag) {
+    title.textContent = name + ' · Próximamente';
+    body.textContent = (sub ? sub + '. ' : '') + (tag || '') + ' Esta solución se habilitará en una fase posterior.';
+    modal.classList.add('is-open');
+  }
+  function closeLocked() { modal.classList.remove('is-open'); }
+
+  document.querySelectorAll('[data-locked]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      openLocked(el.dataset.name, el.dataset.sub, el.dataset.tag);
+    });
+  });
+  closeBtn?.addEventListener('click', closeLocked);
+  modal?.addEventListener('click', function (e) {
+    if (e.target === modal) closeLocked();
+  });
+
+  const params = new URLSearchParams(window.location.search);
+  const locked = params.get('locked');
+  if (locked) {
+    const btn = document.querySelector('[data-locked="' + locked + '"]');
+    if (btn) openLocked(btn.dataset.name, btn.dataset.sub, btn.dataset.tag);
+  }
+})();
+</script>
+{% endblock %}

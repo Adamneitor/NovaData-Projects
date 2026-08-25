@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block titulo %}Clientes{% endblock %}
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><i class="bi bi-people"></i>Clientes</h1>
+    <p class="page-subtitle">Búsqueda indexada · no se cargan los 100k+ registros en pantalla</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo cliente</button>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" action="/catalogos/clientes" class="row g-2 align-items-end" id="formBuscarCli">
+      <div class="col-md-9">
+        <label class="form-label">Buscar cliente</label>
+        <div class="input-group input-group-lg">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="search" class="form-control" name="q" id="qClientes" value="{{ q }}"
+                 placeholder="Nombre, identificación, teléfono o correo…" autofocus autocomplete="off">
+        </div>
+      </div>
+      <div class="col-md-3 d-grid">
+        <button class="btn btn-dark btn-lg">Buscar</button>
+      </div>
+    </form>
+    <div class="form-text mt-2">Escriba y espere: resultados en vivo vía API (debounce). Prefijo de cédula/nombre usa índices.</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr>
+        <th>Código</th><th>Nombre</th><th>Identificación</th><th>Teléfono</th><th>Correo</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyClientes">
+      {% if resultado %}
+        {% for c in resultado.items %}
+        <tr>
+          <td>{{ c.id }}</td>
+          <td class="fw-semibold"><a href="/catalogos/clientes/{{ c.id }}" class="text-decoration-none">{{ c.nombre_completo }}</a></td>
+          <td>{{ c.tipo_identificacion }}: {{ c.identificacion }}</td>
+          <td>{{ c.telefono or '' }}</td>
+          <td>{{ c.correo or '' }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-dark" href="/catalogos/clientes/{{ c.id }}">Ficha</a>
+            <a class="btn btn-sm btn-warning" href="/casos?cliente_id={{ c.id }}">Crear caso</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6"><div class="empty-state"><i class="bi bi-search"></i><p>Sin resultados para “{{ q }}”.</p></div></td></tr>
+        {% endfor %}
+        {% if resultado.total %}
+        <tr class="table-light"><td colspan="6" class="small text-muted">
+          Mostrando {{ resultado.items|length }} de {{ resultado.total }} coincidencias.
+        </td></tr>
+        {% endif %}
+      {% else %}
+        <tr><td colspan="6"><div class="empty-state"><i class="bi bi-people"></i><p>Use el buscador para localizar clientes.<br>La lista completa no se descarga (volúmenes bancarios).</p></div></td></tr>
+      {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalNuevo" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form method="post" action="/catalogos/clientes/crear">
+      <div class="modal-header"><h5 class="modal-title">Nuevo cliente</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2"><label class="form-label">Nombre completo / Razón social</label><input class="form-control" name="nombre_completo" required></div>
+        <div class="row">
+          <div class="col-5 mb-2"><label class="form-label">Tipo ID</label>
+            <select class="form-select" name="tipo_identificacion">
+              <option>Cedula</option><option>Pasaporte</option><option>RNC</option>
+            </select>
+          </div>
+          <div class="col-7 mb-2"><label class="form-label">Identificación</label><input class="form-control" name="identificacion" required></div>
+        </div>
+        <div class="mb-2"><label class="form-label">Teléfono</label><input class="form-control" name="telefono"></div>
+        <div class="mb-2"><label class="form-label">Correo</label><input type="email" class="form-control" name="correo"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-warning">Crear</button></div>
+    </form>
+  </div></div>
+</div>
+
+<script>
+(function () {
+  const input = document.getElementById('qClientes');
+  const tbody = document.getElementById('tbodyClientes');
+  let t = null, seq = 0;
+  if (!input || !tbody) return;
+
+  async function live(q) {
+    const my = ++seq;
+    if (q.trim().length < 2) return;
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="hx-skeleton d-inline-block" style="width:120px;height:14px"></span><p class="mt-2 mb-0">Buscando…</p></div></td></tr>`;
+    const res = await fetch(`/catalogos/api/clientes/buscar?q=${encodeURIComponent(q)}&page_size=25`);
+    const data = await res.json();
+    if (my !== seq) return;
+    if (!data.items.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Sin resultados.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = data.items.map(c => `
+      <tr>
+        <td>${c.id}</td>
+        <td class="fw-semibold"><a class="text-decoration-none" href="/catalogos/clientes/${c.id}">${c.nombre_completo}</a></td>
+        <td>${c.tipo_identificacion}: ${c.identificacion}</td>
+        <td>${c.telefono || ''}</td>
+        <td>${c.correo || ''}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-dark" href="/catalogos/clientes/${c.id}">Ficha</a>
+          <a class="btn btn-sm btn-warning" href="/casos?cliente_id=${c.id}">Crear caso</a>
+        </td>
+      </tr>`).join('') +
+      `<tr class="table-light"><td colspan="6" class="small text-muted">Mostrando ${data.items.length} de ${data.total}.</td></tr>`;
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => live(input.value), 300);
+  });
+})();
+</script>
+{% endblock %}

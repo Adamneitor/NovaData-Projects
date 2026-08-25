@@ -1,0 +1,203 @@
+{% extends "base_claude.html" %}
+{% from "macros/nova_mark.html" import nova_mark, icon_helios, icon_hermes, icon_venus, icon_zeus, icon_ares, icon_lock, user_initials %}
+{% block title %}{% block page_title %}Helios · NOVA{% endblock %}{% endblock %}
+{% block body_class %}page-shell{% endblock %}
+{% block body %}
+<div class="nv-shell">
+  <header class="nv-topbar">
+    <div class="nv-topbar__left">
+      <button type="button" class="nv-burger" id="railToggle" aria-label="Menú">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
+      </button>
+      <a href="{{ url_for('launcher') }}" class="nv-topbar__brand" aria-label="NOVA">
+        {{ nova_mark(22, with_wordmark=true, variant='chrome') }}
+      </a>
+      <span class="nv-topbar__vsep" aria-hidden="true"></span>
+      <button type="button" class="nv-chip-product" id="productChip" aria-expanded="false" aria-haspopup="true">
+        {{ icon_helios(15) }}
+        <span>Helios</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg>
+      </button>
+    </div>
+    <div class="nv-topbar__right">
+      <div class="nv-search-fake" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+        Buscar caso, cliente o cédula
+      </div>
+      <span class="nv-env-badge">Producción</span>
+      {% if user %}
+      <span class="nv-avatar" title="{{ user.name }}">{{ user_initials(user.name) }}</span>
+      {% endif %}
+    </div>
+
+    <div class="nv-switcher" id="productSwitcher" role="menu">
+      <div class="nv-switcher__head">
+        <span>Cambiar de producto</span>
+        <button type="button" class="nv-switcher__close" id="switcherClose">Cerrar</button>
+      </div>
+      <div class="nv-switcher__body">
+        <a class="nv-switcher__item is-active" href="{{ url_for('helios_home') }}">
+          <span style="color:#5B52E8">{{ icon_helios(18) }}</span>
+          <span style="flex:1;min-width:0"><strong>Helios</strong><small>En uso · Fábrica de Crédito</small></span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B52E8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,13 10,18 19,7"></polyline></svg>
+        </a>
+        {% for s in solutions if not s.active %}
+        <button type="button" class="nv-switcher__item" data-locked="{{ s.id }}" data-name="{{ s.name }}" data-sub="{{ s.subtitle }}" data-tag="{{ s.tagline }}">
+          <span style="opacity:.8;color:{% if s.id=='hermes' %}#5FA98F{% elif s.id=='venus' %}#C4808F{% elif s.id=='zeus' %}#7B9BC9{% else %}#9E9BA6{% endif %}">
+            {% if s.id == 'hermes' %}{{ icon_hermes(18) }}
+            {% elif s.id == 'venus' %}{{ icon_venus(18) }}
+            {% elif s.id == 'zeus' %}{{ icon_zeus(18) }}
+            {% else %}{{ icon_ares(18) }}{% endif %}
+          </span>
+          <span style="flex:1;min-width:0"><strong>{{ s.name }}</strong><small>Próximamente</small></span>
+          {{ icon_lock(13) }}
+        </button>
+        {% endfor %}
+      </div>
+      <a class="nv-switcher__foot" href="{{ url_for('launcher') }}">Ver toda la constelación →</a>
+    </div>
+  </header>
+
+  <div class="nv-rail-overlay" id="railOverlay"></div>
+
+  <div class="nv-body">
+    <aside class="nv-rail" id="appRail">
+      <div class="nv-rail__groups">
+        <div>
+          <div class="nv-rail__label">Operación</div>
+          <a class="nv-rail__link {% if nav_active == 'casos' %}is-active{% endif %}" href="{{ url_for('helios_casos') }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="6" rx="1.5"></rect><rect x="3.5" y="14" width="17" height="6" rx="1.5"></rect></svg>
+            <span>Casos</span>
+          </a>
+          <span class="nv-rail__link" aria-disabled="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"></path><path d="M16 6.5a3 3 0 0 1 0 6"></path><path d="M17.5 20c0-2.4-.9-4.2-2.3-5.2"></path></svg>
+            <span>Clientes 360</span>
+          </span>
+        </div>
+        <div>
+          <div class="nv-rail__label">Diseño BPM</div>
+          <span class="nv-rail__link" aria-disabled="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="2.5"></circle><circle cx="6" cy="18" r="2.5"></circle><circle cx="18" cy="12" r="2.5"></circle><path d="M6 8.5v7"></path><path d="M8.5 6.8c4 .6 5.6 2.4 7 4.4"></path></svg>
+            <span>Flujos</span>
+          </span>
+          <span class="nv-rail__link" aria-disabled="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v5"></path><path d="M15 3v5"></path><rect x="6.5" y="8" width="11" height="7" rx="2"></rect><path d="M12 15v6"></path></svg>
+            <span>APIs</span>
+          </span>
+          <span class="nv-rail__link" aria-disabled="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"></path><path d="M14 3v4h4"></path></svg>
+            <span>Documentos</span>
+          </span>
+          <span class="nv-rail__link" aria-disabled="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="14" y2="17"></line></svg>
+            <span>Datos complementarios</span>
+          </span>
+          <span class="nv-rail__link" aria-disabled="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5V5.5A1.5 1.5 0 0 1 5.5 4h5l9 9-6.5 6.5z"></path><circle cx="8" cy="8" r="1.3"></circle></svg>
+            <span>Tipos de flujo</span>
+          </span>
+        </div>
+        <div>
+          <div class="nv-rail__label">Administración</div>
+          <span class="nv-rail__link" aria-disabled="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7.5a4 4 0 0 1 8 0V10"></path></svg>
+            <span>Seguridad</span>
+          </span>
+        </div>
+      </div>
+      <a class="nv-rail__back" href="{{ url_for('launcher') }}">
+        <svg width="15" height="15" viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="13.5" stroke="#64748B" stroke-width="1.6"></circle><circle cx="16" cy="16" r="4" fill="#64748B"></circle></svg>
+        <span>Volver a NOVA</span>
+      </a>
+    </aside>
+
+    <div class="nv-main">
+      <nav class="nv-crumb" aria-label="Breadcrumb">
+        {% block breadcrumb %}
+        <a href="{{ url_for('launcher') }}">NOVA</a><span class="sep">/</span>
+        <span class="cur">Helios</span>
+        {% endblock %}
+      </nav>
+      <div class="nv-content">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="nv-modal-backdrop" id="lockedModal" role="dialog" aria-modal="true">
+  <div class="nv-modal">
+    <div class="nv-modal__top">
+      <span class="nv-modal__icon">{{ icon_lock(28) }}</span>
+      <span class="nv-modal__badge">{{ icon_lock(11) }} Próximamente</span>
+    </div>
+    <div>
+      <div class="nv-modal__title-row">
+        <span class="nv-modal__dot nv-modal__dot--hermes" id="lockedDot"></span>
+        <h2 id="lockedTitle">Producto</h2>
+      </div>
+      <span class="nv-modal__sub" id="lockedSub"></span>
+    </div>
+    <p class="nv-modal__desc" id="lockedBody"></p>
+    <div class="nv-modal__foot">
+      <span class="nv-modal__hint">Sigues dentro de Helios; nada de tu trabajo se pierde.</span>
+      <div class="nv-modal__actions">
+        <a class="nv-btn-ghost" href="{{ url_for('launcher') }}">Ver constelación</a>
+        <button type="button" class="nv-btn-solid" id="lockedClose">Seguir en Helios</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(function () {
+  var chip = document.getElementById('productChip');
+  var switcher = document.getElementById('productSwitcher');
+  var closeBtn = document.getElementById('switcherClose');
+  function toggleSwitcher(force) {
+    var open = typeof force === 'boolean' ? force : !switcher.classList.contains('is-open');
+    switcher.classList.toggle('is-open', open);
+    chip.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  chip?.addEventListener('click', function (e) { e.stopPropagation(); toggleSwitcher(); });
+  closeBtn?.addEventListener('click', function () { toggleSwitcher(false); });
+  document.addEventListener('click', function (e) {
+    if (!switcher.contains(e.target) && e.target !== chip && !chip.contains(e.target)) toggleSwitcher(false);
+  });
+
+  var rail = document.getElementById('appRail');
+  var overlay = document.getElementById('railOverlay');
+  var railToggle = document.getElementById('railToggle');
+  function setRail(open) {
+    rail.classList.toggle('is-open', open);
+    overlay.classList.toggle('is-open', open);
+  }
+  railToggle?.addEventListener('click', function () { setRail(!rail.classList.contains('is-open')); });
+  overlay?.addEventListener('click', function () { setRail(false); });
+
+  var modal = document.getElementById('lockedModal');
+  var title = document.getElementById('lockedTitle');
+  var sub = document.getElementById('lockedSub');
+  var body = document.getElementById('lockedBody');
+  var dot = document.getElementById('lockedDot');
+  function openLocked(name, subtitle, tag, id) {
+    title.textContent = name;
+    sub.textContent = subtitle || '';
+    body.textContent = (tag || '') + ' Se habilitará en una fase posterior.';
+    if (dot) dot.className = 'nv-modal__dot nv-modal__dot--' + (id || 'hermes');
+    toggleSwitcher(false);
+    modal.classList.add('is-open');
+  }
+  function closeLocked() { modal.classList.remove('is-open'); }
+  document.querySelectorAll('[data-locked]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      openLocked(el.dataset.name, el.dataset.sub, el.dataset.tag, el.dataset.locked);
+    });
+  });
+  document.getElementById('lockedClose')?.addEventListener('click', closeLocked);
+  modal?.addEventListener('click', function (e) { if (e.target === modal) closeLocked(); });
+})();
+</script>
+{% block page_scripts %}{% endblock %}
+{% endblock %}

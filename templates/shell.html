@@ -33,13 +33,19 @@
 
 <div class="app-shell">
     <div class="app-brand" id="app-brand">
-        <a href="{{ url_for('home') }}" class="nova-brand nova-brand--sidebar" aria-label="Nova Data Solutions">
+        <a href="{{ url_for('catalogo') }}" class="nova-brand nova-brand--sidebar" aria-label="Nova Data Solutions">
             <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" class="nova-brand__icon">
+            <span class="nova-brand__divider"></span>
             <span class="nova-brand__text">
                 <span class="nova-brand__name">NOVA</span>
                 <span class="nova-brand__sub">DATA SOLUTIONS</span>
             </span>
         </a>
+        {% if active_product == 'helios' %}
+        <div class="product-chip" style="margin:.5rem .75rem 0;padding:.4rem .65rem;border-radius:8px;background:rgba(91,82,232,.18);border:1px solid rgba(91,82,232,.35);color:var(--nova-primary,#5B52E8);font-size:.72rem;font-weight:600;display:flex;align-items:center;gap:.35rem">
+            <i class="fa-solid fa-sun"></i> Helios · Fábrica de Crédito
+        </div>
+        {% endif %}
     </div>
 
     <button type="button" class="app-sidebar__collapse" id="sidebar-toggle" title="Ocultar/mostrar barra (Ctrl+B)" aria-label="Alternar barra lateral">
@@ -49,12 +55,29 @@
     <aside class="app-sidebar" id="app-sidebar">
         <div class="app-sidebar__scroll">
             <div class="app-sidebar__section">
+                <div class="app-sidebar__section-title">Soluciones</div>
+                <ul class="app-sidebar__nav">
+                    <li class="app-sidebar__nav-item">
+                        <a href="{{ url_for('catalogo') }}" class="app-sidebar__nav-link {% if request.endpoint == 'catalogo' %}active{% endif %}">
+                            <i class="fa-solid fa-grip"></i>
+                            <span>Catálogo</span>
+                        </a>
+                    </li>
+                    <li class="app-sidebar__nav-item">
+                        <a href="{{ url_for('helios_home') }}" class="app-sidebar__nav-link {% if request.endpoint == 'helios_home' %}active{% endif %}">
+                            <i class="fa-solid fa-sun"></i>
+                            <span>Helios</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="app-sidebar__section">
                 <div class="app-sidebar__section-title">Main</div>
                 <ul class="app-sidebar__nav">
                     <li class="app-sidebar__nav-item">
                         <a href="{{ url_for('home') }}" class="app-sidebar__nav-link {% if request.endpoint == 'home' %}active{% endif %}">
                             <i class="fa-solid fa-house"></i>
-                            <span>Home</span>
+                            <span>Portales</span>
                         </a>
                     </li>
                     {% if user.role == 'admin' %}

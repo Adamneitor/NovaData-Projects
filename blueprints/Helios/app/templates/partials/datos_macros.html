@@ -1,0 +1,136 @@
+{# Macros reutilizables: campos de datos adicionales #}
+
+{% macro campo_dato(ed, valor, puede_actuar, datos_pendientes, intent_errs, field_errors=None, valor_es_ui=False, span='half', datos_api_readonly=None) %}
+  {% set marcado_intent = intent_errs | selectattr('campo', 'equalto', 'dato_' ~ ed.dato_id) | list %}
+  {% set err_msg = (field_errors or {}).get(ed.dato_id) or (field_errors or {}).get('dato_' ~ ed.dato_id) %}
+  {% set marcado = marcado_intent or err_msg %}
+  {% set dep = ed.depende_de_dato_id %}
+  {% set tipo = ed.dato.tipo_dato.input_html %}
+  {% set codigo = tipo_codigo(ed.dato.tipo_dato) %}
+  {% set attrs = input_attrs_for_dato(ed.dato) %}
+  {% set api_ro = datos_api_readonly and (ed.dato_id in datos_api_readonly) %}
+  {% set locked = (not puede_actuar) or api_ro %}
+  <div class="data-field df-field df-span-{{ span }} {% if marcado %}is-error{% endif %} {% if api_ro %}is-api-readonly{% endif %}"
+       id="campo-dato_{{ ed.dato_id }}"
+       data-dato-id="{{ ed.dato_id }}"
+       data-base-required="{{ '1' if ed.obligatorio and not api_ro else '0' }}"
+       {% if locked %}data-locked="1"{% endif %}
+       {% if api_ro %}data-api-output="1"{% endif %}
+       {% if dep and not api_ro %}
+       data-depends-on="{{ dep }}"
+       data-required-when="{{ '1' if ed.requerido_si_cumple else '0' }}"
+       data-disable-when-false="{{ '1' if ed.deshabilitar_si_no_cumple else '0' }}"
+       {% endif %}>
+    <div class="df-label-row">
+      <label class="df-label" for="input-dato_{{ ed.dato_id }}"{% if ed.dato.descripcion %} title="{{ ed.dato.descripcion }}"{% endif %}>
+        {{ ed.dato.nombre }}
+        <span class="df-req {% if api_ro or (not ed.obligatorio and not ed.requerido_si_cumple) %}d-none{% endif %}" title="Obligatorio">*</span>
+      </label>
+      <div class="df-label-meta">
+        {% if api_ro %}<span class="df-chip df-chip--api" title="Rellenado por API"><i class="bi bi-plug"></i> API</span>{% endif %}
+        {% if ed.dato_id in datos_pendientes %}<span class="df-chip df-chip--pend">Pendiente</span>{% endif %}
+        {% if dep and not api_ro %}
+        <span class="df-chip df-chip--cond" title="Depende de {{ ed.depende_de.nombre if ed.depende_de else ('dato #' ~ dep) }}">
+          <i class="bi bi-link-45deg"></i>{{ ed.depende_de.nombre if ed.depende_de else 'Condicional' }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+    {% if api_ro %}
+    <p class="df-hint df-hint--api mb-1">
+      {% if valor %}Valor del API · solo lectura{% else %}Se completará automáticamente al ejecutar el API{% endif %}
+    </p>
+    {% else %}
+    <p class="df-hint df-hint--cond d-none" data-cond-hint>Deshabilitado hasta cumplir la condición.</p>
+    {% endif %}
+    {% if tipo == 'select' or codigo == 'lista' %}
+      <select class="df-input caso-input" id="input-dato_{{ ed.dato_id }}" name="dato_{{ ed.dato_id }}" {% if locked %}disabled{% endif %}>
+        <option value="">Seleccione…</option>
+        {% for op in (ed.dato.opciones or '').split(';') %}{% if op %}<option {% if valor == op %}selected{% endif %}>{{ op }}</option>{% endif %}{% endfor %}
+      </select>
+    {% elif tipo == 'checkbox' or codigo == 'booleano' %}
+      <select class="df-input caso-input" id="input-dato_{{ ed.dato_id }}" name="dato_{{ ed.dato_id }}" {% if locked %}disabled{% endif %}>
+        <option value="">Seleccione…</option>
+        <option value="Si" {% if valor == 'Si' %}selected{% endif %}>Sí</option>
+        <option value="No" {% if valor == 'No' %}selected{% endif %}>No</option>
+      </select>
+    {% elif codigo == 'fecha' %}
+      <input type="date" class="df-input caso-input" id="input-dato_{{ ed.dato_id }}" name="dato_{{ ed.dato_id }}" value="{{ valor }}" {% if locked %}disabled{% endif %}>
+    {% else %}
+      {% set display = valor if valor_es_ui else (format_dato(ed.dato, valor) if valor else '') %}
+      <input type="text"
+             class="df-input caso-input"
+             id="input-dato_{{ ed.dato_id }}"
+             name="dato_{{ ed.dato_id }}"
+             value="{{ display }}"
+             placeholder="{% if api_ro %}Automático{% elif codigo in ['moneda','moneda_decimal'] %}$0.00{% elif codigo == 'telefono' %}+1(000) 000-0000{% else %}{% endif %}"
+             data-dato-codigo="{{ attrs['data-dato-codigo'] }}"
+             data-dato-formato="{{ attrs['data-dato-formato'] }}"
+             data-dato-decimales="{{ attrs['data-dato-decimales'] }}"
+             inputmode="{{ attrs['inputmode'] }}"
+             autocomplete="off"
+             {% if locked %}disabled{% endif %}>
+    {% endif %}
+    <div class="field-error {% if not err_msg %}d-none{% endif %}" data-field-error>
+      {% if err_msg %}<i class="bi bi-exclamation-circle"></i> {{ err_msg }}{% endif %}
+    </div>
+  </div>
+{% endmacro %}
+
+{% macro boton_datos_adicionales(caso, datos_pend_count, datos_total, datos_completados, puede_actuar) %}
+  {% set pct = ((datos_completados / datos_total * 100)|round|int) if datos_total else 100 %}
+  <div class="datos-cta">
+    <div class="datos-cta__progress">
+      <div class="datos-cta__bar"><span style="width: {{ pct }}%"></span></div>
+      <div class="datos-cta__meta">{{ datos_completados }} de {{ datos_total }} completados · {{ pct }}%</div>
+    </div>
+    {% if datos_pend_count %}
+    <a class="btn-caso-primary datos-cta__btn" href="/casos/{{ caso.id }}/datos">
+      <i class="bi bi-pencil-square"></i>
+      Completar Datos Adicionales
+      <span class="datos-cta__badge">{{ datos_pend_count }}</span>
+    </a>
+    {% else %}
+    <a class="btn-caso-secondary datos-cta__btn datos-cta__btn--done" href="/casos/{{ caso.id }}/datos">
+      <i class="bi bi-check2-circle"></i>
+      Ver / Editar Datos Adicionales
+    </a>
+    {% endif %}
+    {% if not puede_actuar %}
+    <p class="form-text mb-0 mt-2">Solo lectura en esta etapa o sin permiso de actuación.</p>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% macro expediente_datos(datos_expediente, etapas_por_id, caso) %}
+  {% if datos_expediente %}
+  <div class="doc-section-label doc-section-label--spaced">
+    Expediente · datos capturados
+    <span class="st st-muted">{{ datos_expediente|length }}</span>
+  </div>
+  <div class="doc-list">
+    {% for cd in datos_expediente %}
+      {% set etapa_dato = etapas_por_id.get(cd.etapa_id) if cd.etapa_id else none %}
+      <div class="doc-row doc-row--readonly">
+        <div class="doc-row__info">
+          <div class="doc-row__name">{{ cd.dato.nombre if cd.dato else 'Dato' }}</div>
+          <div class="doc-row__status">
+            {% if etapa_dato %}<span class="st st-muted">{{ etapa_dato.nombre }}</span>{% endif %}
+            <span class="st st-ok">{{ format_dato(cd.dato, cd.valor) if cd.dato else cd.valor }}</span>
+          </div>
+          <div class="doc-row__meta">
+            {% if cd.fecha_modificacion %}
+              Actualizado {{ cd.fecha_modificacion.strftime('%d/%m/%Y %H:%M') }}
+            {% elif cd.fecha_adicion %}
+              Capturado {{ cd.fecha_adicion.strftime('%d/%m/%Y %H:%M') }}
+            {% endif %}
+            {% if cd.usuario_modificacion %} · {{ cd.usuario_modificacion.nombre }}
+            {% elif cd.usuario_adicion %} · {{ cd.usuario_adicion.nombre }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endmacro %}
