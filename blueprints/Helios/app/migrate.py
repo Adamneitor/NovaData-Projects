@@ -2,7 +2,16 @@
 
 from sqlalchemy import text
 
+from app.config import DATABASE_URL
 from app.database import engine
+
+
+def migrate() -> None:
+    # Solo aplica a SQL Server; en SQLite/Postgres create_all + seed bastan.
+    if not str(DATABASE_URL).startswith("mssql"):
+        print("migrate: omitido (motor no-MSSQL).")
+        return
+    _migrate_mssql()
 
 
 def _add_column_if_missing(cn, table: str, column: str, ddl: str) -> None:
@@ -19,7 +28,7 @@ def _add_column_if_missing(cn, table: str, column: str, ddl: str) -> None:
         print(f"Columna {table}.{column} agregada.")
 
 
-def migrate() -> None:
+def _migrate_mssql() -> None:
     with engine.begin() as cn:
         _add_column_if_missing(
             cn,

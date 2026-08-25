@@ -25,6 +25,14 @@ _LOGIN_MAX_ATTEMPTS = 5
 _LOGIN_WINDOW_SEC = 300  # 5 minutos
 _LOGIN_LOCK_SEC = 300
 
+# Hook opcional (Nova Projects) para SSO vía cookie firmada
+_SSO_HOOK = None
+
+
+def register_sso_hook(fn) -> None:
+    global _SSO_HOOK
+    _SSO_HOOK = fn
+
 
 def login_rate_limited(key: str) -> bool:
     ahora = time.time()
@@ -103,6 +111,11 @@ def _login_location(request: Request) -> str:
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> Usuario:
+    if _SSO_HOOK is not None:
+        try:
+            _SSO_HOOK(request, db)
+        except Exception:
+            pass
     user_id = request.session.get("user_id")
     if not user_id:
         raise HTTPException(

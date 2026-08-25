@@ -1020,7 +1020,6 @@ a.nv-rail__link:hover { color: #CBD5E1; }
   .casos-search { width: 100%; }
 }
 
-/* ===== Lockup oficial icon-n + wordmark ===== */
 .nova-lockup {
   display: inline-flex;
   align-items: center;
@@ -1029,8 +1028,18 @@ a.nv-rail__link:hover { color: #CBD5E1; }
   color: inherit;
 }
 .nova-lockup__icon {
-  display: block;
+  display: block !important;
+  width: auto;
   height: auto;
+  max-height: none;
+  flex: none;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+.nova-lockup__divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(156, 163, 175, .24);
   flex: none;
 }
 .nova-lockup__text {
@@ -1065,8 +1074,14 @@ a.nv-rail__link:hover { color: #CBD5E1; }
 .nova-lockup--chrome .nova-lockup__sub {
   font-size: 7px;
 }
-.nova-lockup--compact .nova-lockup__text { display: none; }
-.nv-login__logo-row { align-items: flex-start; }
+.nova-lockup--compact .nova-lockup__text,
+.nova-lockup--compact .nova-lockup__divider { display: none; }
+.nova-mark {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+.nv-login__logo-row { align-items: center; gap: 18px; }
 .nv-login__wordmark-stack {
   display: flex;
   flex-direction: column;
@@ -1086,3 +1101,4 @@ a.nv-rail__link:hover { color: #CBD5E1; }
 }
 .page-shell a { color: var(--nova-accent-ink); }
 .page-shell a:hover { color: var(--nova-primary-hover); }
+.nv-modal .nova-lockup { margin-bottom: 4px; }

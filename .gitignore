@@ -63,7 +63,6 @@ htmlcov/
 # ========================
 .railway/
 
-# Local SQLite / runtime
 instance/
 *.db
 

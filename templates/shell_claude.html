@@ -65,48 +65,48 @@
       <div class="nv-rail__groups">
         <div>
           <div class="nv-rail__label">Operación</div>
-          <a class="nv-rail__link {% if nav_active == 'casos' %}is-active{% endif %}" href="{{ url_for('helios_casos') }}">
+          <a class="nv-rail__link {% if nav_active == 'casos' %}is-active{% endif %}" href="/casos">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="6" rx="1.5"></rect><rect x="3.5" y="14" width="17" height="6" rx="1.5"></rect></svg>
             <span>Casos</span>
           </a>
-          <span class="nv-rail__link" aria-disabled="true">
+          <a class="nv-rail__link" href="/catalogos/clientes">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"></path><path d="M16 6.5a3 3 0 0 1 0 6"></path><path d="M17.5 20c0-2.4-.9-4.2-2.3-5.2"></path></svg>
             <span>Clientes 360</span>
-          </span>
+          </a>
         </div>
         <div>
           <div class="nv-rail__label">Diseño BPM</div>
-          <span class="nv-rail__link" aria-disabled="true">
+          <a class="nv-rail__link" href="/flujos">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="2.5"></circle><circle cx="6" cy="18" r="2.5"></circle><circle cx="18" cy="12" r="2.5"></circle><path d="M6 8.5v7"></path><path d="M8.5 6.8c4 .6 5.6 2.4 7 4.4"></path></svg>
             <span>Flujos</span>
-          </span>
-          <span class="nv-rail__link" aria-disabled="true">
+          </a>
+          <a class="nv-rail__link" href="/apis">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v5"></path><path d="M15 3v5"></path><rect x="6.5" y="8" width="11" height="7" rx="2"></rect><path d="M12 15v6"></path></svg>
             <span>APIs</span>
-          </span>
-          <span class="nv-rail__link" aria-disabled="true">
+          </a>
+          <a class="nv-rail__link" href="/catalogos/documentos">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"></path><path d="M14 3v4h4"></path></svg>
             <span>Documentos</span>
-          </span>
-          <span class="nv-rail__link" aria-disabled="true">
+          </a>
+          <a class="nv-rail__link" href="/catalogos/datos">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="14" y2="17"></line></svg>
             <span>Datos complementarios</span>
-          </span>
-          <span class="nv-rail__link" aria-disabled="true">
+          </a>
+          <a class="nv-rail__link" href="/catalogos/tipos-flujo">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5V5.5A1.5 1.5 0 0 1 5.5 4h5l9 9-6.5 6.5z"></path><circle cx="8" cy="8" r="1.3"></circle></svg>
             <span>Tipos de flujo</span>
-          </span>
+          </a>
         </div>
         <div>
           <div class="nv-rail__label">Administración</div>
-          <span class="nv-rail__link" aria-disabled="true">
+          <a class="nv-rail__link" href="/admin/usuarios">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7.5a4 4 0 0 1 8 0V10"></path></svg>
             <span>Seguridad</span>
-          </span>
+          </a>
         </div>
       </div>
       <a class="nv-rail__back" href="{{ url_for('launcher') }}">
-        <svg width="15" height="15" viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="13.5" stroke="#64748B" stroke-width="1.6"></circle><circle cx="16" cy="16" r="4" fill="#64748B"></circle></svg>
+        <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" width="15" height="15" style="width:15px;height:auto;opacity:.85">
         <span>Volver a NOVA</span>
       </a>
     </aside>
@@ -128,7 +128,7 @@
 <div class="nv-modal-backdrop" id="lockedModal" role="dialog" aria-modal="true">
   <div class="nv-modal">
     <div class="nv-modal__top">
-      <span class="nv-modal__icon">{{ icon_lock(28) }}</span>
+      <span class="nv-modal__icon">{{ nova_mark(28) }}</span>
       <span class="nv-modal__badge">{{ icon_lock(11) }} Próximamente</span>
     </div>
     <div>

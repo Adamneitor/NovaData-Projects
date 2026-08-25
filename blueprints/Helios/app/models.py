@@ -83,7 +83,7 @@ class UsuarioPasswordHistorial(Base):
     id: Mapped[int] = mapped_column("IdHistorial", BigInteger, primary_key=True, autoincrement=True)
     usuario_id: Mapped[int] = mapped_column("key_usuario", ForeignKey("Usuarios.key_usuario"))
     password_hash: Mapped[str] = mapped_column(String(300))
-    fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.sysdatetime())
+    fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     usuario: Mapped[Usuario] = relationship()
 
@@ -97,7 +97,7 @@ class AuditoriaPassword(Base):
     # CAMBIO | RESET_ADMIN | EXPIRACION | POLITICA | LOGIN_FALLIDO
     evento: Mapped[str] = mapped_column(String(40))
     detalle: Mapped[str | None] = mapped_column(String(500))
-    fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.sysdatetime())
+    fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     ip: Mapped[str | None] = mapped_column(String(50))
 
 
@@ -251,7 +251,7 @@ class Flujo(Base):
     nombre: Mapped[str] = mapped_column("Nombre", String(150))
     descripcion: Mapped[str | None] = mapped_column("Descripcion", String(500))
     activo: Mapped[bool] = mapped_column("Activo", Boolean, default=True)
-    fecha_creacion: Mapped[datetime] = mapped_column(DateTime, server_default=func.sysdatetime())
+    fecha_creacion: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     # API que se invoca al concluir (cerrar) el flujo, para integraciones
     api_conclusion_id: Mapped[int | None] = mapped_column(
         "IdApiConclusion", ForeignKey("Api_Calls.IdApi")
@@ -577,7 +577,7 @@ class Caso(Base):
     estado_general: Mapped[str] = mapped_column(
         "EstadoGeneral", String(20), default="ACTIVO"
     )  # ACTIVO / CERRADO / CANCELADO
-    fecha_creacion: Mapped[datetime] = mapped_column(DateTime, server_default=func.sysdatetime())
+    fecha_creacion: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     fecha_cierre: Mapped[datetime | None] = mapped_column(DateTime)
     creado_por_id: Mapped[int] = mapped_column("key_usuario_creador", ForeignKey("Usuarios.key_usuario"))
 
@@ -604,7 +604,7 @@ class CasoHistorial(Base):
     caso_id: Mapped[int] = mapped_column("IdCaso", ForeignKey("Casos.IdCaso"))
     etapa_id: Mapped[int] = mapped_column("IdEtapa", ForeignKey("Etapas.IdEtapa"))
     estado_id: Mapped[int] = mapped_column("IdEstado", ForeignKey("Estados.IdEstado"))
-    fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.sysdatetime())
+    fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     usuario_id: Mapped[int | None] = mapped_column("key_usuario", ForeignKey("Usuarios.key_usuario"))
     comentario: Mapped[str | None] = mapped_column("Comentario", String(500))
     origen: Mapped[str] = mapped_column("Origen", String(10), default="MANUAL")  # MANUAL / API / SISTEMA
@@ -624,7 +624,7 @@ class CasoDocumento(Base):
     etapa_id: Mapped[int] = mapped_column("IdEtapa", ForeignKey("Etapas.IdEtapa"))
     ruta_archivo: Mapped[str] = mapped_column("RutaArchivo", String(500))
     nombre_original: Mapped[str] = mapped_column("NombreOriginal", String(300))
-    fecha_carga: Mapped[datetime] = mapped_column(DateTime, server_default=func.sysdatetime())
+    fecha_carga: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     usuario_id: Mapped[int] = mapped_column("key_usuario_carga", ForeignKey("Usuarios.key_usuario"))
 
     caso: Mapped[Caso] = relationship(back_populates="documentos")
@@ -641,7 +641,7 @@ class CasoDato(Base):
     dato_id: Mapped[int] = mapped_column("key_dato", ForeignKey("Datos_Complementarios.key_dato"))
     etapa_id: Mapped[int | None] = mapped_column("IdEtapa", ForeignKey("Etapas.IdEtapa"))
     valor: Mapped[str] = mapped_column("Valor", Text)
-    fecha_adicion: Mapped[datetime] = mapped_column(DateTime, server_default=func.sysdatetime())
+    fecha_adicion: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     fecha_modificacion: Mapped[datetime | None] = mapped_column(DateTime)
     usuario_adicion_id: Mapped[int] = mapped_column(
         "key_usuario_adicion", ForeignKey("Usuarios.key_usuario")
@@ -670,6 +670,6 @@ class CasoApiLog(Base):
     response_json: Mapped[str | None] = mapped_column(Text)
     http_status: Mapped[int | None] = mapped_column(Integer)
     exito: Mapped[bool] = mapped_column("Exito", Boolean, default=False)
-    fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.sysdatetime())
+    fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     api: Mapped[ApiCall] = relationship()

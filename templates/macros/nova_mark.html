@@ -2,14 +2,15 @@
 {% macro nova_mark(size=28, class='', with_wordmark=false, variant='chrome') %}
 {% if with_wordmark %}
 <span class="nova-lockup nova-lockup--{{ variant }} {{ class }}">
-  <img class="nova-lockup__icon" src="{{ url_for('static', filename='img/icon-n.png') }}" alt="Nova Data Solutions" width="{{ size }}" height="auto" style="width:{{ size }}px;height:auto">
+  <img class="nova-lockup__icon" src="{{ url_for('static', filename='img/icon-n.png') }}" alt="Nova Data Solutions" width="{{ size }}" style="width:{{ size }}px;height:auto;display:block;flex:none">
+  <span class="nova-lockup__divider" aria-hidden="true"></span>
   <span class="nova-lockup__text">
     <span class="nova-lockup__nova">NOVA</span>
     <span class="nova-lockup__sub">Data Solutions</span>
   </span>
 </span>
 {% else %}
-<img class="nova-mark {{ class }}" src="{{ url_for('static', filename='img/icon-n.png') }}" alt="Nova Data Solutions" width="{{ size }}" height="auto" style="width:{{ size }}px;height:auto;display:block">
+<img class="nova-mark {{ class }}" src="{{ url_for('static', filename='img/icon-n.png') }}" alt="Nova Data Solutions" width="{{ size }}" style="width:{{ size }}px;height:auto;display:block">
 {% endif %}
 {% endmacro %}
 

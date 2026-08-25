@@ -414,18 +414,8 @@ def helios_home():
 @app.route("/helios/casos")
 @login_required
 def helios_casos():
-    counts = {
-        "activo": sum(1 for c in MOCK_CASOS if c["situacion"] == "activo"),
-        "cerrado": sum(1 for c in MOCK_CASOS if c["situacion"] == "cerrado"),
-        "cancelado": sum(1 for c in MOCK_CASOS if c["situacion"] == "cancelado"),
-        "todos": len(MOCK_CASOS),
-    }
-    return render_template(
-        "plataforma/casos_lista.html",
-        casos=MOCK_CASOS,
-        counts=counts,
-        nav_active="casos",
-    )
+    """Compat: el BPM real vive en Helios FastAPI (/casos)."""
+    return redirect("/casos")
 
 
 # ---------- Auth ----------
@@ -449,7 +439,19 @@ def login():
             session["user_name"] = user.name
             user.last_seen = datetime.utcnow()
             db.session.commit()
-            return redirect(next_path)
+            from flask import make_response
+            from helios_bridge import SSO_COOKIE_NAME, sign_sso_token
+
+            resp = make_response(redirect(next_path))
+            resp.set_cookie(
+                SSO_COOKIE_NAME,
+                sign_sso_token(user.username, user.name),
+                max_age=60 * 60 * 12,
+                httponly=True,
+                samesite="Lax",
+                secure=bool(os.environ.get("RAILWAY_ENVIRONMENT")),
+            )
+            return resp
 
         return render_template(
             "auth/login.html",
@@ -466,7 +468,12 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("launcher"))
+    from flask import make_response
+    from helios_bridge import SSO_COOKIE_NAME
+
+    resp = make_response(redirect(url_for("launcher")))
+    resp.set_cookie(SSO_COOKIE_NAME, "", max_age=0)
+    return resp
 
 
 # ---------- Shell legacy (portales) ----------
