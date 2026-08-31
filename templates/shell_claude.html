@@ -5,32 +5,35 @@
 {% block body %}
 <div class="nv-shell">
   <header class="nv-topbar">
-    <div class="nv-topbar__left">
+    <div class="nv-topbar__brand-slot">
       <button type="button" class="nv-burger" id="railToggle" aria-label="Menú">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
       </button>
       <a href="{{ url_for('launcher') }}" class="nv-topbar__brand" aria-label="NOVA">
         {{ nova_mark(22, with_wordmark=true, variant='chrome') }}
       </a>
-      <span class="nv-topbar__vsep" aria-hidden="true"></span>
-      <button type="button" class="nv-chip-product" id="productChip" aria-expanded="false" aria-haspopup="true">
-        {{ icon_helios(15) }}
-        <span>Helios</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg>
-      </button>
     </div>
-    <div class="nv-topbar__right">
-      <div class="nv-search-fake" aria-hidden="true">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
-        Buscar caso, cliente o cédula
+    <div class="nv-topbar__rest">
+      <div class="nv-topbar__left">
+        <button type="button" class="nv-chip-product" id="productChip" aria-expanded="false" aria-haspopup="true">
+          {{ icon_helios(15) }}
+          <span>Helios</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg>
+        </button>
       </div>
-      <span class="nv-env-badge">Producción</span>
-      {% if user %}
-      <span class="nv-avatar" title="{{ user.name }}">{{ user_initials(user.name) }}</span>
-      {% endif %}
-    </div>
+      <div class="nv-topbar__right">
+        <div class="nv-search" id="nvSearch">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+          <input type="search" id="nvSearchInput" class="nv-search__input" placeholder="Buscar caso, cliente o cédula" autocomplete="off" enterkeyhint="search">
+          <div class="nv-search__results" id="nvSearchResults" hidden></div>
+        </div>
+        <span class="nv-env-badge">Desarrollo</span>
+        {% if user %}
+        <span class="nv-avatar" title="{{ user.name }}">{{ user_initials(user.name) }}</span>
+        {% endif %}
+      </div>
 
-    <div class="nv-switcher" id="productSwitcher" role="menu">
+      <div class="nv-switcher" id="productSwitcher" role="menu">
       <div class="nv-switcher__head">
         <span>Cambiar de producto</span>
         <button type="button" class="nv-switcher__close" id="switcherClose">Cerrar</button>
@@ -55,6 +58,7 @@
         {% endfor %}
       </div>
       <a class="nv-switcher__foot" href="{{ url_for('launcher') }}">Ver toda la constelación →</a>
+      </div>
     </div>
   </header>
 
@@ -215,6 +219,88 @@
   });
   document.getElementById('lockedClose')?.addEventListener('click', closeLocked);
   modal?.addEventListener('click', function (e) { if (e.target === modal) closeLocked(); });
+
+  /* Búsqueda global Helios (cédula / cliente / caso) */
+  var searchBox = document.getElementById('nvSearch');
+  var searchInput = document.getElementById('nvSearchInput');
+  var searchResults = document.getElementById('nvSearchResults');
+  var searchTimer = null;
+
+  function embedUrl(path) {
+    if (!path) return '/casos?embed=1';
+    return path + (path.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
+  }
+  function openInWorkspace(path) {
+    var frame = document.getElementById('heliosFrame');
+    if (frame) {
+      frame.src = embedUrl(path);
+      try { history.replaceState(null, '', '/helios/w?to=' + encodeURIComponent(path.split('?')[0])); } catch (e) {}
+    } else {
+      window.location.href = '/helios/w?to=' + encodeURIComponent(path);
+    }
+    if (searchResults) { searchResults.hidden = true; searchResults.innerHTML = ''; }
+  }
+  function renderResults(data) {
+    if (!searchResults) return;
+    var casos = (data && data.casos) || [];
+    var clientes = (data && data.clientes) || [];
+    if (!casos.length && !clientes.length) {
+      searchResults.innerHTML = '<div class="nv-search__empty">Sin resultados</div>';
+      searchResults.hidden = false;
+      return;
+    }
+    var html = '';
+    if (casos.length) {
+      html += '<div class="nv-search__group">Casos</div>';
+      casos.forEach(function (c) {
+        html += '<button type="button" class="nv-search__item" data-href="' + c.href + '"><strong>' + c.label + '</strong><small>' + (c.identificacion || '') + '</small></button>';
+      });
+    }
+    if (clientes.length) {
+      html += '<div class="nv-search__group">Clientes</div>';
+      clientes.forEach(function (c) {
+        html += '<button type="button" class="nv-search__item" data-href="' + c.href + '"><strong>' + (c.nombre_completo || c.label) + '</strong><small>' + (c.identificacion || '') + '</small></button>';
+      });
+    }
+    searchResults.innerHTML = html;
+    searchResults.hidden = false;
+    searchResults.querySelectorAll('.nv-search__item').forEach(function (btn) {
+      btn.addEventListener('click', function () { openInWorkspace(btn.getAttribute('data-href')); });
+    });
+  }
+  async function runSearch(q) {
+    if (!q || q.length < 2) {
+      if (searchResults) { searchResults.hidden = true; searchResults.innerHTML = ''; }
+      return;
+    }
+    try {
+      var res = await fetch('/casos/api/buscar?q=' + encodeURIComponent(q), { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('search');
+      renderResults(await res.json());
+    } catch (err) {
+      if (searchResults) {
+        searchResults.innerHTML = '<div class="nv-search__empty">No se pudo buscar. Abre Helios e intenta de nuevo.</div>';
+        searchResults.hidden = false;
+      }
+    }
+  }
+  searchInput?.addEventListener('input', function () {
+    clearTimeout(searchTimer);
+    var q = searchInput.value.trim();
+    searchTimer = setTimeout(function () { runSearch(q); }, 280);
+  });
+  searchInput?.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      clearTimeout(searchTimer);
+      var q = searchInput.value.trim();
+      if (q.length >= 2) openInWorkspace('/casos?q=' + encodeURIComponent(q));
+    }
+    if (e.key === 'Escape' && searchResults) searchResults.hidden = true;
+  });
+  document.addEventListener('click', function (e) {
+    if (searchBox && !searchBox.contains(e.target) && searchResults) searchResults.hidden = true;
+  });
 })();
 </script>
 {% block page_scripts %}{% endblock %}

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from sqlalchemy import String, cast, or_
 from sqlalchemy.orm import Session
 
 from app.auth import PERFIL_SOPORTE, PERFIL_SUPER, get_current_user
@@ -113,23 +114,80 @@ def lista(
     request: Request,
     estado_general: str = "",
     cliente_id: int | None = None,
+    q: str = "",
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    q = db.query(Caso).order_by(Caso.id.desc())
+    query = db.query(Caso).order_by(Caso.id.desc())
     if estado_general:
-        q = q.filter(Caso.estado_general == estado_general)
+        query = query.filter(Caso.estado_general == estado_general)
+    if cliente_id:
+        query = query.filter(Caso.cliente_id == cliente_id)
+    qn = (q or "").strip()
+    if qn:
+        digitos = "".join(ch for ch in qn if ch.isdigit())
+        cli_filtros = [
+            Cliente.nombre_completo.ilike(f"%{qn}%"),
+            Cliente.identificacion.ilike(f"%{qn}%"),
+        ]
+        if len(digitos) >= 3:
+            cli_filtros.append(Cliente.identificacion.ilike(f"%{digitos}%"))
+        if qn.isdigit():
+            cli_filtros.append(cast(Caso.id, String) == qn)
+        query = query.outerjoin(Cliente, Caso.cliente_id == Cliente.id).filter(or_(*cli_filtros))
     cliente_pref = db.get(Cliente, cliente_id) if cliente_id else None
     return render(
         request,
         "casos/lista.html",
         {
-            "casos": q.limit(300).all(),
+            "casos": query.limit(300).all(),
             "usuario": usuario,
             "filtro": estado_general,
+            "q": qn,
             "flujos": db.query(Flujo).filter(Flujo.activo).order_by(Flujo.nombre).all(),
             "cliente_pref": cliente_pref,
         },
+    )
+
+
+@router.get("/api/buscar")
+def api_buscar_casos(
+    q: str = "",
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+):
+    """Autocompletado global: casos + clientes por cédula/nombre."""
+    from app.services.clientes import buscar_clientes
+
+    qn = (q or "").strip()
+    if len(qn) < 2:
+        return JSONResponse({"clientes": [], "casos": []})
+
+    clientes = buscar_clientes(db, qn, page=1, page_size=8).get("items", [])
+    digitos = "".join(ch for ch in qn if ch.isdigit())
+    cq = db.query(Caso).join(Cliente, Caso.cliente_id == Cliente.id, isouter=True)
+    filtros = [Cliente.identificacion.ilike(f"%{qn}%"), Cliente.nombre_completo.ilike(f"%{qn}%")]
+    if len(digitos) >= 3:
+        filtros.append(Cliente.identificacion.ilike(f"%{digitos}%"))
+    if qn.isdigit():
+        filtros.append(Caso.id == int(qn))
+    casos_rows = cq.filter(or_(*filtros)).order_by(Caso.id.desc()).limit(8).all()
+    casos = [
+        {
+            "id": c.id,
+            "label": f"Caso #{c.id} · {(c.cliente.nombre_completo if c.cliente else 'Sin cliente')}",
+            "identificacion": c.cliente.identificacion if c.cliente else "",
+            "href": f"/casos/{c.id}",
+        }
+        for c in casos_rows
+    ]
+    return JSONResponse(
+        {
+            "clientes": [
+                {**c, "href": f"/catalogos/clientes/{c['id']}", "tipo": "cliente"} for c in clientes
+            ],
+            "casos": [{**c, "tipo": "caso"} for c in casos],
+        }
     )
 
 
