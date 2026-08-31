@@ -23,7 +23,8 @@
         <strong>{{ user.name }}</strong>
         <span>{{ user.role|capitalize }}</span>
       </div>
-      <a class="nv-launch__out" href="{{ url_for('explorar') }}">Explorar</a>
+      <a class="nv-launch__out" href="https://www.datanova.com.do/" target="_blank" rel="noopener">datanova.com.do</a>
+      <a class="nv-launch__out" href="{{ url_for('explorar') }}">Framework</a>
       <a class="nv-launch__out" href="{{ url_for('logout') }}">Salir</a>
       {% else %}
       <a class="nv-launch__in" href="{{ url_for('login', next='/app') }}">Ingresar</a>

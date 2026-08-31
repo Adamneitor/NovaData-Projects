@@ -1642,3 +1642,136 @@ a.nv-astro--locked {
   .ct-nav, .mk-nav, .mk-section, .mk-hero, .mk-contact { padding-left: 20px; padding-right: 20px; }
 }
 
+/* ========== PRESENTACIÓN FRAMEWORK (home público, estilo hub) ========== */
+.nv-present__kicker {
+  margin: 0 0 12px;
+  font: 700 11px/1 var(--font-ui);
+  letter-spacing: .16em; text-transform: uppercase; color: #8B84FF;
+}
+.nv-present__copy { max-width: 460px; }
+.nv-present__ext {
+  color: #A9A3FF; font-weight: 600; text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.nv-present__ext:hover { color: #EAE8FE; }
+.nv-present__cta {
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+  margin-top: 28px;
+}
+.nv-present__ghost {
+  font: 600 13.5px var(--font-ui); color: #94A3B8;
+}
+.nv-present__ghost:hover { color: #E7EDF5; }
+.nv-present__foot { bottom: 40px; }
+
+.nv-carousel {
+  position: absolute; z-index: 2;
+  left: 560px; top: 110px;
+  width: min(620px, calc(100vw - 580px));
+  min-height: 560px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.nv-carousel__orbits {
+  position: absolute; inset: 20px 40px auto; width: calc(100% - 80px);
+  height: 420px; pointer-events: none; opacity: .9;
+  animation: mkSpin 60s linear infinite;
+}
+.nv-carousel__stage {
+  position: relative;
+  width: 100%; max-width: 400px;
+  min-height: 420px;
+  margin-top: 40px;
+}
+.nv-carousel__slide {
+  position: absolute; inset: 0; left: 0; top: 0; width: 100%;
+  opacity: 0;
+  transform: translateY(18px) scale(.96);
+  pointer-events: none;
+  transition: opacity .45s var(--ease-out), transform .45s var(--ease-out);
+  box-shadow: 0 26px 70px -22px color-mix(in srgb, var(--star, #5B52E8) 45%, transparent);
+  border-color: color-mix(in srgb, var(--star, #5B52E8) 42%, transparent);
+  background: linear-gradient(
+    158deg,
+    color-mix(in srgb, var(--star, #5B52E8) 18%, transparent),
+    rgba(91,82,232,.03) 62%,
+    rgba(7,11,20,.4)
+  );
+}
+.nv-carousel__slide.is-active {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  z-index: 2;
+}
+.nv-carousel__tagline {
+  margin: -8px 0 18px;
+  font: 500 12.5px/1.45 var(--font-ui); color: #8496AC;
+}
+.nv-astro__cta--soft {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--star, #5B52E8) 45%, transparent);
+  color: #E7EDF5;
+  box-shadow: none;
+}
+.nv-carousel__controls {
+  display: flex; align-items: center; gap: 14px;
+  margin-top: 18px; z-index: 3;
+}
+.nv-carousel__btn {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: grid; place-items: center;
+  border: 1px solid rgba(148,163,184,.2);
+  background: rgba(20,19,43,.7);
+  color: #CBD5E1; cursor: pointer;
+}
+.nv-carousel__btn:hover {
+  border-color: rgba(168,162,255,.45); color: #fff;
+}
+.nv-carousel__dots { display: flex; gap: 8px; }
+.nv-carousel__dot {
+  width: 9px; height: 9px; border-radius: 999px; border: 0;
+  background: rgba(148,163,184,.28); cursor: pointer; padding: 0;
+  transition: transform .2s, background .2s;
+}
+.nv-carousel__dot.is-active {
+  background: var(--star, var(--nova-primary));
+  transform: scale(1.25);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--star, #5B52E8) 22%, transparent);
+}
+.nv-carousel__rail {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  margin-top: 16px; max-width: 420px;
+}
+.nv-carousel__chip {
+  font: 700 10.5px/1 var(--font-ui);
+  letter-spacing: .08em; text-transform: uppercase;
+  color: #64748B; padding: 7px 10px; border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.14);
+  background: rgba(148,163,184,.05);
+  cursor: pointer; user-select: none;
+  transition: .18s var(--ease-out);
+}
+.nv-carousel__chip.is-active {
+  color: var(--star, #A9A3FF);
+  border-color: color-mix(in srgb, var(--star, #5B52E8) 40%, transparent);
+  background: color-mix(in srgb, var(--star, #5B52E8) 14%, transparent);
+}
+
+@media (max-width: 1200px) {
+  .nv-carousel {
+    position: relative; left: auto; top: auto;
+    width: 100%; max-width: 520px;
+    margin: 32px auto 64px; min-height: auto;
+  }
+  .nv-present .nv-launch__copy {
+    margin: 40px 32px 0; max-width: none;
+  }
+  .nv-present .nv-launch__foot {
+    position: relative; left: auto; bottom: auto; margin: 24px 32px 0;
+  }
+}
+@media (max-width: 768px) {
+  .nv-carousel__stage { min-height: 380px; max-width: 100%; }
+  .nv-present__cta { flex-direction: column; align-items: flex-start; }
+}
+

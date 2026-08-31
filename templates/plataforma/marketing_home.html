@@ -1,152 +1,158 @@
 {% extends "base_claude.html" %}
 {% from "macros/nova_mark.html" import nova_mark, icon_helios, icon_hermes, icon_venus, icon_zeus, icon_ares %}
-{% block title %}NOVA · El impulso inteligente de tu crecimiento{% endblock %}
-{% block body_class %}page-marketing{% endblock %}
+{% block title %}NOVA Projects · Framework de constelaciones{% endblock %}
+{% block body_class %}page-launcher page-present{% endblock %}
 {% block body %}
-<div class="mk">
-  <div class="mk__atmos" aria-hidden="true">
-    <div class="mk__grid"></div>
-    <div class="mk__glow mk__glow--a"></div>
-    <div class="mk__glow mk__glow--b"></div>
+<div class="nv-launch nv-present">
+  <div class="nv-launch__atmos" aria-hidden="true">
+    <div class="nv-launch__grid"></div>
+    <div class="nv-launch__glow--amber"></div>
+    <div class="nv-launch__glow--cyan"></div>
   </div>
 
-  <header class="mk-nav">
-    <a href="{{ url_for('launcher') }}" class="mk-nav__brand" aria-label="NOVA">
-      {{ nova_mark(26, with_wordmark=true, variant='chrome') }}
+  <header class="nv-launch__top">
+    <a href="{{ url_for('launcher') }}" class="nv-launch__brand" aria-label="NOVA">
+      {{ nova_mark(28, with_wordmark=true, variant='chrome') }}
     </a>
-    <nav class="mk-nav__links" aria-label="Secciones">
-      <a href="#constelacion">Constelación</a>
-      <a href="#como">Cómo funciona</a>
-      <a href="#contacto">Contacto</a>
-    </nav>
-    <div class="mk-nav__actions">
-      <a class="mk-btn mk-btn--ghost" href="{{ url_for('login', next='/app') }}">Ingresar</a>
-      <a class="mk-btn mk-btn--solid" href="{{ url_for('contacto') }}">Hablar con nosotros</a>
+    <div class="nv-launch__user">
+      <a class="nv-launch__out" href="https://www.datanova.com.do/" target="_blank" rel="noopener">Nova Data Solutions</a>
+      <span class="nv-launch__sep" aria-hidden="true"></span>
+      <a class="nv-launch__in" href="{{ url_for('login', next='/app') }}">Ingresar</a>
     </div>
   </header>
 
-  <section class="mk-hero">
-    <div class="mk-hero__copy">
-      <p class="mk-kicker">Nova Data Solutions</p>
-      <h1>Una plataforma.<br>Cinco impulsos.<br><span>Un solo sistema.</span></h1>
-      <p class="mk-hero__lead">NOVA orquesta crédito, fidelidad, uso, cobranza y control operativo — en una constelación que crece contigo.</p>
-      <div class="mk-hero__cta">
-        <a class="mk-btn mk-btn--cta" href="{{ url_for('login', next='/app') }}">Ingresar</a>
-        <a class="mk-btn mk-btn--ghost" href="{{ url_for('contacto') }}">Hablar con nosotros</a>
-      </div>
+  <div class="nv-launch__copy nv-present__copy">
+    <p class="nv-present__kicker">NOVA Projects · Framework</p>
+    <h1>La constelación<br>de soluciones</h1>
+    <p class="lead">Un solo shell. Cinco impulsos. Acceso por plan.</p>
+    <div class="nv-launch__rule"></div>
+    <p class="body">
+      <strong>NOVA Projects</strong> es el marco operativo donde viven Helios, Hermes, Venus, Zeus y Ares.
+      Aquí presentamos el framework con detalle; la firma y la consultoría están en
+      <a class="nv-present__ext" href="https://www.datanova.com.do/" target="_blank" rel="noopener">datanova.com.do</a>.
+    </p>
+    <div class="nv-present__cta">
+      <a class="nv-launch__in" href="{{ url_for('login', next='/app') }}">Ingresar a la plataforma</a>
+      <a class="nv-present__ghost" href="#carousel">Ver constelaciones</a>
     </div>
-    <div class="mk-hero__visual" aria-hidden="true">
-      <div class="mk-hero__orb">
-        {{ nova_mark(88) }}
-        <span class="mk-hero__orb-ring"></span>
-        <span class="mk-hero__orb-ring mk-hero__orb-ring--2"></span>
-      </div>
-      <ul class="mk-hero__orbit-list">
-        <li style="--c:#5B52E8">Helios</li>
-        <li style="--c:#5FA98F">Hermes</li>
-        <li style="--c:#C4808F">Venus</li>
-        <li style="--c:#7B9BC9">Zeus</li>
-        <li style="--c:#9E9BA6">Ares</li>
-      </ul>
-    </div>
-  </section>
+  </div>
 
-  <section class="mk-section" id="constelacion">
-    <div class="mk-section__head">
-      <h2>La constelación NOVA</h2>
-      <p>Cinco soluciones. Una misma identidad. Activa las que tu operación necesita.</p>
-    </div>
-    <div class="mk-stars">
+  <div class="nv-launch__foot nv-present__foot">
+    <span class="label">Presentación de producto</span>
+    <p class="quote">La meta no es hacer más. Es hacerlo mejor.</p>
+  </div>
+
+  {# Carrusel estilo hub (misma estética de astros) #}
+  <div class="nv-carousel" id="carousel" aria-roledescription="carrusel" aria-label="Constelaciones NOVA">
+    <svg class="nv-carousel__orbits" viewBox="0 0 560 520" fill="none" aria-hidden="true">
+      <ellipse cx="280" cy="260" rx="240" ry="220" stroke="rgba(148,163,184,.14)"></ellipse>
+      <ellipse cx="280" cy="260" rx="170" ry="155" stroke="rgba(148,163,184,.09)"></ellipse>
+      <circle cx="280" cy="260" r="6" fill="rgba(91,82,232,.55)"></circle>
+    </svg>
+
+    <div class="nv-carousel__stage">
       {% for s in solutions %}
-      <article class="mk-star mk-star--{{ s.id }} {% if s.active %}is-live{% endif %}">
-        <div class="mk-star__top">
-          <span class="mk-star__ico" style="color:{{ s.color }}">
-            {% if s.id == 'helios' %}{{ icon_helios(28) }}
-            {% elif s.id == 'hermes' %}{{ icon_hermes(28) }}
-            {% elif s.id == 'venus' %}{{ icon_venus(28) }}
-            {% elif s.id == 'zeus' %}{{ icon_zeus(28) }}
-            {% else %}{{ icon_ares(28) }}{% endif %}
+      <article
+        class="nv-carousel__slide nv-astro nv-astro--helios nv-carousel__slide--{{ s.id }} {% if loop.first %}is-active{% endif %}"
+        data-slide="{{ loop.index0 }}"
+        data-id="{{ s.id }}"
+        {% if not loop.first %}aria-hidden="true"{% endif %}
+        style="--star:{{ s.color }}"
+      >
+        <div class="nv-astro__head">
+          <span class="nv-astro__icon" style="color:{{ s.color }}">
+            {% if s.id == 'helios' %}{{ icon_helios(40) }}
+            {% elif s.id == 'hermes' %}{{ icon_hermes(40) }}
+            {% elif s.id == 'venus' %}{{ icon_venus(40) }}
+            {% elif s.id == 'zeus' %}{{ icon_zeus(40) }}
+            {% else %}{{ icon_ares(40) }}{% endif %}
           </span>
           {% if s.active %}
-          <span class="mk-badge mk-badge--live">En producción</span>
+          <span class="nv-pill-on"><i></i><span>Disponible</span></span>
           {% else %}
-          <span class="mk-badge">Adquirible</span>
+          <span class="nv-pill-lock">En roadmap</span>
           {% endif %}
         </div>
-        <h3>{{ s.name }}</h3>
-        <p class="mk-star__sub">{{ s.subtitle }}</p>
-        <p class="mk-star__desc">{{ s.pitch or s.desc }}</p>
+        <span class="nv-astro__name">{{ s.name|upper }}</span>
+        <span class="nv-astro__sub" style="color:{{ s.color }}">{{ s.subtitle }}</span>
+        <p class="nv-astro__desc">{{ s.pitch or s.desc }}</p>
+        <p class="nv-carousel__tagline">{{ s.tagline }}</p>
         {% if s.active %}
-        <a class="mk-star__link" href="{{ url_for('login', next='/helios') }}">Probar Helios →</a>
+        <a class="nv-astro__cta" style="pointer-events:auto" href="{{ url_for('login', next='/helios') }}">
+          Ver en plataforma
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
+        </a>
         {% else %}
-        <a class="mk-star__link" href="{{ url_for('contacto', producto=s.id) }}">Adquirir →</a>
+        <a class="nv-astro__cta nv-astro__cta--soft" style="pointer-events:auto" href="{{ url_for('contacto', producto=s.id) }}">
+          Solicitar activación →
+        </a>
         {% endif %}
       </article>
       {% endfor %}
     </div>
-  </section>
 
-  <section class="mk-section mk-section--steps" id="como">
-    <div class="mk-section__head">
-      <h2>Cómo funciona</h2>
-      <p>De la conversación comercial al escritorio operativo en tres pasos.</p>
+    <div class="nv-carousel__controls">
+      <button type="button" class="nv-carousel__btn" id="carouselPrev" aria-label="Anterior">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15,6 9,12 15,18"></polyline></svg>
+      </button>
+      <div class="nv-carousel__dots" id="carouselDots" role="tablist">
+        {% for s in solutions %}
+        <button type="button" class="nv-carousel__dot {% if loop.first %}is-active{% endif %}" data-dot="{{ loop.index0 }}" aria-label="{{ s.name }}" style="--star:{{ s.color }}"></button>
+        {% endfor %}
+      </div>
+      <button type="button" class="nv-carousel__btn" id="carouselNext" aria-label="Siguiente">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9,6 15,12 9,18"></polyline></svg>
+      </button>
     </div>
-    <ol class="mk-steps">
-      <li>
-        <span class="mk-steps__n">01</span>
-        <strong>Contrata</strong>
-        <p>Elige las soluciones de la constelación que tu institución necesita.</p>
-      </li>
-      <li>
-        <span class="mk-steps__n">02</span>
-        <strong>Activa</strong>
-        <p>Habilitamos tu plan. Solo ves desbloqueado lo que contrataste.</p>
-      </li>
-      <li>
-        <span class="mk-steps__n">03</span>
-        <strong>Opera</strong>
-        <p>Entras a NOVA y trabajas en un mismo shell — sin cambiar de marca.</p>
-      </li>
-    </ol>
-  </section>
 
-  <section class="mk-section mk-section--why">
-    <div class="mk-section__head">
-      <h2>Por qué NOVA</h2>
-      <p>La meta no es hacer más. Es hacerlo mejor.</p>
+    <div class="nv-carousel__rail" aria-hidden="true">
+      {% for s in solutions %}
+      <span class="nv-carousel__chip {% if loop.first %}is-active{% endif %}" data-chip="{{ loop.index0 }}" style="--star:{{ s.color }}">{{ s.name }}</span>
+      {% endfor %}
     </div>
-    <div class="mk-why">
-      <div>
-        <strong>Orquestación</strong>
-        <p>Una plataforma, una identidad, múltiples productos en órbita.</p>
-      </div>
-      <div>
-        <strong>Time-to-value</strong>
-        <p>Empieza con Helios hoy y activa el resto cuando el negocio lo pida.</p>
-      </div>
-      <div>
-        <strong>Control operativo</strong>
-        <p>Roles, planes y acceso por constelación — sin fragmentar la experiencia.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="mk-contact" id="contacto">
-    <div class="mk-contact__card">
-      <div>
-        <h2>¿Listo para activar tu constelación?</h2>
-        <p>Cuéntanos qué productos necesitas. Te respondemos con un plan claro.</p>
-      </div>
-      <div class="mk-contact__actions">
-        <a class="mk-btn mk-btn--cta" href="{{ url_for('contacto') }}">Ir a contacto</a>
-        <a class="mk-btn mk-btn--ghost" href="{{ url_for('login', next='/app') }}">Ya soy cliente · Ingresar</a>
-      </div>
-    </div>
-  </section>
-
-  <footer class="mk-foot">
-    <div class="mk-foot__brand">{{ nova_mark(22, with_wordmark=true, variant='chrome') }}</div>
-    <p>Nova Data Solutions · El impulso inteligente de tu crecimiento</p>
-  </footer>
+  </div>
 </div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(function () {
+  var root = document.getElementById('carousel');
+  if (!root) return;
+  var slides = Array.prototype.slice.call(root.querySelectorAll('.nv-carousel__slide'));
+  var dots = Array.prototype.slice.call(root.querySelectorAll('.nv-carousel__dot'));
+  var chips = Array.prototype.slice.call(root.querySelectorAll('.nv-carousel__chip'));
+  var i = 0;
+  var timer = null;
+  var delay = 4800;
+
+  function go(n) {
+    i = (n + slides.length) % slides.length;
+    slides.forEach(function (el, idx) {
+      var on = idx === i;
+      el.classList.toggle('is-active', on);
+      el.setAttribute('aria-hidden', on ? 'false' : 'true');
+    });
+    dots.forEach(function (el, idx) { el.classList.toggle('is-active', idx === i); });
+    chips.forEach(function (el, idx) { el.classList.toggle('is-active', idx === i); });
+  }
+  function next() { go(i + 1); }
+  function prev() { go(i - 1); }
+  function arm() {
+    clearInterval(timer);
+    timer = setInterval(next, delay);
+  }
+
+  document.getElementById('carouselNext')?.addEventListener('click', function () { next(); arm(); });
+  document.getElementById('carouselPrev')?.addEventListener('click', function () { prev(); arm(); });
+  dots.forEach(function (el) {
+    el.addEventListener('click', function () { go(+el.dataset.dot); arm(); });
+  });
+  chips.forEach(function (el) {
+    el.addEventListener('click', function () { go(+el.dataset.chip); arm(); });
+  });
+  root.addEventListener('mouseenter', function () { clearInterval(timer); });
+  root.addEventListener('mouseleave', arm);
+  arm();
+})();
+</script>
 {% endblock %}
