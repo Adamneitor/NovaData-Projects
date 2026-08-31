@@ -1,0 +1,81 @@
+{% extends "base_claude.html" %}
+{% from "macros/nova_mark.html" import nova_mark %}
+{% block title %}Contacto · NOVA{% endblock %}
+{% block body_class %}page-contact{% endblock %}
+{% block body %}
+<div class="ct">
+  <div class="ct__atmos" aria-hidden="true">
+    <div class="ct__grid"></div>
+    <div class="ct__glow"></div>
+  </div>
+
+  <header class="ct-nav">
+    <a href="{{ url_for('launcher') }}" class="ct-nav__brand" aria-label="NOVA">
+      {{ nova_mark(24, with_wordmark=true, variant='chrome') }}
+    </a>
+    <div class="ct-nav__actions">
+      <a class="mk-btn mk-btn--ghost" href="{{ url_for('launcher') }}">Inicio</a>
+      <a class="mk-btn mk-btn--solid" href="{{ url_for('login', next='/app') }}">Ingresar</a>
+    </div>
+  </header>
+
+  <main class="ct-main">
+    <div class="ct-copy">
+      <p class="mk-kicker">Adquirir / Contacto</p>
+      <h1>Activemos tu constelación</h1>
+      <p>Cuéntanos qué soluciones necesitas. Te respondemos con alcance, tiempos y un plan claro.</p>
+      <ul class="ct-points">
+        <li>Helios listo para operar hoy</li>
+        <li>Hermes, Venus, Zeus y Ares disponibles para contratar</li>
+        <li>Un solo shell NOVA para todo tu plan</li>
+      </ul>
+    </div>
+
+    <div class="ct-panel">
+      {% if sent %}
+      <div class="ct-success" role="status">
+        <h2>Solicitud recibida</h2>
+        <p>Gracias. Nuestro equipo te contactará pronto{% if producto_label %} sobre <strong>{{ producto_label }}</strong>{% endif %}.</p>
+        <a class="mk-btn mk-btn--cta" href="{{ url_for('launcher') }}">Volver al inicio</a>
+      </div>
+      {% else %}
+      <form method="post" class="ct-form" novalidate>
+        {% if error %}
+        <div class="nv-login__error" role="alert">{{ error }}</div>
+        {% endif %}
+        <div class="nv-field">
+          <label for="nombre">Nombre</label>
+          <div class="nv-input"><input id="nombre" name="nombre" type="text" required autocomplete="name" value="{{ form.nombre or '' }}"></div>
+        </div>
+        <div class="nv-field">
+          <label for="empresa">Empresa</label>
+          <div class="nv-input"><input id="empresa" name="empresa" type="text" required autocomplete="organization" value="{{ form.empresa or '' }}"></div>
+        </div>
+        <div class="nv-field">
+          <label for="correo">Correo</label>
+          <div class="nv-input"><input id="correo" name="correo" type="email" required autocomplete="email" value="{{ form.correo or '' }}"></div>
+        </div>
+        <div class="nv-field">
+          <label for="producto">Producto de interés</label>
+          <div class="nv-input nv-input--select">
+            <select id="producto" name="producto">
+              <option value="">Constelación completa</option>
+              {% for s in solutions %}
+              <option value="{{ s.id }}" {% if producto == s.id %}selected{% endif %}>{{ s.name }} · {{ s.subtitle }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="nv-field">
+          <label for="mensaje">Mensaje</label>
+          <div class="nv-input nv-input--area">
+            <textarea id="mensaje" name="mensaje" rows="4" placeholder="Cuéntanos tu caso de uso…">{{ form.mensaje or '' }}</textarea>
+          </div>
+        </div>
+        <button type="submit" class="nv-btn-cta" style="width:100%">Enviar solicitud</button>
+      </form>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}

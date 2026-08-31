@@ -1,4 +1,7 @@
 """Catálogo de soluciones Nova (Helios, Hermes, Venus, Zeus, Ares)."""
+from __future__ import annotations
+
+import os
 
 SOLUTIONS = [
     {
@@ -7,6 +10,7 @@ SOLUTIONS = [
         "tagline": "Núcleo que energiza y orquesta la originación",
         "subtitle": "Fábrica de Crédito",
         "desc": "Originación, BPM operativo, buró y decisión en un solo flujo de trabajo.",
+        "pitch": "Opera solicitudes de punta a punta con BPM, catálogos y APIs en un solo lienzo.",
         "active": True,
         "home_endpoint": "helios_home",
         "icon": "sun",
@@ -18,6 +22,7 @@ SOLUTIONS = [
         "tagline": "Impulsa el uso mediante recompensas",
         "subtitle": "Programa de Fidelidad",
         "desc": "Programa de fidelidad y recompensas para impulsar el uso de productos.",
+        "pitch": "Diseña programas de puntos y recompensas que activen el uso recurrente.",
         "active": False,
         "home_endpoint": None,
         "icon": "gift",
@@ -29,6 +34,7 @@ SOLUTIONS = [
         "tagline": "Reactiva y fortalece la relación con el cliente",
         "subtitle": "Motivación al uso",
         "desc": "Campañas y motivadores para reactivar la relación con el cliente.",
+        "pitch": "Campañas de reactivación con segmentación y motivadores de uso.",
         "active": False,
         "home_endpoint": None,
         "icon": "heart",
@@ -40,6 +46,7 @@ SOLUTIONS = [
         "tagline": "Optimiza la recuperación con inteligencia estratégica",
         "subtitle": "Score de cobranzas",
         "desc": "Score e inteligencia estratégica para optimizar la recuperación.",
+        "pitch": "Prioriza gestión de cobranza con score e inteligencia de recuperación.",
         "active": False,
         "home_endpoint": None,
         "icon": "bolt",
@@ -51,6 +58,7 @@ SOLUTIONS = [
         "tagline": "Control operativo de activos físicos",
         "subtitle": "Inventario de plásticos",
         "desc": "Control operativo e inventario de activos físicos (plásticos).",
+        "pitch": "Controla inventario físico y trazabilidad operativa de activos.",
         "active": False,
         "home_endpoint": None,
         "icon": "box",
@@ -67,6 +75,32 @@ def get_solution(solution_id: str) -> dict | None:
     return None
 
 
+def default_entitlements() -> set[str]:
+    """Productos del plan (demo). Override: NOVA_ENTITLEMENTS=helios,hermes"""
+    raw = os.environ.get("NOVA_ENTITLEMENTS", "helios")
+    ids = {x.strip().lower() for x in raw.split(",") if x.strip()}
+    valid = {s["id"] for s in SOLUTIONS}
+    return ids & valid or {"helios"}
+
+
+def enrich_solutions(entitled: set[str] | None = None) -> list[dict]:
+    """Agrega entitled/status para hub y marketing."""
+    entitled = entitled if entitled is not None else default_entitlements()
+    out: list[dict] = []
+    for s in SOLUTIONS:
+        item = dict(s)
+        is_entitled = item["id"] in entitled
+        item["entitled"] = is_entitled
+        if is_entitled and item.get("active"):
+            item["status"] = "live"
+        elif is_entitled:
+            item["status"] = "roadmap"
+        else:
+            item["status"] = "contractable"
+        out.append(item)
+    return out
+
+
 SAFE_NEXT = (
     "helios_home",
     "helios_casos",
@@ -75,6 +109,8 @@ SAFE_NEXT = (
     "admin_dashboard",
     "module_view",
     "launcher",
+    "hub",
+    "contacto",
 )
 
 
@@ -98,6 +134,9 @@ def sanitize_next_path(path: str | None, default: str = "/") -> str:
         "/module/",
         "/soluciones/",
         "/entrar/",
+        "/app",
+        "/contacto",
+        "/explorar",
     )
     if p == "/" or any(p == a.rstrip("/") or p.startswith(a) for a in allowed):
         return p

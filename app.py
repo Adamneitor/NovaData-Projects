@@ -30,7 +30,13 @@ except ImportError:
     pass
 
 from database import User, create_and_seed, db, init_app as init_database
-from solutions import SOLUTIONS, get_solution, sanitize_next_path
+from solutions import (
+    SOLUTIONS,
+    default_entitlements,
+    enrich_solutions,
+    get_solution,
+    sanitize_next_path,
+)
 
 app = Flask(__name__)
 # Misma clave por defecto que Helios / helios_bridge (evita bucle SSO en Railway)
@@ -396,11 +402,82 @@ MOCK_CASOS = [
 
 @app.route("/")
 def launcher():
-    """Home pública: constelación NOVA (P0-02)."""
+    """Anónimo → marketing. Autenticado → hub de constelación."""
+    if session.get("user_id"):
+        return redirect(url_for("hub"))
+    return render_template(
+        "plataforma/marketing_home.html",
+        solutions=SOLUTIONS,
+    )
+
+
+@app.route("/explorar")
+def explorar():
+    """Home marketing siempre visible (también con sesión)."""
+    return render_template(
+        "plataforma/marketing_home.html",
+        solutions=SOLUTIONS,
+    )
+
+
+@app.route("/app")
+@login_required
+def hub():
+    """Hub post-login: productos del plan + Adquirir para el resto."""
+    user = _current_user()
+    entitled = default_entitlements()
     return render_template(
         "plataforma/launcher.html",
+        solutions=enrich_solutions(entitled),
+        logged=True,
+        user=user.to_session_dict() if user else None,
+    )
+
+
+@app.route("/contacto", methods=["GET", "POST"])
+def contacto():
+    producto = (request.values.get("producto") or "").strip().lower()
+    sol = get_solution(producto)
+    form = {
+        "nombre": (request.form.get("nombre") or "").strip(),
+        "empresa": (request.form.get("empresa") or "").strip(),
+        "correo": (request.form.get("correo") or "").strip(),
+        "mensaje": (request.form.get("mensaje") or "").strip(),
+    }
+    if request.method == "POST":
+        if not form["nombre"] or not form["empresa"] or not form["correo"]:
+            return render_template(
+                "plataforma/contacto.html",
+                solutions=SOLUTIONS,
+                producto=producto,
+                producto_label=sol["name"] if sol else None,
+                form=form,
+                error="Completa nombre, empresa y correo.",
+                sent=False,
+            )
+        app.logger.info(
+            "Contacto NOVA: %s | %s | %s | producto=%s | %s",
+            form["nombre"],
+            form["empresa"],
+            form["correo"],
+            producto or "constelacion",
+            (form["mensaje"] or "")[:200],
+        )
+        return render_template(
+            "plataforma/contacto.html",
+            solutions=SOLUTIONS,
+            producto=producto,
+            producto_label=sol["name"] if sol else None,
+            form={},
+            sent=True,
+        )
+    return render_template(
+        "plataforma/contacto.html",
         solutions=SOLUTIONS,
-        logged=bool(session.get("user_id")),
+        producto=producto,
+        producto_label=sol["name"] if sol else None,
+        form={},
+        sent=False,
     )
 
 
@@ -415,8 +492,11 @@ def entrar_solucion(solution_id):
     sol = get_solution(solution_id)
     if not sol:
         return redirect(url_for("launcher"))
-    if not sol["active"]:
-        return redirect(url_for("launcher", locked=sol["id"]))
+    entitled = default_entitlements()
+    if sol["id"] not in entitled:
+        return redirect(url_for("contacto", producto=sol["id"]))
+    if not sol.get("active"):
+        return redirect(url_for("hub", locked=sol["id"]))
     target = url_for(sol["home_endpoint"]) if sol.get("home_endpoint") else "/helios"
     if "user_id" not in session:
         return redirect(url_for("login", next=target))
@@ -513,14 +593,18 @@ def helios_entrar():
 # ---------- Auth ----------
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    next_path = sanitize_next_path(request.values.get("next"), "/")
+    next_path = sanitize_next_path(request.values.get("next"), "/app")
+    if next_path == "/":
+        next_path = "/app"
 
     if request.method == "POST":
         username = (request.form.get("username") or "").strip()
         if "\\" in username:
             username = username.split("\\")[-1].strip()
         password = request.form.get("password") or ""
-        next_path = sanitize_next_path(request.form.get("next"), "/")
+        next_path = sanitize_next_path(request.form.get("next"), "/app")
+        if next_path == "/":
+            next_path = "/app"
 
         user = User.query.filter_by(username=username, active=True).first()
         if user and check_password_hash(user.password_hash, password):

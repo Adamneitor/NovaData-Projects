@@ -1,0 +1,152 @@
+{% extends "base_claude.html" %}
+{% from "macros/nova_mark.html" import nova_mark, icon_helios, icon_hermes, icon_venus, icon_zeus, icon_ares %}
+{% block title %}NOVA · El impulso inteligente de tu crecimiento{% endblock %}
+{% block body_class %}page-marketing{% endblock %}
+{% block body %}
+<div class="mk">
+  <div class="mk__atmos" aria-hidden="true">
+    <div class="mk__grid"></div>
+    <div class="mk__glow mk__glow--a"></div>
+    <div class="mk__glow mk__glow--b"></div>
+  </div>
+
+  <header class="mk-nav">
+    <a href="{{ url_for('launcher') }}" class="mk-nav__brand" aria-label="NOVA">
+      {{ nova_mark(26, with_wordmark=true, variant='chrome') }}
+    </a>
+    <nav class="mk-nav__links" aria-label="Secciones">
+      <a href="#constelacion">Constelación</a>
+      <a href="#como">Cómo funciona</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <div class="mk-nav__actions">
+      <a class="mk-btn mk-btn--ghost" href="{{ url_for('login', next='/app') }}">Ingresar</a>
+      <a class="mk-btn mk-btn--solid" href="{{ url_for('contacto') }}">Hablar con nosotros</a>
+    </div>
+  </header>
+
+  <section class="mk-hero">
+    <div class="mk-hero__copy">
+      <p class="mk-kicker">Nova Data Solutions</p>
+      <h1>Una plataforma.<br>Cinco impulsos.<br><span>Un solo sistema.</span></h1>
+      <p class="mk-hero__lead">NOVA orquesta crédito, fidelidad, uso, cobranza y control operativo — en una constelación que crece contigo.</p>
+      <div class="mk-hero__cta">
+        <a class="mk-btn mk-btn--cta" href="{{ url_for('login', next='/app') }}">Ingresar</a>
+        <a class="mk-btn mk-btn--ghost" href="{{ url_for('contacto') }}">Hablar con nosotros</a>
+      </div>
+    </div>
+    <div class="mk-hero__visual" aria-hidden="true">
+      <div class="mk-hero__orb">
+        {{ nova_mark(88) }}
+        <span class="mk-hero__orb-ring"></span>
+        <span class="mk-hero__orb-ring mk-hero__orb-ring--2"></span>
+      </div>
+      <ul class="mk-hero__orbit-list">
+        <li style="--c:#5B52E8">Helios</li>
+        <li style="--c:#5FA98F">Hermes</li>
+        <li style="--c:#C4808F">Venus</li>
+        <li style="--c:#7B9BC9">Zeus</li>
+        <li style="--c:#9E9BA6">Ares</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="mk-section" id="constelacion">
+    <div class="mk-section__head">
+      <h2>La constelación NOVA</h2>
+      <p>Cinco soluciones. Una misma identidad. Activa las que tu operación necesita.</p>
+    </div>
+    <div class="mk-stars">
+      {% for s in solutions %}
+      <article class="mk-star mk-star--{{ s.id }} {% if s.active %}is-live{% endif %}">
+        <div class="mk-star__top">
+          <span class="mk-star__ico" style="color:{{ s.color }}">
+            {% if s.id == 'helios' %}{{ icon_helios(28) }}
+            {% elif s.id == 'hermes' %}{{ icon_hermes(28) }}
+            {% elif s.id == 'venus' %}{{ icon_venus(28) }}
+            {% elif s.id == 'zeus' %}{{ icon_zeus(28) }}
+            {% else %}{{ icon_ares(28) }}{% endif %}
+          </span>
+          {% if s.active %}
+          <span class="mk-badge mk-badge--live">En producción</span>
+          {% else %}
+          <span class="mk-badge">Adquirible</span>
+          {% endif %}
+        </div>
+        <h3>{{ s.name }}</h3>
+        <p class="mk-star__sub">{{ s.subtitle }}</p>
+        <p class="mk-star__desc">{{ s.pitch or s.desc }}</p>
+        {% if s.active %}
+        <a class="mk-star__link" href="{{ url_for('login', next='/helios') }}">Probar Helios →</a>
+        {% else %}
+        <a class="mk-star__link" href="{{ url_for('contacto', producto=s.id) }}">Adquirir →</a>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="mk-section mk-section--steps" id="como">
+    <div class="mk-section__head">
+      <h2>Cómo funciona</h2>
+      <p>De la conversación comercial al escritorio operativo en tres pasos.</p>
+    </div>
+    <ol class="mk-steps">
+      <li>
+        <span class="mk-steps__n">01</span>
+        <strong>Contrata</strong>
+        <p>Elige las soluciones de la constelación que tu institución necesita.</p>
+      </li>
+      <li>
+        <span class="mk-steps__n">02</span>
+        <strong>Activa</strong>
+        <p>Habilitamos tu plan. Solo ves desbloqueado lo que contrataste.</p>
+      </li>
+      <li>
+        <span class="mk-steps__n">03</span>
+        <strong>Opera</strong>
+        <p>Entras a NOVA y trabajas en un mismo shell — sin cambiar de marca.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="mk-section mk-section--why">
+    <div class="mk-section__head">
+      <h2>Por qué NOVA</h2>
+      <p>La meta no es hacer más. Es hacerlo mejor.</p>
+    </div>
+    <div class="mk-why">
+      <div>
+        <strong>Orquestación</strong>
+        <p>Una plataforma, una identidad, múltiples productos en órbita.</p>
+      </div>
+      <div>
+        <strong>Time-to-value</strong>
+        <p>Empieza con Helios hoy y activa el resto cuando el negocio lo pida.</p>
+      </div>
+      <div>
+        <strong>Control operativo</strong>
+        <p>Roles, planes y acceso por constelación — sin fragmentar la experiencia.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="mk-contact" id="contacto">
+    <div class="mk-contact__card">
+      <div>
+        <h2>¿Listo para activar tu constelación?</h2>
+        <p>Cuéntanos qué productos necesitas. Te respondemos con un plan claro.</p>
+      </div>
+      <div class="mk-contact__actions">
+        <a class="mk-btn mk-btn--cta" href="{{ url_for('contacto') }}">Ir a contacto</a>
+        <a class="mk-btn mk-btn--ghost" href="{{ url_for('login', next='/app') }}">Ya soy cliente · Ingresar</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="mk-foot">
+    <div class="mk-foot__brand">{{ nova_mark(22, with_wordmark=true, variant='chrome') }}</div>
+    <p>Nova Data Solutions · El impulso inteligente de tu crecimiento</p>
+  </footer>
+</div>
+{% endblock %}
