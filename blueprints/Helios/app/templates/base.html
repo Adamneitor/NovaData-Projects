@@ -14,12 +14,13 @@
   <link href="/static/css/helios.css" rel="stylesheet">
   {% block head_extra %}{% endblock %}
 </head>
-<body class="hx-app">
 {% set perfil = request.session.get('perfil_id', 0) %}
 {% set logged = request.session.get('user_id') %}
 {% set path = request.url.path %}
+{% set embed = embed if embed is defined else is_embed(request) %}
+<body class="hx-app{% if embed %} hx-embed{% endif %}">
 
-{% if logged and path not in ('/',) and not path.startswith('/login') %}
+{% if logged and not embed and path not in ('/',) and not path.startswith('/login') %}
 <button type="button" class="hx-topbar" id="hxMenuBtn" aria-label="Abrir menú">
   <i class="bi bi-list fs-4"></i>
   <span class="brand nova-brand nova-brand--light" style="gap:.35rem">
@@ -102,7 +103,7 @@
 </nav>
 {% endif %}
 
-<main class="{% if logged and path not in ('/',) and not path.startswith('/login') %}contenido{% else %}{% endif %}">
+<main class="{% if logged and not embed and path not in ('/',) and not path.startswith('/login') %}contenido{% elif embed %}contenido contenido--embed{% else %}{% endif %}">
   {% for f in get_flashes(request) %}
   <div class="alert alert-{{ f.c }} alert-dismissible fade show" role="alert">
     {{ f.m }}
@@ -113,7 +114,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-{% if logged and path not in ('/',) and not path.startswith('/login') %}
+{% if logged and not embed and path not in ('/',) and not path.startswith('/login') %}
 <script>
 (function () {
   const sidebar = document.getElementById('hxSidebar');
@@ -129,6 +130,24 @@
   }
   btn?.addEventListener('click', toggle);
   backdrop?.addEventListener('click', close);
+})();
+</script>
+{% endif %}
+{% if embed %}
+<script>
+(function () {
+  /* Si el login/portal intenta cargar dentro del iframe, salir al shell */
+  if (window.top !== window) {
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href]');
+      if (!a) return;
+      var href = a.getAttribute('href') || '';
+      if (href === '/' || href.indexOf('/login') === 0 || href.indexOf('/logout') === 0 || href.indexOf('/helios/w') === 0) {
+        e.preventDefault();
+        window.top.location.href = a.href;
+      }
+    }, true);
+  }
 })();
 </script>
 {% endif %}

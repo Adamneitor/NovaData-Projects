@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
 
+from app.embed import is_embed_request
 from app.services.dato_formato import (
     FORMATOS_POR_TIPO,
     format_dato,
@@ -33,8 +34,11 @@ templates.env.globals["resolve_formato"] = resolve_formato
 templates.env.globals["resolve_decimales"] = resolve_decimales
 templates.env.globals["input_attrs_for_dato"] = input_attrs_for_dato
 templates.env.globals["FORMATOS_POR_TIPO"] = FORMATOS_POR_TIPO
+templates.env.globals["is_embed"] = is_embed_request
 templates.env.filters["format_dato"] = lambda value, dato, locale="en_US": format_dato(dato, value, locale=locale)
 
 
 def render(request: Request, template: str, context: dict | None = None):
-    return templates.TemplateResponse(request, template, context or {})
+    ctx = dict(context or {})
+    ctx.setdefault("embed", is_embed_request(request))
+    return templates.TemplateResponse(request, template, ctx)

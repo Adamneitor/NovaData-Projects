@@ -87,6 +87,11 @@
 {% block extra_scripts %}
 <script>
 (function () {
+  /* Si el login cargó dentro del iframe Helios, salir al top */
+  if (window.top !== window) {
+    window.top.location.href = window.location.href;
+    return;
+  }
   var toggle = document.getElementById('toggle-password');
   var pwd = document.getElementById('password');
   if (toggle && pwd) {

@@ -143,6 +143,20 @@ a:hover { color: var(--nova-primary, #5B52E8); }
   max-width: 1440px;
 }
 
+/* Embebido en shell NOVA: sin sidebar, contenido a ancho completo */
+body.hx-embed {
+  background: var(--hx-bg);
+  min-height: 100%;
+}
+body.hx-embed .contenido,
+.contenido--embed {
+  margin-left: 0;
+  max-width: none;
+  min-height: 100%;
+  padding: 1.25rem 1.5rem 2rem;
+  width: 100%;
+}
+
 /* Mobile topbar */
 .hx-topbar {
   display: none;

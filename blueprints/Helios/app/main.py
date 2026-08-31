@@ -6,11 +6,13 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import SECRET_KEY
+from app.embed import EmbedMiddleware
 from app.routers import admin, apis, auth, casos, catalogos, flujos, platform
 
 app = FastAPI(title="NOVA · Helios BPM")
 # Cookie distinta de Flask (`session`) para no pisar el login del portal NOVA
 _https = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID"))
+app.add_middleware(EmbedMiddleware)
 app.add_middleware(
     SessionMiddleware,
     secret_key=SECRET_KEY,

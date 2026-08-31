@@ -444,20 +444,70 @@ def helios_home():
 @app.route("/helios/casos")
 @login_required
 def helios_casos():
-    """Compat: el BPM real vive en Helios FastAPI (/casos)."""
+    """Compat: abre Casos dentro del shell NOVA."""
+    return redirect(url_for("helios_workspace", to="/casos"))
+
+_HELIOS_NAV = (
+    ("/casos", "casos", "Casos"),
+    ("/catalogos/clientes", "clientes", "Clientes"),
+    ("/flujos", "flujos", "Flujos"),
+    ("/apis", "apis", "APIs"),
+    ("/catalogos/documentos", "documentos", "Documentos"),
+    ("/catalogos/datos", "datos", "Datos complementarios"),
+    ("/catalogos/tipos-flujo", "tipos", "Tipos de flujo"),
+    ("/admin/usuarios", "usuarios", "Usuarios"),
+    ("/admin/grupos", "grupos", "Grupos"),
+    ("/admin/politicas-password", "politicas", "Politicas"),
+    ("/admin/ambiente", "ambiente", "Ambiente"),
+)
+
+
+def _helios_nav_meta(path: str) -> tuple[str, str]:
+    base = path.split("?", 1)[0]
+    for prefix, nav, label in _HELIOS_NAV:
+        if base == prefix or base.startswith(prefix + "/"):
+            return nav, label
+    return "casos", "Casos"
+
+
+@app.route("/helios/w")
+@login_required
+def helios_workspace():
+    """Shell NOVA + iframe Helios (sin chrome propio)."""
     from flask import make_response
 
-    return _attach_sso_cookie(make_response(redirect("/casos")))
+    target = sanitize_next_path(request.args.get("to"), "/casos")
+    nav, label = _helios_nav_meta(target)
+    sep = "&" if "?" in target else "?"
+    iframe_src = f"{target}{sep}embed=1"
+    resp = make_response(
+        render_template(
+            "plataforma/helios_workspace.html",
+            iframe_src=iframe_src,
+            embed_path=target.split("?", 1)[0],
+            crumb_label=label,
+            nav_active=nav,
+        )
+    )
+    resp = _attach_sso_cookie(resp)
+    resp.set_cookie(
+        "nova_helios_embed",
+        "1",
+        max_age=60 * 60 * 12,
+        httponly=False,
+        samesite="Lax",
+        secure=_cookie_secure(),
+        path="/",
+    )
+    return resp
 
 
 @app.route("/helios/entrar")
 @login_required
 def helios_entrar():
-    """Handoff: reemite SSO y entra al módulo Helios (rompe bucle de cookies viejas)."""
-    from flask import make_response
-
+    """Handoff SSO a workspace embebido (no sale del shell NOVA)."""
     target = sanitize_next_path(request.args.get("to"), "/casos")
-    return _attach_sso_cookie(make_response(redirect(target)))
+    return redirect(url_for("helios_workspace", to=target))
 
 
 # ---------- Auth ----------
@@ -513,6 +563,7 @@ def logout():
 
     resp = make_response(redirect(url_for("launcher")))
     resp.set_cookie(SSO_COOKIE_NAME, "", max_age=0, path="/")
+    resp.set_cookie("nova_helios_embed", "", max_age=0, path="/")
     return resp
 
 

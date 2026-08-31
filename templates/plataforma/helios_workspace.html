@@ -1,0 +1,82 @@
+{% extends "shell_claude.html" %}
+{% block page_title %}{{ crumb_label }} · Helios · NOVA{% endblock %}
+{% block body_class %}page-shell page-shell--workspace{% endblock %}
+{% block breadcrumb %}
+<a href="{{ url_for('launcher') }}">NOVA</a><span class="sep">/</span>
+<a href="{{ url_for('helios_home') }}">Helios</a><span class="sep">/</span>
+<span class="cur" id="wsCrumb">{{ crumb_label }}</span>
+{% endblock %}
+{% block content %}
+<div class="nv-workspace">
+  <iframe
+    id="heliosFrame"
+    class="nv-workspace__frame"
+    title="Helios · {{ crumb_label }}"
+    src="{{ iframe_src }}"
+    referrerpolicy="same-origin"
+  ></iframe>
+</div>
+{% endblock %}
+{% block page_scripts %}
+<script>
+(function () {
+  var frame = document.getElementById('heliosFrame');
+  var crumb = document.getElementById('wsCrumb');
+  var labels = {
+    '/casos': 'Casos',
+    '/catalogos/clientes': 'Clientes',
+    '/flujos': 'Flujos',
+    '/apis': 'APIs',
+    '/catalogos/documentos': 'Documentos',
+    '/catalogos/datos': 'Datos complementarios',
+    '/catalogos/tipos-flujo': 'Tipos de flujo',
+    '/admin/usuarios': 'Usuarios',
+    '/admin/grupos': 'Grupos',
+    '/admin/politicas-password': 'Políticas',
+    '/admin/ambiente': 'Ambiente'
+  };
+  function labelFor(path) {
+    if (!path) return 'Helios';
+    if (labels[path]) return labels[path];
+    var keys = Object.keys(labels).sort(function (a, b) { return b.length - a.length; });
+    for (var i = 0; i < keys.length; i++) {
+      if (path === keys[i] || path.indexOf(keys[i] + '/') === 0) return labels[keys[i]];
+    }
+    return 'Helios';
+  }
+  function embedUrl(path) {
+    if (!path) path = '/casos';
+    return path + (path.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
+  }
+  function setActive(path) {
+    document.querySelectorAll('.nv-rail__link[data-helios-path]').forEach(function (a) {
+      var p = a.getAttribute('data-helios-path') || '';
+      var on = path === p || (p !== '/' && path.indexOf(p + '/') === 0) ||
+        (p === '/admin/usuarios' && path.indexOf('/admin/') === 0 && path.indexOf('/admin/ambiente') !== 0);
+      if (p.indexOf('/admin/') === 0) {
+        on = path === p || path.indexOf(p) === 0;
+      }
+      a.classList.toggle('is-active', on);
+    });
+    if (crumb) crumb.textContent = labelFor(path);
+  }
+  document.querySelectorAll('.nv-rail__link[data-helios-path]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var path = a.getAttribute('data-helios-path');
+      if (!path || !frame) return;
+      e.preventDefault();
+      frame.src = embedUrl(path);
+      setActive(path);
+      try {
+        history.replaceState(null, '', '/helios/w?to=' + encodeURIComponent(path));
+      } catch (err) {}
+      var rail = document.getElementById('appRail');
+      var overlay = document.getElementById('railOverlay');
+      if (rail) rail.classList.remove('is-open');
+      if (overlay) overlay.classList.remove('is-open');
+    });
+  });
+  setActive({{ embed_path|tojson }});
+})();
+</script>
+{% endblock %}

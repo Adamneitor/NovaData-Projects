@@ -103,14 +103,25 @@ def usuario_debe_cambiar_password(user: Usuario) -> bool:
 
 
 def _login_location(request: Request, *, sso_failed: bool = False) -> str:
-    path = request.url.path or "/helios"
+    path = request.url.path or "/casos"
     from urllib.parse import quote
 
-    if path.startswith("/login") or path == "/":
+    # Dentro del shell NOVA: volver al workspace, no a /casos a pantalla completa
+    try:
+        from app.embed import is_embed_request
+
+        embed = is_embed_request(request)
+    except Exception:
+        embed = False
+
+    if embed and path not in ("/",) and not path.startswith("/login"):
+        next_w = f"/helios/w?to={quote(path, safe='/')}"
+        base = f"/login?next={quote(next_w, safe='/?=&')}"
+    elif path.startswith("/login") or path == "/":
         base = "/login?next=/helios"
     else:
         base = f"/login?next={quote(path, safe='/')}"
-    # Evita bucle Flask↔Helios: si ya venía cookie SSO y falló, Flask no redirige otra vez
+
     if sso_failed or request.cookies.get("nova_helios_sso"):
         sep = "&" if "?" in base else "?"
         base = f"{base}{sep}sso=fail"

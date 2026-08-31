@@ -64,44 +64,63 @@
     <aside class="nv-rail" id="appRail">
       <div class="nv-rail__groups">
         <div>
+          <div class="nv-rail__label">Producto</div>
+          <a class="nv-rail__link {% if nav_active == 'home' %}is-active{% endif %}" href="{{ url_for('helios_home') }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
+            <span>Inicio Helios</span>
+          </a>
+        </div>
+        <div>
           <div class="nv-rail__label">Operación</div>
-          <a class="nv-rail__link {% if nav_active == 'casos' %}is-active{% endif %}" href="{{ url_for('helios_entrar', to='/casos') }}">
+          <a class="nv-rail__link {% if nav_active == 'casos' %}is-active{% endif %}" href="{{ url_for('helios_workspace', to='/casos') }}" data-helios-path="/casos">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="6" rx="1.5"></rect><rect x="3.5" y="14" width="17" height="6" rx="1.5"></rect></svg>
             <span>Casos</span>
           </a>
-          <a class="nv-rail__link" href="{{ url_for('helios_entrar', to='/catalogos/clientes') }}">
+          <a class="nv-rail__link {% if nav_active == 'clientes' %}is-active{% endif %}" href="{{ url_for('helios_workspace', to='/catalogos/clientes') }}" data-helios-path="/catalogos/clientes">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"></path><path d="M16 6.5a3 3 0 0 1 0 6"></path><path d="M17.5 20c0-2.4-.9-4.2-2.3-5.2"></path></svg>
             <span>Clientes 360</span>
           </a>
         </div>
         <div>
           <div class="nv-rail__label">Diseño BPM</div>
-          <a class="nv-rail__link" href="{{ url_for('helios_entrar', to='/flujos') }}">
+          <a class="nv-rail__link {% if nav_active == 'flujos' %}is-active{% endif %}" href="{{ url_for('helios_workspace', to='/flujos') }}" data-helios-path="/flujos">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="2.5"></circle><circle cx="6" cy="18" r="2.5"></circle><circle cx="18" cy="12" r="2.5"></circle><path d="M6 8.5v7"></path><path d="M8.5 6.8c4 .6 5.6 2.4 7 4.4"></path></svg>
             <span>Flujos</span>
           </a>
-          <a class="nv-rail__link" href="{{ url_for('helios_entrar', to='/apis') }}">
+          <a class="nv-rail__link {% if nav_active == 'apis' %}is-active{% endif %}" href="{{ url_for('helios_workspace', to='/apis') }}" data-helios-path="/apis">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v5"></path><path d="M15 3v5"></path><rect x="6.5" y="8" width="11" height="7" rx="2"></rect><path d="M12 15v6"></path></svg>
             <span>APIs</span>
           </a>
-          <a class="nv-rail__link" href="{{ url_for('helios_entrar', to='/catalogos/documentos') }}">
+          <a class="nv-rail__link {% if nav_active == 'documentos' %}is-active{% endif %}" href="{{ url_for('helios_workspace', to='/catalogos/documentos') }}" data-helios-path="/catalogos/documentos">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"></path><path d="M14 3v4h4"></path></svg>
             <span>Documentos</span>
           </a>
-          <a class="nv-rail__link" href="{{ url_for('helios_entrar', to='/catalogos/datos') }}">
+          <a class="nv-rail__link {% if nav_active == 'datos' %}is-active{% endif %}" href="{{ url_for('helios_workspace', to='/catalogos/datos') }}" data-helios-path="/catalogos/datos">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="14" y2="17"></line></svg>
             <span>Datos complementarios</span>
           </a>
-          <a class="nv-rail__link" href="{{ url_for('helios_entrar', to='/catalogos/tipos-flujo') }}">
+          <a class="nv-rail__link {% if nav_active == 'tipos' %}is-active{% endif %}" href="{{ url_for('helios_workspace', to='/catalogos/tipos-flujo') }}" data-helios-path="/catalogos/tipos-flujo">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5V5.5A1.5 1.5 0 0 1 5.5 4h5l9 9-6.5 6.5z"></path><circle cx="8" cy="8" r="1.3"></circle></svg>
             <span>Tipos de flujo</span>
           </a>
         </div>
         <div>
-          <div class="nv-rail__label">Administración</div>
-          <a class="nv-rail__link" href="{{ url_for('helios_entrar', to='/admin/usuarios') }}">
+          <div class="nv-rail__label">Seguridad</div>
+          <a class="nv-rail__link {% if nav_active == 'usuarios' %}is-active{% endif %}" href="{{ url_for('helios_workspace', to='/admin/usuarios') }}" data-helios-path="/admin/usuarios">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7.5a4 4 0 0 1 8 0V10"></path></svg>
-            <span>Seguridad</span>
+            <span>Usuarios</span>
+          </a>
+          <a class="nv-rail__link {% if nav_active == 'grupos' %}is-active{% endif %}" href="{{ url_for('helios_workspace', to='/admin/grupos') }}" data-helios-path="/admin/grupos">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.5"></circle><path d="M3.5 19c0-2.8 2.2-5 5.5-5s5.5 2.2 5.5 5"></path><path d="M16 19c0-2 .8-3.5 2.2-4.2"></path></svg>
+            <span>Grupos</span>
+          </a>
+          <a class="nv-rail__link {% if nav_active == 'politicas' %}is-active{% endif %}" href="{{ url_for('helios_workspace', to='/admin/politicas-password') }}" data-helios-path="/admin/politicas-password">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path></svg>
+            <span>Políticas</span>
+          </a>
+          <a class="nv-rail__link {% if nav_active == 'ambiente' %}is-active{% endif %}" href="{{ url_for('helios_workspace', to='/admin/ambiente') }}" data-helios-path="/admin/ambiente">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.4"></path><polyline points="18,3 18.5,8.5 13,8"></polyline><path d="M21 12a9 9 0 0 1-15.5 6.4"></path><polyline points="6,21 5.5,15.5 11,16"></polyline></svg>
+            <span>Reiniciar ambiente</span>
           </a>
         </div>
       </div>
@@ -110,7 +129,6 @@
         <span>Volver a NOVA</span>
       </a>
     </aside>
-
     <div class="nv-main">
       <nav class="nv-crumb" aria-label="Breadcrumb">
         {% block breadcrumb %}
