@@ -1,6 +1,6 @@
 {% extends "base_claude.html" %}
 {% from "macros/nova_mark.html" import nova_mark, icon_helios, icon_hermes, icon_venus, icon_zeus, icon_ares %}
-{% block title %}NOVA Projects · Framework de constelaciones{% endblock %}
+{% block title %}NOVA Projects{% endblock %}
 {% block body_class %}page-present page-present-v2{% endblock %}
 {% block body %}
 {% set login_url = url_for('login', next='/helios') %}
@@ -15,8 +15,6 @@
       <span class="nv-mk__badge">Projects</span>
     </a>
     <nav class="nv-mk__links" aria-label="Secciones">
-      <a href="#constelaciones">Constelaciones</a>
-      <a href="#framework">El framework</a>
       <a href="https://www.datanova.com.do/" target="_blank" rel="noopener">datanova.com.do ↗</a>
       <a class="nv-btn-brand nv-btn-brand--sm" href="{{ login_url }}">Ingresar</a>
     </nav>
@@ -24,9 +22,6 @@
 
   <section class="nv-mk__hero-v2">
     <div class="nv-mk__hero-copy">
-      <span class="nv-mk__live-badge">
-        <i></i>Framework de constelaciones
-      </span>
       <h1>Cinco constelaciones.<br><span class="nv-mk__grad">Un solo impulso.</span></h1>
       <p class="nv-mk__lede nv-mk__lede--left">
         Crédito, fidelidad, reactivación, cobranzas e inventario operando sobre el mismo shell,
@@ -44,38 +39,40 @@
 
     <div class="nv-mk__orbit-scene" aria-hidden="true">
       <div class="nv-mk__orbit-glow"></div>
-      <div class="nv-mk__orbit-rings">
-        <div class="nv-mk__ring nv-mk__ring--outer"><span class="nv-mk__star nv-mk__star--a"></span><span class="nv-mk__star nv-mk__star--b"></span></div>
-        <div class="nv-mk__ring nv-mk__ring--mid"><span class="nv-mk__star nv-mk__star--c"></span></div>
-        <div class="nv-mk__ring nv-mk__ring--inner"><span class="nv-mk__star nv-mk__star--d"></span></div>
-      </div>
-      <div class="nv-mk__orbit-core">
-        <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" width="46">
-      </div>
-      <div class="nv-mk__orbit-astro nv-mk__orbit-astro--helios">
-        <span class="nv-mk__orbit-icon">{{ icon_helios(24) }}</span>
-        <span class="nv-mk__orbit-label">Helios</span>
-      </div>
-      <div class="nv-mk__orbit-astro nv-mk__orbit-astro--hermes">
-        <span class="nv-mk__orbit-icon">{{ icon_hermes(21) }}</span>
-        <span class="nv-mk__orbit-label">Hermes</span>
-      </div>
-      <div class="nv-mk__orbit-astro nv-mk__orbit-astro--venus">
-        <span class="nv-mk__orbit-icon">{{ icon_venus(21) }}</span>
-        <span class="nv-mk__orbit-label">Venus</span>
-      </div>
-      <div class="nv-mk__orbit-astro nv-mk__orbit-astro--zeus">
-        <span class="nv-mk__orbit-icon">{{ icon_zeus(21) }}</span>
-        <span class="nv-mk__orbit-label">Zeus</span>
-      </div>
-      <div class="nv-mk__orbit-astro nv-mk__orbit-astro--ares">
-        <span class="nv-mk__orbit-icon">{{ icon_ares(21) }}</span>
-        <span class="nv-mk__orbit-label">Ares</span>
+      <div class="nv-mk__orbit-hub">
+        <div class="nv-mk__orbit-rings">
+          <div class="nv-mk__ring nv-mk__ring--outer"><span class="nv-mk__star nv-mk__star--a"></span><span class="nv-mk__star nv-mk__star--b"></span></div>
+          <div class="nv-mk__ring nv-mk__ring--mid"><span class="nv-mk__star nv-mk__star--c"></span></div>
+          <div class="nv-mk__ring nv-mk__ring--inner"><span class="nv-mk__star nv-mk__star--d"></span></div>
+        </div>
+        <div class="nv-mk__orbit-core">
+          <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" width="46">
+        </div>
+        <div class="nv-mk__orbit-astro nv-mk__orbit-astro--helios">
+          <span class="nv-mk__orbit-icon">{{ icon_helios(24) }}</span>
+          <span class="nv-mk__orbit-label">Helios</span>
+        </div>
+        <div class="nv-mk__orbit-astro nv-mk__orbit-astro--hermes">
+          <span class="nv-mk__orbit-icon">{{ icon_hermes(21) }}</span>
+          <span class="nv-mk__orbit-label">Hermes</span>
+        </div>
+        <div class="nv-mk__orbit-astro nv-mk__orbit-astro--venus">
+          <span class="nv-mk__orbit-icon">{{ icon_venus(21) }}</span>
+          <span class="nv-mk__orbit-label">Venus</span>
+        </div>
+        <div class="nv-mk__orbit-astro nv-mk__orbit-astro--zeus">
+          <span class="nv-mk__orbit-icon">{{ icon_zeus(21) }}</span>
+          <span class="nv-mk__orbit-label">Zeus</span>
+        </div>
+        <div class="nv-mk__orbit-astro nv-mk__orbit-astro--ares">
+          <span class="nv-mk__orbit-icon">{{ icon_ares(21) }}</span>
+          <span class="nv-mk__orbit-label">Ares</span>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="nv-mk__pillars" id="framework">
+  <section class="nv-mk__pillars" id="pilares">
     <div class="nv-mk__pillars-head">
       <span class="nv-mk__eyebrow">Por qué un framework</span>
       <h2>De los datos a la decisión</h2>
@@ -138,13 +135,11 @@
       <span class="nv-mk__eyebrow">La constelación</span>
       <h2>Conócelas en órbita</h2>
     </div>
-    <div class="nv-mk__chips" id="coverChips" role="tablist">
+    <nav class="nv-mk__names" id="coverNames" role="tablist" aria-label="Seleccionar astro">
       {% for s in solutions %}
-      <button type="button" class="nv-mk__chip {% if loop.first %}is-active{% endif %}" data-chip="{{ loop.index0 }}" style="--star:{{ s.color }}">
-        <i></i>{{ s.name }}
-      </button>
+      <button type="button" class="nv-mk__name {% if loop.first %}is-active{% endif %}" data-chip="{{ loop.index0 }}" style="--star:{{ s.color }}">{{ s.name }}</button>{% if not loop.last %}<span class="nv-mk__name-sep" aria-hidden="true">·</span>{% endif %}
       {% endfor %}
-    </div>
+    </nav>
 
     <div class="nv-mk__cover-stage">
       <div class="nv-mk__cover-track" id="coverTrack">
@@ -180,9 +175,10 @@
                 </li>
                 {% endfor %}
               </ul>
-              <div class="nv-mk__slide-actions">
-                <a class="nv-btn-brand" href="{{ login_url }}">Ingresar</a>
-                <a class="nv-btn-soft" href="{{ url_for('contacto', producto=s.id) }}">Adquirir</a>
+              <div class="nv-mk__slide-links">
+                <a href="{{ login_url }}">Ingresar</a>
+                <span aria-hidden="true">·</span>
+                <a href="{{ url_for('contacto', producto=s.id) }}">Adquirir</a>
               </div>
             </div>
             <div class="nv-mk__cover-demo">
@@ -279,7 +275,7 @@
   if (!track) return;
   var slides = Array.prototype.slice.call(track.querySelectorAll('.nv-mk__cover-slide'));
   var dots = Array.prototype.slice.call(document.querySelectorAll('#coverDots [data-dot]'));
-  var chips = Array.prototype.slice.call(document.querySelectorAll('#coverChips [data-chip]'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('#coverNames [data-chip]'));
   var n = slides.length;
   var i = 0;
   var timer = null;
