@@ -1601,7 +1601,12 @@ a.nv-astro--locked {
   background: rgba(156,163,175,.06); color: #E8E9F2 !important;
   font: 600 14.5px var(--font-ui); padding: 15px; text-decoration: none;
 }
-.nv-btn-soft:hover { border-color: rgba(156,163,175,.45); color: #F7F8FC !important; }
+.nv-link-ext {
+  color: #A9A3FF; font-weight: 600; text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.nv-link-ext:hover { color: #EAE8FE; }
+
 
 /* ========== CONTACTO ========== */
 .page-contact { background: var(--nova-void); min-height: 100vh; color: #E7EDF5; }
