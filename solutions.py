@@ -164,7 +164,6 @@ def sanitize_next_path(path: str | None, default: str = "/") -> str:
         "/module/",
         "/soluciones/",
         "/entrar/",
-        "/constelacion",
         "/contacto",
         "/explorar",
     )

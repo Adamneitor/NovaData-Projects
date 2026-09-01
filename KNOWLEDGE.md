@@ -1,6 +1,7 @@
 # Nova Projects — Knowledge Map
 
 ## Changelog
+- **2026-09-01**: Home público v2 (4a): hero orbital animado, pilares BI, carrusel coverflow; **sin post-login** — login → `/helios` directo; eliminados hub `/constelacion` y templates `launcher.html`/`constelacion.html`.
 - **2026-08-25**: BD persistente (SQLite local / Postgres Railway); catálogo NOVA público → login → Helios; shell alineado a marca; `init_db.py` + Procfile release.
 
 ## Stack
@@ -9,11 +10,12 @@
 - Identidad: logo `static/img/icon-n.png`, tokens `#5B52E8` / `#4A9FF5`, CSS `static/css/platform.css`
 
 ## Flujo UX
-1. `/` catálogo de soluciones (público)
-2. Click Helios → `/login?next=/helios` si no hay sesión
-3. `/helios` home producto
-4. `/home` portales internos legacy
-5. Hermes/Venus/Zeus/Ares → Próximamente
+1. `/` home público v2 (constelación en movimiento, carrusel coverflow) — anónimo
+2. Login → `/helios` shell directo (sin pantalla intermedia)
+3. `/explorar` — home marketing aunque haya sesión
+4. `/constelacion` y `/app` — legacy redirect → Helios
+5. Adquirir → `/contacto?producto=...`
+6. `/home` portales internos legacy
 
 ## Railway
 1. Servicio con root = carpeta `Nova Projects`
@@ -37,8 +39,8 @@ python app.py
 | App | `app.py` |
 | BD | `database.py`, `init_db.py` |
 | Soluciones | `solutions.py` |
-| Catálogo UI | `templates/plataforma/` |
-| Shell | `templates/shell.html` |
+| Catálogo UI | `templates/plataforma/marketing_home.html`, `contacto.html` |
+| CSS marca | `static/css/claude-nova.css` |
 
 ## Pitfalls
 - Helios BPM (FastAPI + SQL Server en `blueprints/Helios`) es aparte; Railway hostea este portal Flask.

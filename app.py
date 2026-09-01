@@ -229,17 +229,13 @@ def login_required(f):
     return decorated_function
 
 
-def nova_solution_required(f):
-    """Tras login, exige haber elegido constelación antes del shell de módulos."""
-
-    @wraps(f)
-    @login_required
-    def decorated_function(*args, **kwargs):
-        if not session.get("nova_solution"):
-            return redirect(url_for("constelacion"))
-        return f(*args, **kwargs)
-
-    return decorated_function
+def _post_login_url() -> str:
+    """Destino tras login: shell Helios (sin pantalla intermedia)."""
+    entitled = default_entitlements()
+    for sol in SOLUTIONS:
+        if sol["id"] in entitled and sol.get("active") and sol.get("home_endpoint"):
+            return url_for(sol["home_endpoint"])
+    return url_for("helios_home")
 
 
 def admin_required(f):
@@ -415,13 +411,9 @@ MOCK_CASOS = [
 
 @app.route("/")
 def launcher():
-    """Anónimo → marketing. Autenticado → selector de constelación."""
+    """Anónimo → home público v2. Autenticado → shell Helios."""
     if session.get("user_id"):
-        if session.get("nova_solution"):
-            sol = get_solution(session["nova_solution"])
-            if sol and sol.get("home_endpoint"):
-                return redirect(url_for(sol["home_endpoint"]))
-        return redirect(url_for("constelacion"))
+        return redirect(_post_login_url())
     return render_template(
         "plataforma/marketing_home.html",
         solutions=SOLUTIONS,
@@ -440,23 +432,15 @@ def explorar():
 @app.route("/constelacion")
 @login_required
 def constelacion():
-    """Selector obligatorio de constelación (post-login, diseño órbita P0-02)."""
-    session.pop("nova_solution", None)
-    user = _current_user()
-    entitled = default_entitlements()
-    return render_template(
-        "plataforma/constelacion.html",
-        solutions=enrich_solutions(entitled),
-        logged=True,
-        user=user.to_session_dict() if user else None,
-    )
+    """Legacy: ya no hay hub post-login."""
+    return redirect(_post_login_url())
 
 
 @app.route("/app")
 @login_required
 def hub():
-    """Legacy: redirige al selector de constelación."""
-    return redirect(url_for("constelacion"))
+    """Legacy: redirige al shell operativo."""
+    return redirect(_post_login_url())
 
 
 @app.route("/contacto", methods=["GET", "POST"])
@@ -517,7 +501,7 @@ def catalogo():
 def entrar_solucion(solution_id):
     sol = get_solution(solution_id)
     if not sol:
-        return redirect(url_for("constelacion"))
+        return redirect(_post_login_url())
     entitled = default_entitlements()
     if sol["id"] not in entitled:
         return redirect(url_for("contacto", producto=sol["id"]))
@@ -529,7 +513,7 @@ def entrar_solucion(solution_id):
 
 
 @app.route("/helios")
-@nova_solution_required
+@login_required
 def helios_home():
     sol = get_solution("helios")
     movimientos = [
@@ -547,7 +531,7 @@ def helios_home():
 
 
 @app.route("/helios/casos")
-@nova_solution_required
+@login_required
 def helios_casos():
     """Compat: abre Casos dentro del shell NOVA."""
     return redirect(url_for("helios_workspace", to="/casos"))
@@ -576,7 +560,7 @@ def _helios_nav_meta(path: str) -> tuple[str, str]:
 
 
 @app.route("/helios/w")
-@nova_solution_required
+@login_required
 def helios_workspace():
     """Shell NOVA + iframe Helios (sin chrome propio)."""
     from flask import make_response
@@ -608,7 +592,7 @@ def helios_workspace():
 
 
 @app.route("/helios/entrar")
-@nova_solution_required
+@login_required
 def helios_entrar():
     """Handoff SSO a workspace embebido (no sale del shell NOVA)."""
     target = sanitize_next_path(request.args.get("to"), "/casos")
@@ -618,22 +602,28 @@ def helios_entrar():
 # ---------- Auth ----------
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    next_path = sanitize_next_path(request.values.get("next"), "/constelacion")
+    default_next = "/helios"
+    next_path = sanitize_next_path(request.values.get("next"), default_next)
     if next_path == "/":
-        next_path = "/constelacion"
+        next_path = default_next
 
     if request.method == "POST":
         username = (request.form.get("username") or "").strip()
         if "\\" in username:
             username = username.split("\\")[-1].strip()
         password = request.form.get("password") or ""
-        next_path = sanitize_next_path(request.form.get("next"), "/constelacion")
+        next_path = sanitize_next_path(request.form.get("next"), default_next)
         if next_path == "/":
-            next_path = "/constelacion"
+            next_path = default_next
 
         user = User.query.filter_by(username=username, active=True).first()
         if user and check_password_hash(user.password_hash, password):
-            session.pop("nova_solution", None)
+            entitled = default_entitlements()
+            default_sol = next(
+                (s["id"] for s in SOLUTIONS if s["id"] in entitled and s.get("active")),
+                "helios",
+            )
+            session["nova_solution"] = default_sol
             session["user_id"] = user.id
             session["username"] = user.username
             session["user_role"] = user.role
