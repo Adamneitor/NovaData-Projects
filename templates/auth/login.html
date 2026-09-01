@@ -22,15 +22,14 @@
       </div>
 
       <form method="POST" id="login-form" novalidate>
-        <input type="hidden" name="next" value="{{ next_path or '/app' }}">
+        <input type="hidden" name="next" value="{{ next_path or '/constelacion' }}">
         {% if error %}
         <div class="nv-login__error" role="alert">{{ error }}</div>
         {% endif %}
 
         <div class="nv-field">
           <label for="username">Usuario</label>
-          <div class="nv-input nv-input--prefix">
-            <span class="nv-input__prefix" aria-hidden="true">BVIMENCA\</span>
+          <div class="nv-input">
             <input id="username" name="username" type="text" autocomplete="username" required autofocus placeholder="tu.usuario">
           </div>
         </div>

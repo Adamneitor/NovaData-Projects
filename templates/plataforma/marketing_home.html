@@ -18,7 +18,7 @@
       <a href="#constelaciones">Constelaciones</a>
       <a href="#plan">Cómo funciona</a>
       <a href="https://www.datanova.com.do/" target="_blank" rel="noopener">datanova.com.do ↗</a>
-      <a class="nv-btn-brand nv-btn-brand--sm" href="{{ url_for('login', next='/app') }}">Ingresar</a>
+      <a class="nv-btn-brand nv-btn-brand--sm" href="{{ url_for('login', next='/constelacion') }}">Ingresar</a>
     </nav>
   </header>
 
@@ -29,10 +29,10 @@
     <h1>Un shell. Cinco impulsos.</h1>
     <p class="nv-mk__lede">
       NOVA Projects es el framework operativo de la constelación: cada producto se contrata por plan,
-      se activa en tu shell y opera sobre los mismos datos. La meta no es hacer más. Es hacerlo mejor.
+      se adquiere para tu shell y opera sobre los mismos datos. La meta no es hacer más. Es hacerlo mejor.
     </p>
     <div class="nv-mk__cta">
-      <a class="nv-btn-brand" href="{{ url_for('login', next='/app') }}">
+      <a class="nv-btn-brand" href="{{ url_for('login', next='/constelacion') }}">
         Ingresar
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
       </a>
@@ -59,7 +59,7 @@
     <div class="nv-mk__track-wrap">
       <div class="nv-mk__track" id="carouselTrack">
         {% for s in solutions %}
-        <article class="nv-mk__slide {% if s.active %}nv-mk__slide--live{% endif %}" data-slide="{{ loop.index0 }}" style="--star:{{ s.color }}">
+        <article class="nv-mk__slide" data-slide="{{ loop.index0 }}" style="--star:{{ s.color }}">
           <div class="nv-mk__slide-main">
             <div class="nv-mk__slide-title">
               <span class="nv-mk__slide-icon">
@@ -72,11 +72,6 @@
               <div>
                 <div class="nv-mk__slide-name-row">
                   <span class="nv-mk__slide-name">{{ s.name|upper }}</span>
-                  {% if s.active %}
-                  <span class="nv-pill-on"><i></i><span>Disponible</span></span>
-                  {% else %}
-                  <span class="nv-pill-lock">Roadmap</span>
-                  {% endif %}
                 </div>
                 <span class="nv-mk__slide-sub">{{ s.subtitle }}</span>
               </div>
@@ -85,27 +80,18 @@
             <ul class="nv-mk__caps">
               {% for c in s.capabilities %}
               <li>
-                {% if s.active %}
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8B84FF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5,13 10,18 19,7"></polyline></svg>
-                {% else %}
-                <span class="nv-mk__dot" style="background:{{ s.color }}"></span>
-                {% endif %}
                 {{ c }}
               </li>
               {% endfor %}
             </ul>
           </div>
           <div class="nv-mk__slide-side">
-            {% if s.active %}
-            <a class="nv-btn-brand" href="{{ url_for('login', next='/helios') }}">
-              Entrar a Helios
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
-            </a>
-            <p>En producción · BPM, casos, flujos, APIs y catálogos</p>
-            {% else %}
-            <a class="nv-btn-soft" href="{{ url_for('contacto', producto=s.id) }}">Solicitar activación</a>
+            <div class="nv-mk__slide-actions">
+              <a class="nv-btn-brand" href="{{ url_for('login', next='/constelacion') }}">Ingresar</a>
+              <a class="nv-btn-soft" href="{{ url_for('contacto', producto=s.id) }}">Adquirir</a>
+            </div>
             <p>Se habilita por plan sobre el mismo shell NOVA</p>
-            {% endif %}
           </div>
         </article>
         {% endfor %}
@@ -127,8 +113,8 @@
 
   <section class="nv-mk__plan" id="plan">
     <div class="nv-mk__plan-head">
-      <span class="nv-mk__eyebrow">Cómo se activa el plan</span>
-      <h2>Contrata, activa, opera</h2>
+      <span class="nv-mk__eyebrow">Cómo se adquiere el plan</span>
+      <h2>Contrata, adquiere, opera</h2>
     </div>
     <div class="nv-mk__steps">
       <article>
@@ -136,12 +122,12 @@
         <p>Eliges los productos de tu plan. Cada constelación es un módulo independiente con licenciamiento propio.</p>
       </article>
       <article>
-        <div class="nv-mk__step-label"><span>2</span><strong>Activa</strong></div>
-        <p>El producto se enciende en tu shell: mismos usuarios, misma sesión, mismos datos. Sin instalaciones paralelas.</p>
+        <div class="nv-mk__step-label"><span>2</span><strong>Adquiere</strong></div>
+        <p>El producto se habilita en tu shell: mismos usuarios, misma sesión, mismos datos. Sin instalaciones paralelas.</p>
       </article>
       <article>
         <div class="nv-mk__step-label"><span>3</span><strong>Opera</strong></div>
-        <p>Tu equipo trabaja en el hub «Tu constelación»: menos operación repetitiva, más foco estratégico.</p>
+        <p>Tu equipo elige la constelación y opera en el shell NOVA: menos operación repetitiva, más foco estratégico.</p>
       </article>
     </div>
   </section>

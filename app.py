@@ -229,6 +229,19 @@ def login_required(f):
     return decorated_function
 
 
+def nova_solution_required(f):
+    """Tras login, exige haber elegido constelación antes del shell de módulos."""
+
+    @wraps(f)
+    @login_required
+    def decorated_function(*args, **kwargs):
+        if not session.get("nova_solution"):
+            return redirect(url_for("constelacion"))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -402,9 +415,13 @@ MOCK_CASOS = [
 
 @app.route("/")
 def launcher():
-    """Anónimo → marketing. Autenticado → hub de constelación."""
+    """Anónimo → marketing. Autenticado → selector de constelación."""
     if session.get("user_id"):
-        return redirect(url_for("hub"))
+        if session.get("nova_solution"):
+            sol = get_solution(session["nova_solution"])
+            if sol and sol.get("home_endpoint"):
+                return redirect(url_for(sol["home_endpoint"]))
+        return redirect(url_for("constelacion"))
     return render_template(
         "plataforma/marketing_home.html",
         solutions=SOLUTIONS,
@@ -420,18 +437,26 @@ def explorar():
     )
 
 
-@app.route("/app")
+@app.route("/constelacion")
 @login_required
-def hub():
-    """Hub post-login: productos del plan + Adquirir para el resto."""
+def constelacion():
+    """Selector obligatorio de constelación (post-login, diseño órbita P0-02)."""
+    session.pop("nova_solution", None)
     user = _current_user()
     entitled = default_entitlements()
     return render_template(
-        "plataforma/launcher.html",
+        "plataforma/constelacion.html",
         solutions=enrich_solutions(entitled),
         logged=True,
         user=user.to_session_dict() if user else None,
     )
+
+
+@app.route("/app")
+@login_required
+def hub():
+    """Legacy: redirige al selector de constelación."""
+    return redirect(url_for("constelacion"))
 
 
 @app.route("/contacto", methods=["GET", "POST"])
@@ -488,23 +513,23 @@ def catalogo():
 
 
 @app.route("/entrar/<solution_id>")
+@login_required
 def entrar_solucion(solution_id):
     sol = get_solution(solution_id)
     if not sol:
-        return redirect(url_for("launcher"))
+        return redirect(url_for("constelacion"))
     entitled = default_entitlements()
     if sol["id"] not in entitled:
         return redirect(url_for("contacto", producto=sol["id"]))
     if not sol.get("active"):
-        return redirect(url_for("hub", locked=sol["id"]))
+        return redirect(url_for("contacto", producto=sol["id"]))
+    session["nova_solution"] = sol["id"]
     target = url_for(sol["home_endpoint"]) if sol.get("home_endpoint") else "/helios"
-    if "user_id" not in session:
-        return redirect(url_for("login", next=target))
     return redirect(target)
 
 
 @app.route("/helios")
-@login_required
+@nova_solution_required
 def helios_home():
     sol = get_solution("helios")
     movimientos = [
@@ -522,7 +547,7 @@ def helios_home():
 
 
 @app.route("/helios/casos")
-@login_required
+@nova_solution_required
 def helios_casos():
     """Compat: abre Casos dentro del shell NOVA."""
     return redirect(url_for("helios_workspace", to="/casos"))
@@ -551,7 +576,7 @@ def _helios_nav_meta(path: str) -> tuple[str, str]:
 
 
 @app.route("/helios/w")
-@login_required
+@nova_solution_required
 def helios_workspace():
     """Shell NOVA + iframe Helios (sin chrome propio)."""
     from flask import make_response
@@ -583,7 +608,7 @@ def helios_workspace():
 
 
 @app.route("/helios/entrar")
-@login_required
+@nova_solution_required
 def helios_entrar():
     """Handoff SSO a workspace embebido (no sale del shell NOVA)."""
     target = sanitize_next_path(request.args.get("to"), "/casos")
@@ -593,21 +618,22 @@ def helios_entrar():
 # ---------- Auth ----------
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    next_path = sanitize_next_path(request.values.get("next"), "/app")
+    next_path = sanitize_next_path(request.values.get("next"), "/constelacion")
     if next_path == "/":
-        next_path = "/app"
+        next_path = "/constelacion"
 
     if request.method == "POST":
         username = (request.form.get("username") or "").strip()
         if "\\" in username:
             username = username.split("\\")[-1].strip()
         password = request.form.get("password") or ""
-        next_path = sanitize_next_path(request.form.get("next"), "/app")
+        next_path = sanitize_next_path(request.form.get("next"), "/constelacion")
         if next_path == "/":
-            next_path = "/app"
+            next_path = "/constelacion"
 
         user = User.query.filter_by(username=username, active=True).first()
         if user and check_password_hash(user.password_hash, password):
+            session.pop("nova_solution", None)
             session["user_id"] = user.id
             session["username"] = user.username
             session["user_role"] = user.role

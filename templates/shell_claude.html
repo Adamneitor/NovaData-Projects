@@ -9,7 +9,7 @@
       <button type="button" class="nv-burger" id="railToggle" aria-label="Menú">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
       </button>
-      <a href="{{ url_for('hub') if user else url_for('launcher') }}" class="nv-topbar__brand" aria-label="NOVA">
+      <a href="{{ url_for('constelacion') if user else url_for('launcher') }}" class="nv-topbar__brand" aria-label="NOVA">
         {{ nova_mark(22, with_wordmark=true, variant='chrome') }}
       </a>
     </div>
@@ -57,7 +57,7 @@
         </button>
         {% endfor %}
       </div>
-      <a class="nv-switcher__foot" href="{{ url_for('launcher') }}">Ver toda la constelación →</a>
+      <a class="nv-switcher__foot" href="{{ url_for('constelacion') }}">Ver toda la constelación →</a>
       </div>
     </div>
   </header>
@@ -128,7 +128,7 @@
           </a>
         </div>
       </div>
-      <a class="nv-rail__back" href="{{ url_for('hub') if user else url_for('launcher') }}">
+      <a class="nv-rail__back" href="{{ url_for('constelacion') }}">
         <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" width="15" height="15" style="width:15px;height:auto;opacity:.85">
         <span>Volver a NOVA</span>
       </a>
@@ -164,7 +164,7 @@
     <div class="nv-modal__foot">
       <span class="nv-modal__hint">Sigues dentro de Helios; nada de tu trabajo se pierde.</span>
       <div class="nv-modal__actions">
-        <a class="nv-btn-ghost" href="{{ url_for('launcher') }}">Ver constelación</a>
+        <a class="nv-btn-ghost" href="{{ url_for('constelacion') }}">Ver constelación</a>
         <button type="button" class="nv-btn-solid" id="lockedClose">Seguir en Helios</button>
       </div>
     </div>
@@ -206,7 +206,7 @@
   function openLocked(name, subtitle, tag, id) {
     title.textContent = name;
     sub.textContent = subtitle || '';
-    body.textContent = (tag || '') + ' Se habilitará en una fase posterior.';
+    body.textContent = (tag || '') + ' Puedes adquirirlo para tu plan desde el formulario de contacto.';
     if (dot) dot.className = 'nv-modal__dot nv-modal__dot--' + (id || 'hermes');
     toggleSwitcher(false);
     modal.classList.add('is-open');

@@ -337,8 +337,12 @@ input:focus-visible, button:focus-visible, a:focus-visible {
   background: linear-gradient(158deg, rgba(91,82,232,.18), rgba(91,82,232,.03) 62%, rgba(7,11,20,.4));
   border: 1px solid rgba(91,82,232,.42);
   box-shadow: 0 26px 70px -22px rgba(91,82,232,.45);
-  color: inherit; text-decoration: none; display: block;
+  color: inherit; text-decoration: none;
   animation-delay: 60ms;
+}
+.nv-astro--helios.nv-astro--pick {
+  display: flex;
+  flex-direction: column;
 }
 .nv-astro--helios:hover {
   border-color: rgba(91,82,232,.7);
@@ -382,6 +386,24 @@ input:focus-visible, button:focus-visible, a:focus-visible {
   background: var(--nova-gradient); color: #FFFFFF;
   font: 800 15px var(--font-ui); padding: 14px; cursor: pointer;
   pointer-events: none;
+}
+.nv-astro__actions {
+  display: flex; flex-direction: column; gap: 8px;
+  width: 100%; margin-top: 4px;
+}
+.nv-astro__actions .nv-btn-brand,
+.nv-astro__actions .nv-btn-soft {
+  width: 100%; padding: 11px 12px; font-size: 13px;
+}
+.nv-astro--pick.nv-astro--locked {
+  width: 184px;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+}
+.nv-astro--pick.nv-astro--locked .nv-astro__name {
+  font-size: 18px;
+  letter-spacing: .04em;
 }
 .nv-astro--locked {
   width: 164px; border-radius: 18px; padding: 16px 16px 14px;
@@ -1577,6 +1599,24 @@ a.nv-astro--locked {
 .lg-out a { color: #8B84FF; font-weight: 600; }
 .lg-out a:hover { color: #C4BFFF; }
 
+/* Login: solo borde iluminado al focus, interior plano */
+.page-login .nv-input {
+  background: #14132B;
+  border: 1px solid rgba(156,163,175,.26);
+  box-shadow: none;
+}
+.page-login .nv-input:focus-within {
+  border-color: #5B52E8;
+  box-shadow: none;
+}
+.page-login .nv-input input {
+  background: transparent;
+}
+.page-login input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .nv-btn-brand {
   display: inline-flex; align-items: center; justify-content: center; gap: 9px;
   border: 0; border-radius: 11px;
@@ -1791,9 +1831,12 @@ a.nv-astro--locked {
   border: 1px solid color-mix(in srgb, var(--star, #9E9BA6) 32%, transparent);
   display: grid; grid-template-columns: 1fr minmax(220px, 300px); gap: 40px; align-items: center;
 }
-.nv-mk__slide--live {
-  background: linear-gradient(150deg, rgba(91,82,232,.2), rgba(74,159,245,.06) 55%, rgba(20,19,43,.9));
-  border-color: rgba(139,132,255,.4);
+.nv-mk__slide-actions {
+  display: flex; flex-direction: column; gap: 10px; width: 100%;
+}
+.nv-mk__slide-actions .nv-btn-brand,
+.nv-mk__slide-actions .nv-btn-soft {
+  width: 100%; justify-content: center;
 }
 .nv-mk__slide-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .nv-mk__slide-title { display: flex; align-items: center; gap: 14px; }
