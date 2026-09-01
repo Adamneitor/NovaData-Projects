@@ -1,157 +1,208 @@
 {% extends "base_claude.html" %}
 {% from "macros/nova_mark.html" import nova_mark, icon_helios, icon_hermes, icon_venus, icon_zeus, icon_ares %}
 {% block title %}NOVA Projects · Framework de constelaciones{% endblock %}
-{% block body_class %}page-launcher page-present{% endblock %}
+{% block body_class %}page-present{% endblock %}
 {% block body %}
-<div class="nv-launch nv-present">
-  <div class="nv-launch__atmos" aria-hidden="true">
-    <div class="nv-launch__grid"></div>
-    <div class="nv-launch__glow--amber"></div>
-    <div class="nv-launch__glow--cyan"></div>
+<div class="nv-mk">
+  <div class="nv-mk__atmos" aria-hidden="true">
+    <div class="nv-mk__grid"></div>
+    <div class="nv-mk__halo nv-mk__halo--top"></div>
   </div>
 
-  <header class="nv-launch__top">
-    <a href="{{ url_for('launcher') }}" class="nv-launch__brand" aria-label="NOVA">
+  <header class="nv-mk__nav">
+    <a href="{{ url_for('launcher') }}" class="nv-mk__brand" aria-label="NOVA Projects">
       {{ nova_mark(28, with_wordmark=true, variant='chrome') }}
+      <span class="nv-mk__badge">Projects</span>
     </a>
-    <div class="nv-launch__user">
-      <a class="nv-launch__out" href="https://www.datanova.com.do/" target="_blank" rel="noopener">Nova Data Solutions</a>
-      <span class="nv-launch__sep" aria-hidden="true"></span>
-      <a class="nv-launch__in" href="{{ url_for('login', next='/app') }}">Ingresar</a>
-    </div>
+    <nav class="nv-mk__links" aria-label="Secciones">
+      <a href="#constelaciones">Constelaciones</a>
+      <a href="#plan">Cómo funciona</a>
+      <a href="https://www.datanova.com.do/" target="_blank" rel="noopener">datanova.com.do ↗</a>
+      <a class="nv-btn-brand nv-btn-brand--sm" href="{{ url_for('login', next='/app') }}">Ingresar</a>
+    </nav>
   </header>
 
-  <div class="nv-launch__copy nv-present__copy">
-    <p class="nv-present__kicker">NOVA Projects · Framework</p>
-    <h1>La constelación<br>de soluciones</h1>
-    <p class="lead">Un solo shell. Cinco impulsos. Acceso por plan.</p>
-    <div class="nv-launch__rule"></div>
-    <p class="body">
-      <strong>NOVA Projects</strong> es el marco operativo donde viven Helios, Hermes, Venus, Zeus y Ares.
-      Aquí presentamos el framework con detalle; la firma y la consultoría están en
-      <a class="nv-present__ext" href="https://www.datanova.com.do/" target="_blank" rel="noopener">datanova.com.do</a>.
+  <section class="nv-mk__hero">
+    <div class="nv-mk__lockup">
+      {{ nova_mark(76, with_wordmark=true, variant='hero') }}
+    </div>
+    <h1>Un shell. Cinco impulsos.</h1>
+    <p class="nv-mk__lede">
+      NOVA Projects es el framework operativo de la constelación: cada producto se contrata por plan,
+      se activa en tu shell y opera sobre los mismos datos. La meta no es hacer más. Es hacerlo mejor.
     </p>
-    <div class="nv-present__cta">
-      <a class="nv-launch__in" href="{{ url_for('login', next='/app') }}">Ingresar a la plataforma</a>
-      <a class="nv-present__ghost" href="#carousel">Ver constelaciones</a>
+    <div class="nv-mk__cta">
+      <a class="nv-btn-brand" href="{{ url_for('login', next='/app') }}">
+        Ingresar
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
+      </a>
+      <a class="nv-btn-ghost" href="https://www.datanova.com.do/" target="_blank" rel="noopener">Nova Data Solutions ↗</a>
     </div>
-  </div>
+    <p class="nv-mk__hint">Consultoría, diagnóstico y propuesta corporativa en datanova.com.do</p>
+  </section>
 
-  <div class="nv-launch__foot nv-present__foot">
-    <span class="label">Presentación de producto</span>
-    <p class="quote">La meta no es hacer más. Es hacerlo mejor.</p>
-  </div>
-
-  {# Carrusel estilo hub (misma estética de astros) #}
-  <div class="nv-carousel" id="carousel" aria-roledescription="carrusel" aria-label="Constelaciones NOVA">
-    <svg class="nv-carousel__orbits" viewBox="0 0 560 520" fill="none" aria-hidden="true">
-      <ellipse cx="280" cy="260" rx="240" ry="220" stroke="rgba(148,163,184,.14)"></ellipse>
-      <ellipse cx="280" cy="260" rx="170" ry="155" stroke="rgba(148,163,184,.09)"></ellipse>
-      <circle cx="280" cy="260" r="6" fill="rgba(91,82,232,.55)"></circle>
-    </svg>
-
-    <div class="nv-carousel__stage">
-      {% for s in solutions %}
-      <article
-        class="nv-carousel__slide nv-astro nv-astro--helios nv-carousel__slide--{{ s.id }} {% if loop.first %}is-active{% endif %}"
-        data-slide="{{ loop.index0 }}"
-        data-id="{{ s.id }}"
-        {% if not loop.first %}aria-hidden="true"{% endif %}
-        style="--star:{{ s.color }}"
-      >
-        <div class="nv-astro__head">
-          <span class="nv-astro__icon" style="color:{{ s.color }}">
-            {% if s.id == 'helios' %}{{ icon_helios(40) }}
-            {% elif s.id == 'hermes' %}{{ icon_hermes(40) }}
-            {% elif s.id == 'venus' %}{{ icon_venus(40) }}
-            {% elif s.id == 'zeus' %}{{ icon_zeus(40) }}
-            {% else %}{{ icon_ares(40) }}{% endif %}
-          </span>
-          {% if s.active %}
-          <span class="nv-pill-on"><i></i><span>Disponible</span></span>
-          {% else %}
-          <span class="nv-pill-lock">En roadmap</span>
-          {% endif %}
-        </div>
-        <span class="nv-astro__name">{{ s.name|upper }}</span>
-        <span class="nv-astro__sub" style="color:{{ s.color }}">{{ s.subtitle }}</span>
-        <p class="nv-astro__desc">{{ s.pitch or s.desc }}</p>
-        <p class="nv-carousel__tagline">{{ s.tagline }}</p>
-        {% if s.active %}
-        <a class="nv-astro__cta" style="pointer-events:auto" href="{{ url_for('login', next='/helios') }}">
-          Ver en plataforma
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
-        </a>
-        {% else %}
-        <a class="nv-astro__cta nv-astro__cta--soft" style="pointer-events:auto" href="{{ url_for('contacto', producto=s.id) }}">
-          Solicitar activación →
-        </a>
-        {% endif %}
-      </article>
-      {% endfor %}
-    </div>
-
-    <div class="nv-carousel__controls">
-      <button type="button" class="nv-carousel__btn" id="carouselPrev" aria-label="Anterior">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15,6 9,12 15,18"></polyline></svg>
-      </button>
-      <div class="nv-carousel__dots" id="carouselDots" role="tablist">
+  <section class="nv-mk__carousel" id="constelaciones" aria-roledescription="carrusel" aria-label="Constelaciones NOVA">
+    <div class="nv-mk__carousel-head">
+      <div>
+        <span class="nv-mk__eyebrow">La constelación</span>
+        <h2>Cinco soluciones, un mismo cielo</h2>
+      </div>
+      <div class="nv-mk__chips" id="carouselChips" role="tablist">
         {% for s in solutions %}
-        <button type="button" class="nv-carousel__dot {% if loop.first %}is-active{% endif %}" data-dot="{{ loop.index0 }}" aria-label="{{ s.name }}" style="--star:{{ s.color }}"></button>
+        <button type="button" class="nv-mk__chip {% if loop.first %}is-active{% endif %}" data-chip="{{ loop.index0 }}" style="--star:{{ s.color }}">
+          <i></i>{{ s.name }}
+        </button>
         {% endfor %}
       </div>
-      <button type="button" class="nv-carousel__btn" id="carouselNext" aria-label="Siguiente">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9,6 15,12 9,18"></polyline></svg>
+    </div>
+
+    <div class="nv-mk__track-wrap">
+      <div class="nv-mk__track" id="carouselTrack">
+        {% for s in solutions %}
+        <article class="nv-mk__slide {% if s.active %}nv-mk__slide--live{% endif %}" data-slide="{{ loop.index0 }}" style="--star:{{ s.color }}">
+          <div class="nv-mk__slide-main">
+            <div class="nv-mk__slide-title">
+              <span class="nv-mk__slide-icon">
+                {% if s.id == 'helios' %}{{ icon_helios(28) }}
+                {% elif s.id == 'hermes' %}{{ icon_hermes(28) }}
+                {% elif s.id == 'venus' %}{{ icon_venus(28) }}
+                {% elif s.id == 'zeus' %}{{ icon_zeus(28) }}
+                {% else %}{{ icon_ares(28) }}{% endif %}
+              </span>
+              <div>
+                <div class="nv-mk__slide-name-row">
+                  <span class="nv-mk__slide-name">{{ s.name|upper }}</span>
+                  {% if s.active %}
+                  <span class="nv-pill-on"><i></i><span>Disponible</span></span>
+                  {% else %}
+                  <span class="nv-pill-lock">Roadmap</span>
+                  {% endif %}
+                </div>
+                <span class="nv-mk__slide-sub">{{ s.subtitle }}</span>
+              </div>
+            </div>
+            <p class="nv-mk__slide-quote">«{{ s.tagline }}»</p>
+            <ul class="nv-mk__caps">
+              {% for c in s.capabilities %}
+              <li>
+                {% if s.active %}
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8B84FF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5,13 10,18 19,7"></polyline></svg>
+                {% else %}
+                <span class="nv-mk__dot" style="background:{{ s.color }}"></span>
+                {% endif %}
+                {{ c }}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div class="nv-mk__slide-side">
+            {% if s.active %}
+            <a class="nv-btn-brand" href="{{ url_for('login', next='/helios') }}">
+              Entrar a Helios
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
+            </a>
+            <p>En producción · BPM, casos, flujos, APIs y catálogos</p>
+            {% else %}
+            <a class="nv-btn-soft" href="{{ url_for('contacto', producto=s.id) }}">Solicitar activación</a>
+            <p>Se habilita por plan sobre el mismo shell NOVA</p>
+            {% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      <button type="button" class="nv-mk__arrow nv-mk__arrow--prev" id="carouselPrev" aria-label="Anterior">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="14,6 8,12 14,18"></polyline></svg>
+      </button>
+      <button type="button" class="nv-mk__arrow nv-mk__arrow--next" id="carouselNext" aria-label="Siguiente">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="10,6 16,12 10,18"></polyline></svg>
       </button>
     </div>
 
-    <div class="nv-carousel__rail" aria-hidden="true">
+    <div class="nv-mk__dots" id="carouselDots" role="tablist">
       {% for s in solutions %}
-      <span class="nv-carousel__chip {% if loop.first %}is-active{% endif %}" data-chip="{{ loop.index0 }}" style="--star:{{ s.color }}">{{ s.name }}</span>
+      <button type="button" class="nv-mk__dot-btn {% if loop.first %}is-active{% endif %}" data-dot="{{ loop.index0 }}" aria-label="{{ s.name }}" style="--star:{{ s.color }}"></button>
       {% endfor %}
     </div>
-  </div>
+  </section>
+
+  <section class="nv-mk__plan" id="plan">
+    <div class="nv-mk__plan-head">
+      <span class="nv-mk__eyebrow">Cómo se activa el plan</span>
+      <h2>Contrata, activa, opera</h2>
+    </div>
+    <div class="nv-mk__steps">
+      <article>
+        <div class="nv-mk__step-label"><span>1</span><strong>Contrata</strong></div>
+        <p>Eliges los productos de tu plan. Cada constelación es un módulo independiente con licenciamiento propio.</p>
+      </article>
+      <article>
+        <div class="nv-mk__step-label"><span>2</span><strong>Activa</strong></div>
+        <p>El producto se enciende en tu shell: mismos usuarios, misma sesión, mismos datos. Sin instalaciones paralelas.</p>
+      </article>
+      <article>
+        <div class="nv-mk__step-label"><span>3</span><strong>Opera</strong></div>
+        <p>Tu equipo trabaja en el hub «Tu constelación»: menos operación repetitiva, más foco estratégico.</p>
+      </article>
+    </div>
+  </section>
+
+  <footer class="nv-mk__foot">
+    <div class="nv-mk__foot-brand">
+      <img src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" width="20" height="20">
+      <span class="nv-mk__foot-word">NOVA</span>
+      <span>· El impulso inteligente de tu crecimiento</span>
+    </div>
+    <div class="nv-mk__foot-links">
+      <a href="https://www.datanova.com.do/" target="_blank" rel="noopener">Consultoría y firma ↗ datanova.com.do</a>
+      <span>© 2026 Nova Data Solutions</span>
+    </div>
+  </footer>
 </div>
 {% endblock %}
 {% block extra_scripts %}
 <script>
 (function () {
-  var root = document.getElementById('carousel');
-  if (!root) return;
-  var slides = Array.prototype.slice.call(root.querySelectorAll('.nv-carousel__slide'));
-  var dots = Array.prototype.slice.call(root.querySelectorAll('.nv-carousel__dot'));
-  var chips = Array.prototype.slice.call(root.querySelectorAll('.nv-carousel__chip'));
+  var track = document.getElementById('carouselTrack');
+  if (!track) return;
+  var slides = Array.prototype.slice.call(track.querySelectorAll('.nv-mk__slide'));
+  var dots = Array.prototype.slice.call(document.querySelectorAll('#carouselDots [data-dot]'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('#carouselChips [data-chip]'));
+  var n = slides.length;
   var i = 0;
   var timer = null;
-  var delay = 4800;
+  var resumeAt = 0;
+  var AUTOPLAY = 5200;
+  var PAUSE_AFTER = 12000;
 
-  function go(n) {
-    i = (n + slides.length) % slides.length;
-    slides.forEach(function (el, idx) {
-      var on = idx === i;
-      el.classList.toggle('is-active', on);
-      el.setAttribute('aria-hidden', on ? 'false' : 'true');
-    });
-    dots.forEach(function (el, idx) { el.classList.toggle('is-active', idx === i); });
-    chips.forEach(function (el, idx) { el.classList.toggle('is-active', idx === i); });
+  function go(idx) {
+    i = ((idx % n) + n) % n;
+    track.style.transform = 'translateX(' + (-i * 100) + '%)';
+    dots.forEach(function (el, k) { el.classList.toggle('is-active', k === i); });
+    chips.forEach(function (el, k) { el.classList.toggle('is-active', k === i); });
   }
   function next() { go(i + 1); }
   function prev() { go(i - 1); }
   function arm() {
     clearInterval(timer);
-    timer = setInterval(next, delay);
+    timer = setInterval(function () {
+      if (Date.now() < resumeAt) return;
+      next();
+    }, AUTOPLAY);
+  }
+  function bump() {
+    resumeAt = Date.now() + PAUSE_AFTER;
+    arm();
   }
 
-  document.getElementById('carouselNext')?.addEventListener('click', function () { next(); arm(); });
-  document.getElementById('carouselPrev')?.addEventListener('click', function () { prev(); arm(); });
+  document.getElementById('carouselNext')?.addEventListener('click', function () { next(); bump(); });
+  document.getElementById('carouselPrev')?.addEventListener('click', function () { prev(); bump(); });
   dots.forEach(function (el) {
-    el.addEventListener('click', function () { go(+el.dataset.dot); arm(); });
+    el.addEventListener('click', function () { go(+el.dataset.dot); bump(); });
   });
   chips.forEach(function (el) {
-    el.addEventListener('click', function () { go(+el.dataset.chip); arm(); });
+    el.addEventListener('click', function () { go(+el.dataset.chip); bump(); });
   });
-  root.addEventListener('mouseenter', function () { clearInterval(timer); });
-  root.addEventListener('mouseleave', arm);
+  go(0);
   arm();
 })();
 </script>

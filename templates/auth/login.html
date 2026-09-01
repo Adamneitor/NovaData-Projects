@@ -6,55 +6,64 @@
 <div class="lg">
   <div class="lg__atmos" aria-hidden="true">
     <div class="lg__grid"></div>
-    <div class="lg__glow"></div>
+    <div class="lg__glow lg__glow--a"></div>
+    <div class="lg__glow lg__glow--b"></div>
   </div>
 
-  <a class="lg-back" href="{{ url_for('launcher') }}">← Volver al inicio</a>
-
-  <main class="lg-card">
-    <header class="lg-card__brand">
-      {{ nova_mark(44) }}
-      <div>
-        <h1 class="lg-card__word">NOVA</h1>
-        <p class="lg-card__sub">Data Solutions</p>
-      </div>
-    </header>
-
-    <div class="lg-card__intro">
-      <h2>Bienvenido a NOVA</h2>
-      <p>Entra para operar las soluciones de tu constelación.</p>
+  <div class="lg-stack">
+    <div class="lg-lockup">
+      {{ nova_mark(58, with_wordmark=true, variant='hero') }}
     </div>
 
-    <form method="POST" id="login-form" novalidate>
-      <input type="hidden" name="next" value="{{ next_path or '/app' }}">
-      {% if error %}
-      <div class="nv-login__error" role="alert">{{ error }}</div>
-      {% endif %}
+    <main class="lg-card">
+      <div class="lg-card__intro">
+        <h1>Bienvenido a NOVA</h1>
+        <p>Entra para operar las soluciones de tu constelación.</p>
+      </div>
 
-      <div class="nv-field">
-        <label for="username">Usuario</label>
-        <div class="nv-input">
-          <input id="username" name="username" type="text" autocomplete="username" required autofocus placeholder="tu.usuario">
+      <form method="POST" id="login-form" novalidate>
+        <input type="hidden" name="next" value="{{ next_path or '/app' }}">
+        {% if error %}
+        <div class="nv-login__error" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <div class="nv-field">
+          <label for="username">Usuario</label>
+          <div class="nv-input nv-input--prefix">
+            <span class="nv-input__prefix" aria-hidden="true">BVIMENCA\</span>
+            <input id="username" name="username" type="text" autocomplete="username" required autofocus placeholder="tu.usuario">
+          </div>
         </div>
-      </div>
 
-      <div class="nv-field">
-        <label for="password">Contraseña</label>
-        <div class="nv-input">
-          <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="••••••••">
-          <button type="button" class="nv-input__toggle" id="toggle-password" aria-label="Mostrar contraseña">Ver</button>
+        <div class="nv-field">
+          <div class="lg-card__row">
+            <label for="password">Contraseña</label>
+            <a href="#" class="lg-forgot" onclick="event.preventDefault()">¿Olvidaste tu acceso?</a>
+          </div>
+          <div class="nv-input">
+            <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="••••••••">
+            <button type="button" class="nv-input__toggle" id="toggle-password" aria-label="Mostrar contraseña">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div class="lg-card__row">
-        <a href="#" class="lg-forgot" onclick="event.preventDefault()">¿Olvidó su contraseña?</a>
-      </div>
+        <button type="submit" class="nv-btn-brand" style="width:100%">Ingresar</button>
+      </form>
 
-      <button type="submit" class="nv-btn-cta" style="width:100%">Ingresar</button>
-    </form>
+      <p class="lg-trust">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5FA98F" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+        Sesión segura · acceso a los productos de tu plan
+      </p>
+    </main>
 
-    <p class="lg-trust">Sesión segura · acceso solo a los productos de tu plan</p>
-  </main>
+    <p class="lg-out">
+      ¿Aún sin plan?
+      <a href="{{ url_for('explorar') }}">Conoce el framework</a>
+      ·
+      <a href="https://www.datanova.com.do/" target="_blank" rel="noopener">datanova.com.do ↗</a>
+    </p>
+  </div>
 </div>
 {% endblock %}
 {% block extra_scripts %}
@@ -70,7 +79,7 @@
     toggle.addEventListener('click', function () {
       var show = pwd.type === 'password';
       pwd.type = show ? 'text' : 'password';
-      toggle.textContent = show ? 'Ocultar' : 'Ver';
+      toggle.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
     });
   }
 })();
