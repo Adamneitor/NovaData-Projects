@@ -95,6 +95,17 @@ def _ensure_helios_db() -> None:
         print(f"[helios_bridge] migrate (opcional): {exc}")
     with SessionLocal() as db:
         seed(db)
+        # Presentación: APIs + flujo + casos dummy (idempotente). Opt-out: HELIOS_SEED_DEMO=0
+        if os.getenv("HELIOS_SEED_DEMO", "1") != "0":
+            try:
+                from app.services.seed_demo_presentacion import run_seed_demo  # type: ignore
+
+                run_seed_demo(db, force=False, with_casos=True)
+                db.commit()
+                print("[helios_bridge] Seed demo presentación OK")
+            except Exception as exc:  # noqa: BLE001
+                db.rollback()
+                print(f"[helios_bridge] Seed demo (opcional): {exc}")
     print("[helios_bridge] Tablas + seed Helios OK")
 
 

@@ -24,6 +24,16 @@ def main() -> None:
         print(f"migrate (opcional): {exc}")
     with SessionLocal() as db:
         seed(db)
+        if __import__("os").getenv("HELIOS_SEED_DEMO", "1") != "0":
+            try:
+                from app.services.seed_demo_presentacion import run_seed_demo
+
+                run_seed_demo(db, force=False, with_casos=True)
+                db.commit()
+                print("Seed demo presentación OK")
+            except Exception as exc:  # noqa: BLE001
+                db.rollback()
+                print(f"Seed demo (opcional): {exc}")
     print("Seed Helios OK · usuario admin / admin")
 
 
