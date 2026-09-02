@@ -853,6 +853,7 @@ def _attach_doc_demo(
         },
     )
     db.add(CasoDocumento(**kwargs))
+    db.flush()  # SQLite BigInteger: el siguiente max(id) necesita ver este insert
     return True
 
 
