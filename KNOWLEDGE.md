@@ -11,8 +11,8 @@
 
 ## Flujo UX
 1. `/` home público v2 (constelación en movimiento, carrusel coverflow) — anónimo
-2. Login → `/helios` shell directo (sin pantalla intermedia)
-3. `/explorar` — home marketing aunque haya sesión
+2. Login → `/nova` shell vacío (sidebar siluetas, dropdown abierto)
+3. Elegir solución → módulo (ej. `/helios`)
 4. `/constelacion` y `/app` — legacy redirect → Helios
 5. Adquirir → `/contacto?producto=...`
 6. `/home` portales internos legacy

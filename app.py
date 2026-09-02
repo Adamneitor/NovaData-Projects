@@ -230,12 +230,25 @@ def login_required(f):
 
 
 def _post_login_url() -> str:
-    """Destino tras login: shell Helios (sin pantalla intermedia)."""
-    entitled = default_entitlements()
-    for sol in SOLUTIONS:
-        if sol["id"] in entitled and sol.get("active") and sol.get("home_endpoint"):
+    """Tras login: selector de solución en shell vacío."""
+    if session.get("nova_solution"):
+        sol = get_solution(session["nova_solution"])
+        if sol and sol.get("home_endpoint"):
             return url_for(sol["home_endpoint"])
-    return url_for("helios_home")
+    return url_for("nova_pick")
+
+
+def nova_solution_required(f):
+    """Exige haber elegido solución antes del módulo operativo."""
+
+    @wraps(f)
+    @login_required
+    def decorated_function(*args, **kwargs):
+        if not session.get("nova_solution"):
+            return redirect(url_for("nova_pick"))
+        return f(*args, **kwargs)
+
+    return decorated_function
 
 
 def admin_required(f):
@@ -303,16 +316,23 @@ def _active_product() -> str | None:
 @app.context_processor
 def inject_navigation():
     base = {"solutions": SOLUTIONS, "active_product": _active_product()}
+    try:
+        endpoint = request.endpoint
+    except Exception:
+        endpoint = None
+    base["shell_pick_mode"] = endpoint == "nova_pick"
     if "user_id" not in session:
         return base
     user = _current_user()
     if not user:
         return base
+    entitled = default_entitlements()
     return {
         **base,
         "user": user.to_session_dict(),
         "nav_portals": _accessible_portals(user.role),
         "current_portal_id": _current_portal_id(),
+        "solutions_enriched": enrich_solutions(entitled),
     }
 
 
@@ -429,6 +449,13 @@ def explorar():
     )
 
 
+@app.route("/nova")
+@login_required
+def nova_pick():
+    """Shell vacío post-login: sidebar en siluetas y selector de solución abierto."""
+    return render_template("plataforma/nova_pick.html")
+
+
 @app.route("/constelacion")
 @login_required
 def constelacion():
@@ -501,7 +528,7 @@ def catalogo():
 def entrar_solucion(solution_id):
     sol = get_solution(solution_id)
     if not sol:
-        return redirect(_post_login_url())
+        return redirect(url_for("nova_pick"))
     entitled = default_entitlements()
     if sol["id"] not in entitled:
         return redirect(url_for("contacto", producto=sol["id"]))
@@ -513,7 +540,7 @@ def entrar_solucion(solution_id):
 
 
 @app.route("/helios")
-@login_required
+@nova_solution_required
 def helios_home():
     sol = get_solution("helios")
     movimientos = [
@@ -531,7 +558,7 @@ def helios_home():
 
 
 @app.route("/helios/casos")
-@login_required
+@nova_solution_required
 def helios_casos():
     """Compat: abre Casos dentro del shell NOVA."""
     return redirect(url_for("helios_workspace", to="/casos"))
@@ -560,7 +587,7 @@ def _helios_nav_meta(path: str) -> tuple[str, str]:
 
 
 @app.route("/helios/w")
-@login_required
+@nova_solution_required
 def helios_workspace():
     """Shell NOVA + iframe Helios (sin chrome propio)."""
     from flask import make_response
@@ -592,7 +619,7 @@ def helios_workspace():
 
 
 @app.route("/helios/entrar")
-@login_required
+@nova_solution_required
 def helios_entrar():
     """Handoff SSO a workspace embebido (no sale del shell NOVA)."""
     target = sanitize_next_path(request.args.get("to"), "/casos")
@@ -602,7 +629,7 @@ def helios_entrar():
 # ---------- Auth ----------
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    default_next = "/helios"
+    default_next = "/nova"
     next_path = sanitize_next_path(request.values.get("next"), default_next)
     if next_path == "/":
         next_path = default_next
@@ -618,12 +645,7 @@ def login():
 
         user = User.query.filter_by(username=username, active=True).first()
         if user and check_password_hash(user.password_hash, password):
-            entitled = default_entitlements()
-            default_sol = next(
-                (s["id"] for s in SOLUTIONS if s["id"] in entitled and s.get("active")),
-                "helios",
-            )
-            session["nova_solution"] = default_sol
+            session.pop("nova_solution", None)
             session["user_id"] = user.id
             session["username"] = user.username
             session["user_role"] = user.role

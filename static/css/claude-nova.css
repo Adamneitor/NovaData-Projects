@@ -2409,3 +2409,79 @@ a.nv-astro--locked {
   .nv-mk__cover-zone { width: 72px; }
   .nv-mk__hero-v2 h1 { font-size: 36px; }
 }
+
+/* ========== SHELL POST-LOGIN · selector vacío ========== */
+.page-shell--pick .nv-main--blank,
+.page-shell--pick .nv-content {
+  background: #FFFFFF;
+  min-height: calc(100vh - 56px);
+}
+.page-shell--pick .nv-pick-blank {
+  display: flex; align-items: center; justify-content: center;
+  min-height: calc(100vh - 56px);
+  padding: 48px 24px;
+}
+.page-shell--pick .nv-pick-blank p {
+  margin: 0; max-width: 420px; text-align: center;
+  font: 500 15px/1.6 var(--font-ui); color: #94A3B8;
+}
+
+.nv-env-badge--plain {
+  color: #64748B; background: transparent; border: 0; padding: 0;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.nv-user-tray {
+  display: flex; align-items: center; gap: 12px;
+}
+.nv-user-name {
+  font: 600 13px var(--font-ui); color: #E7EDF5;
+  max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nv-avatar--silhouette {
+  width: 32px; height: 32px; border-radius: 999px;
+  background: rgba(148,163,184,.18);
+  border: 1px solid rgba(148,163,184,.22);
+  box-shadow: none; color: transparent; font-size: 0;
+}
+.nv-logout {
+  font: 600 12.5px var(--font-ui); color: #8496AC; text-decoration: none;
+  padding: 6px 10px; border-radius: 8px;
+  border: 1px solid rgba(148,163,184,.18);
+}
+.nv-logout:hover { color: #E7EDF5; border-color: rgba(148,163,184,.32); }
+
+.nv-chip-product--pick {
+  background: rgba(91,82,232,.2);
+  border-color: rgba(139,132,255,.55);
+  color: #C4BFFF;
+}
+
+.nv-search--ghost {
+  width: min(320px, 36vw); height: 36px; border-radius: 9px;
+  background: rgba(148,163,184,.08); border: 1px solid rgba(148,163,184,.12);
+}
+.nv-search--ghost span {
+  display: block; width: 58%; height: 10px; margin: 13px 12px;
+  border-radius: 999px; background: rgba(148,163,184,.14);
+}
+
+.nv-rail--ghost { pointer-events: none; }
+.nv-rail__ghost {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 18px 16px;
+}
+.nv-rail__ghost-label {
+  display: block; width: 42%; height: 8px; border-radius: 999px;
+  background: rgba(148,163,184,.12);
+}
+.nv-rail__ghost-line {
+  display: block; width: 78%; height: 10px; border-radius: 999px;
+  background: rgba(148,163,184,.1);
+}
+.nv-rail__ghost-line--short { width: 56%; }
+
+.page-shell--pick .nv-switcher.is-open { display: block; }
+
+@media (max-width: 900px) {
+  .nv-user-name { display: none; }
+}
