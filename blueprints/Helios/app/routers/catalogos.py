@@ -195,12 +195,15 @@ def clientes(request: Request, q: str = "", db: Session = Depends(get_db)):
         resultado = buscar_clientes(db, q, page=1, page_size=25)
     else:
         resultado = listar_clientes_recientes(db, page=1, page_size=25)
+    # No pasar clave "items" al template: en Jinja `resultado.items` es dict.items().
     return render(
         request,
         "catalogos/clientes.html",
         {
             "q": q,
-            "resultado": resultado,
+            "clientes": resultado.get("items") or [],
+            "clientes_total": int(resultado.get("total") or 0),
+            "clientes_mode": resultado.get("mode") or ("busqueda" if q.strip() else "recientes"),
             "flujos": db.query(Flujo).filter(Flujo.activo).order_by(Flujo.nombre).all(),
         },
     )

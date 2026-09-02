@@ -29,6 +29,7 @@ from app.services.api_mapeo import dato_ids_output_de_caso
 from app.services.dato_condicion import evaluar_campo
 from app.services.dato_formato import format_dato, parse_value, validate_value
 from app.services.dato_orden import ordenar_datos_expediente
+from app.services.sqlite_ids import apply_bigint_id
 from app.web import flash, render
 
 
@@ -660,12 +661,18 @@ def cargar_documento(
 
     db.add(
         CasoDocumento(
-            caso_id=caso_id,
-            documento_id=documento_id,
-            etapa_id=caso.etapa_actual_id,
-            ruta_archivo=str(destino),
-            nombre_original=archivo.filename or destino.name,
-            usuario_id=usuario.id,
+            **apply_bigint_id(
+                db,
+                CasoDocumento,
+                {
+                    "caso_id": caso_id,
+                    "documento_id": documento_id,
+                    "etapa_id": caso.etapa_actual_id,
+                    "ruta_archivo": str(destino),
+                    "nombre_original": archivo.filename or destino.name,
+                    "usuario_id": usuario.id,
+                },
+            )
         )
     )
     db.commit()

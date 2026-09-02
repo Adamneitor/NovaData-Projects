@@ -37,8 +37,8 @@
         <th>Código</th><th>Nombre</th><th>Identificación</th><th>Teléfono</th><th>Correo</th><th></th>
       </tr></thead>
       <tbody id="tbodyClientes">
-      {% if resultado %}
-        {% for c in resultado.items %}
+      {% if clientes %}
+        {% for c in clientes %}
         <tr>
           <td>{{ c.id }}</td>
           <td class="fw-semibold"><a href="/catalogos/clientes/{{ c.id }}" class="text-decoration-none">{{ c.nombre_completo }}</a></td>
@@ -50,14 +50,15 @@
             <a class="btn btn-sm btn-warning" href="/casos?cliente_id={{ c.id }}">Crear caso</a>
           </td>
         </tr>
-        {% else %}
-        <tr><td colspan="6"><div class="empty-state"><i class="bi bi-search"></i><p>Sin resultados para “{{ q }}”.</p></div></td></tr>
         {% endfor %}
-        {% if resultado.total %}
+        {% if clientes_total %}
         <tr class="table-light"><td colspan="6" class="small text-muted">
-          Mostrando {{ resultado.items|length }} de {{ resultado.total }} coincidencias.
+          Mostrando {{ clientes|length }} de {{ clientes_total }}
+          {% if clientes_mode == 'recientes' %}clientes recientes{% else %}coincidencias{% endif %}.
         </td></tr>
         {% endif %}
+      {% elif q %}
+        <tr><td colspan="6"><div class="empty-state"><i class="bi bi-search"></i><p>Sin resultados para “{{ q }}”.</p></div></td></tr>
       {% else %}
         <tr><td colspan="6"><div class="empty-state"><i class="bi bi-people"></i><p>No hay clientes registrados aún.<br>Cree uno con «Nuevo cliente» o ejecute el seed demo.</p></div></td></tr>
       {% endif %}

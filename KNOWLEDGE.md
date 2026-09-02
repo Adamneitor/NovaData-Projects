@@ -1,9 +1,9 @@
 # Nova Projects — Knowledge Map
 
 ## Changelog
-- **2026-09-02**: Diagnóstico freeze UI al ejecutar APIs Helios: loopback HTTP sync a `/demo-api/*` con gunicorn `-w 1` (deadlock hasta timeout httpx ~30s).
-- **2026-09-02**: Auto-seed demo Helios al arrancar (APIs, flujo, 3 casos, catálogo). Visible en Railway tras deploy.
-- **2026-09-02**: Seed flujo BPM **Demo Originacion TDC** + casos dummy por etapa.
+- **2026-09-02**: Fix 500 Clientes 360 (Jinja `dict.items`) + catálogo/expediente Documentación dummy.
+- **2026-09-02**: Flujo multi-rol 8 etapas + 12 clientes 360; fix IdLog SQLite al Ejecutar API.
+- **2026-09-02**: Fix 500 Ejecutar API + identidad NOVA en caso; rail pegado a búsqueda.
 - **2026-09-01**: Home público v2; login → `/nova` shell vacío.
 
 ## Stack

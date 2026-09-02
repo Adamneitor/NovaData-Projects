@@ -19,7 +19,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.config import AUTH_APP
+from app.config import AUTH_APP, UPLOADS_DIR
 from app.models import (
     ApiCall,
     ApiOutput,
@@ -28,6 +28,7 @@ from app.models import (
     Caso,
     CasoApiLog,
     CasoDato,
+    CasoDocumento,
     Cliente,
     DatoComplementario,
     Documento,
@@ -48,6 +49,7 @@ from app.models import (
 )
 from app.seed import ensure_tipos_dato
 from app.services.password_policy import hash_password
+from app.services.sqlite_ids import apply_bigint_id
 
 FLUJO_NOMBRE = "Demo Originacion TDC"
 
@@ -115,8 +117,12 @@ DATOS_DEMO = [
 DOCS_DEMO = [
     ("Cédula de identidad", "Documento de identidad del solicitante"),
     ("Carta laboral", "Constancia de empleo e ingresos"),
-    ("Estado de cuenta", "Extracto bancario reciente"),
+    ("Estado de cuenta", "Extracto bancario reciente (últimos 3 meses)"),
     ("Formulario KYC", "Conozca su cliente firmado"),
+    ("Comprobante de ingresos", "Volantes de pago o declaración de renta"),
+    ("Referencia comercial", "Carta de referencia de proveedor/cliente"),
+    ("Autorización buró", "Consentimiento de consulta a buró de crédito"),
+    ("Selfie con cédula", "Validación biométrica / presencial"),
 ]
 
 
@@ -447,8 +453,21 @@ def _build_flujo(
     db.flush()
 
     # Etapas
-    e_cap = Etapa(flujo_id=flujo.id, nombre="1. Captura", descripcion="Ejecutivo de Servicio", orden=1)
-    e_doc = Etapa(flujo_id=flujo.id, nombre="2. Documentacion", descripcion="KYC y evidencias", orden=2, permite_retroceso=True)
+    e_cap = Etapa(
+        flujo_id=flujo.id,
+        nombre="1. Captura",
+        descripcion="Ejecutivo de Servicio",
+        orden=1,
+        solicita_documentacion=True,
+    )
+    e_doc = Etapa(
+        flujo_id=flujo.id,
+        nombre="2. Documentacion",
+        descripcion="KYC y evidencias",
+        orden=2,
+        permite_retroceso=True,
+        solicita_documentacion=True,
+    )
     e_buro = Etapa(flujo_id=flujo.id, nombre="3. Consulta Buro", descripcion="Analista · API buró", orden=3)
     e_eval = Etapa(flujo_id=flujo.id, nombre="4. Evaluacion Motor", descripcion="Analista · API motor", orden=4)
     e_apr = Etapa(flujo_id=flujo.id, nombre="5. Aprobacion Gerente", descripcion="Gerente Análisis", orden=5, permite_retroceso=True)
@@ -474,11 +493,15 @@ def _build_flujo(
         for n in names:
             db.add(EtapaGrupo(etapa_id=etapa.id, grupo_id=grupos[n].id))
 
-    # Docs
+    # Docs por etapa (catálogo lleno + requisitos)
     db.add(EtapaDocumento(etapa_id=e_cap.id, documento_id=docs["Cédula de identidad"].id, obligatorio=True))
+    db.add(EtapaDocumento(etapa_id=e_cap.id, documento_id=docs["Autorización buró"].id, obligatorio=True))
     db.add(EtapaDocumento(etapa_id=e_doc.id, documento_id=docs["Carta laboral"].id, obligatorio=True))
     db.add(EtapaDocumento(etapa_id=e_doc.id, documento_id=docs["Estado de cuenta"].id, obligatorio=False))
     db.add(EtapaDocumento(etapa_id=e_doc.id, documento_id=docs["Formulario KYC"].id, obligatorio=True))
+    db.add(EtapaDocumento(etapa_id=e_doc.id, documento_id=docs["Comprobante de ingresos"].id, obligatorio=True))
+    db.add(EtapaDocumento(etapa_id=e_doc.id, documento_id=docs["Referencia comercial"].id, obligatorio=False))
+    db.add(EtapaDocumento(etapa_id=e_doc.id, documento_id=docs["Selfie con cédula"].id, obligatorio=False))
 
     # Datos captura
     for i, key in enumerate(
@@ -782,6 +805,143 @@ def _ensure_casos_demo(db, flujo, clientes, datos):
     _log(f"+ caso #{c6.id} Declinada (Ricardo)")
 
 
+def _attach_doc_demo(
+    db: Session,
+    *,
+    caso: Caso,
+    documento: Documento,
+    etapa: Etapa,
+    usuario: Usuario,
+) -> bool:
+    """Crea archivo dummy + Casos_Documentos si aún no existe ese tipo en el caso."""
+    ya = (
+        db.query(CasoDocumento)
+        .filter(CasoDocumento.caso_id == caso.id, CasoDocumento.documento_id == documento.id)
+        .first()
+    )
+    if ya:
+        return False
+
+    carpeta = UPLOADS_DIR / str(caso.id)
+    carpeta.mkdir(parents=True, exist_ok=True)
+    safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in documento.nombre)[:40]
+    nombre = f"{safe}_demo.txt"
+    destino = carpeta / f"demo_{documento.id}_{safe}.txt"
+    if not destino.exists():
+        destino.write_text(
+            (
+                f"DEMO NOVA DATA SOLUTIONS — Helios\n"
+                f"Documento: {documento.nombre}\n"
+                f"Caso: #{caso.id}\n"
+                f"Etapa: {etapa.nombre}\n"
+                f"Generado: {datetime.utcnow().isoformat()}Z\n"
+                f"Contenido ficticio para presentación.\n"
+            ),
+            encoding="utf-8",
+        )
+
+    kwargs = apply_bigint_id(
+        db,
+        CasoDocumento,
+        {
+            "caso_id": caso.id,
+            "documento_id": documento.id,
+            "etapa_id": etapa.id,
+            "ruta_archivo": str(destino),
+            "nombre_original": nombre,
+            "usuario_id": usuario.id,
+        },
+    )
+    db.add(CasoDocumento(**kwargs))
+    return True
+
+
+def _ensure_etapa_docs_flujo(db: Session, flujo: Flujo, docs: dict[str, Documento]) -> None:
+    """Enriquece requisitos de docs en flujo ya existente (idempotente)."""
+    by_orden = {e.orden: e for e in (flujo.etapas or [])}
+    e_cap, e_doc = by_orden.get(1), by_orden.get(2)
+    links = [
+        (e_cap, "Cédula de identidad", True),
+        (e_cap, "Autorización buró", True),
+        (e_doc, "Carta laboral", True),
+        (e_doc, "Estado de cuenta", False),
+        (e_doc, "Formulario KYC", True),
+        (e_doc, "Comprobante de ingresos", True),
+        (e_doc, "Referencia comercial", False),
+        (e_doc, "Selfie con cédula", False),
+    ]
+    for etapa, nombre, obl in links:
+        if etapa is None or nombre not in docs:
+            continue
+        etapa.solicita_documentacion = True
+        doc = docs[nombre]
+        exists = (
+            db.query(EtapaDocumento)
+            .filter(EtapaDocumento.etapa_id == etapa.id, EtapaDocumento.documento_id == doc.id)
+            .first()
+        )
+        if exists is None:
+            db.add(EtapaDocumento(etapa_id=etapa.id, documento_id=doc.id, obligatorio=obl))
+            _log(f"+ requisito doc «{nombre}» en {etapa.nombre}")
+
+
+def _ensure_casos_documentos(db: Session, flujo: Flujo, docs: dict[str, Documento]) -> None:
+    """Llena el expediente Documentación de los casos demo."""
+    admin = db.query(Usuario).filter(Usuario.usuario_ad == "admin").first()
+    if not admin:
+        return
+    by_orden = {e.orden: e for e in (flujo.etapas or [])}
+    e_cap, e_doc = by_orden.get(1), by_orden.get(2)
+    if not e_cap or not e_doc:
+        return
+
+    pack_captura = ["Cédula de identidad", "Autorización buró"]
+    pack_doc = [
+        "Carta laboral",
+        "Estado de cuenta",
+        "Formulario KYC",
+        "Comprobante de ingresos",
+        "Referencia comercial",
+        "Selfie con cédula",
+    ]
+
+    n = 0
+    for caso in db.query(Caso).filter(Caso.flujo_id == flujo.id).all():
+        orden = caso.etapa_actual.orden if caso.etapa_actual else 1
+        for name in pack_captura:
+            if name in docs and _attach_doc_demo(
+                db, caso=caso, documento=docs[name], etapa=e_cap, usuario=admin
+            ):
+                n += 1
+        # Casos que ya pasaron captura: expediente KYC completo
+        if orden >= 2:
+            for name in pack_doc:
+                if name in docs and _attach_doc_demo(
+                    db, caso=caso, documento=docs[name], etapa=e_doc, usuario=admin
+                ):
+                    n += 1
+        # Caso aún en captura: deja 1 pendiente (Autorización) para demo de validación
+        # → ya cargamos ambos arriba; para el de captura dejamos Autorización solo si orden>1
+        if orden == 1:
+            # Quitar autorización del caso en captura para mostrar pendiente
+            auth = docs.get("Autorización buró")
+            if auth:
+                pend = (
+                    db.query(CasoDocumento)
+                    .filter(
+                        CasoDocumento.caso_id == caso.id,
+                        CasoDocumento.documento_id == auth.id,
+                    )
+                    .all()
+                )
+                for row in pend:
+                    db.delete(row)
+    if n:
+        _log(f"+ {n} documentos dummy en expedientes")
+    else:
+        _log("expedientes de documentos ya poblados")
+
+
 def run_seed_demo(
     db: Session,
     *,
@@ -845,8 +1005,10 @@ def run_seed_demo(
         n_etapas = len(existente.etapas or [])
         if (n_casos and not force and n_etapas >= 8):
             _log(f"flujo ya existe id={existente.id} con {n_casos} caso(s)")
+            _ensure_etapa_docs_flujo(db, existente, docs)
             if with_casos:
                 _ensure_casos_demo(db, existente, clientes, datos)
+                _ensure_casos_documentos(db, existente, docs)
             return {"flujo_id": existente.id, "created": False, "base_url": base}
         _purge_flujo(db, existente)
 
@@ -855,4 +1017,5 @@ def run_seed_demo(
     )
     if with_casos:
         _ensure_casos_demo(db, flujo, clientes, datos)
+        _ensure_casos_documentos(db, flujo, docs)
     return {"flujo_id": flujo.id, "created": True, "base_url": base}
