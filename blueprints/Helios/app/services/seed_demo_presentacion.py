@@ -19,7 +19,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.config import AUTH_APP, UPLOADS_DIR
+from app.config import AUTH_APP
 from app.models import (
     ApiCall,
     ApiOutput,
@@ -812,8 +812,10 @@ def _attach_doc_demo(
     documento: Documento,
     etapa: Etapa,
     usuario: Usuario,
+    estado: str = "verificado",
+    nota: str | None = None,
 ) -> bool:
-    """Crea archivo dummy + Casos_Documentos si aún no existe ese tipo en el caso."""
+    """Marca documento en checklist (sin archivo físico)."""
     ya = (
         db.query(CasoDocumento)
         .filter(CasoDocumento.caso_id == caso.id, CasoDocumento.documento_id == documento.id)
@@ -822,23 +824,11 @@ def _attach_doc_demo(
     if ya:
         return False
 
-    carpeta = UPLOADS_DIR / str(caso.id)
-    carpeta.mkdir(parents=True, exist_ok=True)
-    safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in documento.nombre)[:40]
-    nombre = f"{safe}_demo.txt"
-    destino = carpeta / f"demo_{documento.id}_{safe}.txt"
-    if not destino.exists():
-        destino.write_text(
-            (
-                f"DEMO NOVA DATA SOLUTIONS — Helios\n"
-                f"Documento: {documento.nombre}\n"
-                f"Caso: #{caso.id}\n"
-                f"Etapa: {etapa.nombre}\n"
-                f"Generado: {datetime.utcnow().isoformat()}Z\n"
-                f"Contenido ficticio para presentación.\n"
-            ),
-            encoding="utf-8",
-        )
+    estado_n = (estado or "verificado").strip().lower()
+    if estado_n not in ("recibido", "verificado", "no_aplica"):
+        estado_n = "verificado"
+    label = {"recibido": "Recibido", "verificado": "Verificado", "no_aplica": "No aplica"}[estado_n]
+    nombre = (nota or f"Demo · {label} · {documento.nombre}")[:280]
 
     kwargs = apply_bigint_id(
         db,
@@ -847,13 +837,13 @@ def _attach_doc_demo(
             "caso_id": caso.id,
             "documento_id": documento.id,
             "etapa_id": etapa.id,
-            "ruta_archivo": str(destino),
+            "ruta_archivo": f"checklist://{estado_n}",
             "nombre_original": nombre,
             "usuario_id": usuario.id,
         },
     )
     db.add(CasoDocumento(**kwargs))
-    db.flush()  # SQLite BigInteger: el siguiente max(id) necesita ver este insert
+    db.flush()
     return True
 
 

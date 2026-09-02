@@ -268,12 +268,14 @@ def detalle(
 
     # Última carga por tipo de documento (para requisitos de etapa actual)
     docs_cargados = {cd.documento_id: cd for cd in caso.documentos}
+    docs_meta = {did: _meta_documento(cd) for did, cd in docs_cargados.items()}
     # Expediente: todas las cargas del caso (cualquier etapa), más recientes primero
     docs_expediente = sorted(
         list(caso.documentos),
         key=lambda cd: (cd.fecha_carga or datetime.min, cd.id),
         reverse=True,
     )
+    docs_expediente_meta = {cd.id: _meta_documento(cd) for cd in docs_expediente}
     etapas_por_id = {e.id: e for e in caso.flujo.etapas}
     datos_valores_all = {cd.dato_id: cd.valor for cd in caso.datos}
     datos_etapa = _datos_etapa_ordenados(etapa)
@@ -378,7 +380,9 @@ def detalle(
             "docs_pend_count": len(docs_pend),
             "datos_pend_count": len(datos_pend),
             "docs_cargados": docs_cargados,
+            "docs_meta": docs_meta,
             "docs_expediente": docs_expediente,
+            "docs_expediente_meta": docs_expediente_meta,
             "datos_expediente": datos_expediente,
             "datos_inline": datos_inline,
             "datos_completados": datos_completados,
@@ -637,6 +641,117 @@ def cancelar(
 
 # ------------------------------- Documentos --------------------------------
 
+CHECKLIST_PREFIX = "checklist://"
+DOC_ESTADOS_OK = frozenset({"recibido", "verificado", "no_aplica"})
+
+
+def _meta_documento(cd: CasoDocumento | None) -> dict:
+    """Estado de checklist (o archivo legado) para el formulario de documentación."""
+    if cd is None:
+        return {"estado": "pendiente", "nota": "", "es_archivo": False, "id": None}
+    ruta = (cd.ruta_archivo or "").strip()
+    if ruta.startswith(CHECKLIST_PREFIX):
+        estado = ruta[len(CHECKLIST_PREFIX) :].split("|", 1)[0].strip().lower() or "recibido"
+        if estado not in DOC_ESTADOS_OK:
+            estado = "recibido"
+        return {
+            "estado": estado,
+            "nota": (cd.nombre_original or "").strip(),
+            "es_archivo": False,
+            "id": cd.id,
+        }
+    return {
+        "estado": "recibido",
+        "nota": (cd.nombre_original or "").strip(),
+        "es_archivo": True,
+        "id": cd.id,
+    }
+
+
+@router.post("/{caso_id}/documentos/checklist")
+async def guardar_checklist_documentos(
+    request: Request,
+    caso_id: int,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Marca requisitos documentales como formulario (sin adjuntos)."""
+    caso = db.get(Caso, caso_id)
+    if not caso or caso.estado_general != "ACTIVO" or not _puede_actuar(usuario, caso.etapa_actual):
+        flash(request, "No puede editar la documentación de este caso.", "danger")
+        return RedirectResponse(f"/casos/{caso_id}", status_code=303)
+
+    form = await request.form()
+    existentes = {cd.documento_id: cd for cd in caso.documentos}
+    guardados = 0
+    for ed in caso.etapa_actual.documentos or []:
+        key_est = f"doc_{ed.documento_id}_estado"
+        key_nota = f"doc_{ed.documento_id}_nota"
+        if key_est not in form:
+            continue
+        estado = str(form.get(key_est) or "pendiente").strip().lower()
+        nota = str(form.get(key_nota) or "").strip()[:280]
+        row = existentes.get(ed.documento_id)
+
+        if estado == "pendiente" or estado not in DOC_ESTADOS_OK:
+            if row is not None:
+                db.delete(row)
+                guardados += 1
+            continue
+
+        label = {
+            "recibido": "Recibido",
+            "verificado": "Verificado",
+            "no_aplica": "No aplica",
+        }.get(estado, estado)
+        nombre = nota or f"Checklist · {label}"
+        ruta = f"{CHECKLIST_PREFIX}{estado}"
+
+        if row is not None:
+            # No pisar archivo real subido: solo actualizar si ya era checklist
+            if (row.ruta_archivo or "").startswith(CHECKLIST_PREFIX) or not row.ruta_archivo:
+                row.ruta_archivo = ruta
+                row.nombre_original = nombre
+                row.usuario_id = usuario.id
+                row.etapa_id = caso.etapa_actual_id
+                guardados += 1
+            continue
+
+        db.add(
+            CasoDocumento(
+                **apply_bigint_id(
+                    db,
+                    CasoDocumento,
+                    {
+                        "caso_id": caso_id,
+                        "documento_id": ed.documento_id,
+                        "etapa_id": caso.etapa_actual_id,
+                        "ruta_archivo": ruta,
+                        "nombre_original": nombre,
+                        "usuario_id": usuario.id,
+                    },
+                )
+            )
+        )
+        db.flush()
+        guardados += 1
+
+    db.commit()
+    flash(request, f"Documentación guardada ({guardados} cambio(s)).")
+
+    caso = db.get(Caso, caso_id)
+    if caso and _puede_actuar(usuario, caso.etapa_actual):
+        try:
+            auto_msgs = motor.intentar_aplicar_regla_api_auto(db, caso, usuario)
+            if auto_msgs:
+                db.commit()
+                for m in auto_msgs:
+                    flash(request, m, "info")
+        except Exception:  # noqa: BLE001
+            db.rollback()
+
+    return RedirectResponse(f"/casos/{caso_id}#seccion-documentos", status_code=303)
+
 
 @router.post("/{caso_id}/documentos/{documento_id}/cargar")
 def cargar_documento(
@@ -703,7 +818,11 @@ def descargar_documento(
     cd = db.get(CasoDocumento, caso_doc_id)
     if not cd or cd.caso_id != caso_id:
         return RedirectResponse(f"/casos/{caso_id}", status_code=303)
-    return FileResponse(cd.ruta_archivo, filename=cd.nombre_original)
+    ruta = (cd.ruta_archivo or "").strip()
+    # Checklist / formulario: no hay archivo físico
+    if ruta.startswith(CHECKLIST_PREFIX) or not Path(ruta).is_file():
+        return RedirectResponse(f"/casos/{caso_id}#seccion-documentos", status_code=303)
+    return FileResponse(ruta, filename=cd.nombre_original)
 
 
 # ---------------------------------- Datos ----------------------------------

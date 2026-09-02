@@ -77,48 +77,61 @@
     {# ========== COLUMNA PRINCIPAL ========== #}
     <div class="caso-main">
 
-      {# Documentación #}
+      {# Documentación — formulario checklist (sin adjuntos) #}
       <article class="caso-card" id="seccion-documentos">
         <header class="caso-card__head">
-          <div class="caso-card__icon caso-card__icon--docs"><i class="bi bi-folder2-open"></i></div>
+          <div class="caso-card__icon caso-card__icon--docs"><i class="bi bi-ui-checks"></i></div>
           <div>
             <h2>Documentación</h2>
-            <p>Requisitos de etapa y expediente del caso</p>
+            <p>Checklist de requisitos · marque estado y referencia</p>
           </div>
           {% if docs_pend_count %}<span class="caso-chip caso-chip--warn">{{ docs_pend_count }} pendiente{{ 's' if docs_pend_count != 1 }}</span>{% endif %}
         </header>
         <div class="caso-card__body">
           <div class="doc-section-label">Requisitos · {{ caso.etapa_actual.nombre }}</div>
           {% if docs_etapa %}
-          <div class="doc-list">
+          <form method="post" action="/casos/{{ caso.id }}/documentos/checklist" id="formDocumentacion" class="doc-form" autocomplete="off">
+            <div class="doc-form-grid">
             {% for ed in docs_etapa %}
-              {% set cargado = docs_cargados.get(ed.documento_id) %}
+              {% set meta = docs_meta.get(ed.documento_id, {'estado': 'pendiente', 'nota': '', 'es_archivo': false}) %}
               {% set marcado = intent_errs | selectattr('campo', 'equalto', 'documento_' ~ ed.documento_id) | list %}
-              <div class="doc-row {% if marcado %}is-error{% endif %}" id="campo-documento_{{ ed.documento_id }}">
-                <div class="doc-row__info">
-                  <div class="doc-row__name">{{ ed.documento.nombre }}</div>
-                  <div class="doc-row__status">
-                    {% if ed.obligatorio %}
-                      {% if ed.documento_id in docs_pendientes %}<span class="st st-bad">Obligatorio · pendiente</span>
-                      {% else %}<span class="st st-ok">Obligatorio · listo</span>{% endif %}
-                    {% else %}<span class="st st-muted">Opcional</span>{% endif %}
-                    {% if cargado %}
-                      <a class="doc-file" href="/casos/{{ caso.id }}/documentos/{{ cargado.id }}/descargar"><i class="bi bi-paperclip"></i> {{ cargado.nombre_original }}</a>
-                    {% endif %}
+              <div class="doc-field {% if marcado %}is-error{% endif %}" id="campo-documento_{{ ed.documento_id }}">
+                <div class="doc-field__head">
+                  <label class="doc-field__name" for="doc_{{ ed.documento_id }}_estado">{{ ed.documento.nombre }}</label>
+                  {% if ed.obligatorio %}
+                    {% if ed.documento_id in docs_pendientes %}<span class="st st-bad">Obligatorio</span>
+                    {% else %}<span class="st st-ok">Completo</span>{% endif %}
+                  {% else %}<span class="st st-muted">Opcional</span>{% endif %}
+                </div>
+                {% if ed.documento.descripcion %}<p class="doc-field__hint">{{ ed.documento.descripcion }}</p>{% endif %}
+                <div class="doc-field__controls">
+                  <div class="doc-field__estado">
+                    <select class="caso-input" name="doc_{{ ed.documento_id }}_estado" id="doc_{{ ed.documento_id }}_estado"
+                            {% if not puede_actuar %}disabled{% endif %}>
+                      <option value="pendiente" {% if meta.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                      <option value="recibido" {% if meta.estado == 'recibido' %}selected{% endif %}>Recibido</option>
+                      <option value="verificado" {% if meta.estado == 'verificado' %}selected{% endif %}>Verificado</option>
+                      <option value="no_aplica" {% if meta.estado == 'no_aplica' %}selected{% endif %}>No aplica</option>
+                    </select>
+                  </div>
+                  <div class="doc-field__nota">
+                    <input type="text" class="caso-input" name="doc_{{ ed.documento_id }}_nota"
+                           value="{{ meta.nota if not meta.es_archivo else '' }}"
+                           placeholder="N.º referencia, folio o comentario…"
+                           {% if not puede_actuar %}disabled{% endif %}>
                   </div>
                 </div>
-                {% if puede_actuar %}
-                <form method="post" action="/casos/{{ caso.id }}/documentos/{{ ed.documento_id }}/cargar" enctype="multipart/form-data" class="doc-upload">
-                  <label class="btn-upload">
-                    <i class="bi bi-upload"></i>
-                    <span>{% if cargado %}Reemplazar{% else %}Subir{% endif %}</span>
-                    <input type="file" name="archivo" required onchange="this.form.submit()">
-                  </label>
-                </form>
+                {% if meta.es_archivo and docs_cargados.get(ed.documento_id) %}
+                <div class="doc-field__legacy">
+                  <i class="bi bi-paperclip"></i>
+                  Adjunto previo:
+                  <a href="/casos/{{ caso.id }}/documentos/{{ docs_cargados[ed.documento_id].id }}/descargar">{{ meta.nota }}</a>
+                </div>
                 {% endif %}
               </div>
             {% endfor %}
-          </div>
+            </div>
+          </form>
           {% else %}
           <div class="caso-empty caso-empty--compact">
             <i class="bi bi-inbox"></i>
@@ -127,20 +140,26 @@
           {% endif %}
 
           <div class="doc-section-label doc-section-label--spaced">
-            Expediente · todos los cargados
+            Expediente · registros
             {% if docs_expediente %}<span class="st st-muted">{{ docs_expediente|length }}</span>{% endif %}
           </div>
           {% if docs_expediente %}
           <div class="doc-list">
             {% for cd in docs_expediente %}
               {% set etapa_doc = etapas_por_id.get(cd.etapa_id) %}
+              {% set em = docs_expediente_meta.get(cd.id, {}) %}
               <div class="doc-row doc-row--readonly">
                 <div class="doc-row__info">
                   <div class="doc-row__name">{{ cd.documento.nombre if cd.documento else 'Documento' }}</div>
                   <div class="doc-row__status">
                     <span class="st st-muted">{{ etapa_doc.nombre if etapa_doc else 'Etapa' }}</span>
-                    <span class="st st-ok">Cargado</span>
-                    <a class="doc-file" href="/casos/{{ caso.id }}/documentos/{{ cd.id }}/descargar"><i class="bi bi-paperclip"></i> {{ cd.nombre_original }}</a>
+                    {% if em.estado == 'verificado' %}<span class="st st-ok">Verificado</span>
+                    {% elif em.estado == 'no_aplica' %}<span class="st st-muted">No aplica</span>
+                    {% elif em.estado == 'recibido' %}<span class="st st-ok">Recibido</span>
+                    {% else %}<span class="st st-ok">Registrado</span>{% endif %}
+                    {% if em.es_archivo %}
+                      <a class="doc-file" href="/casos/{{ caso.id }}/documentos/{{ cd.id }}/descargar"><i class="bi bi-paperclip"></i> {{ cd.nombre_original }}</a>
+                    {% elif em.nota %}<span class="doc-file">{{ em.nota }}</span>{% endif %}
                   </div>
                   <div class="doc-row__meta">
                     {{ cd.fecha_carga.strftime('%d/%m/%Y %H:%M') if cd.fecha_carga else '—' }}
@@ -152,8 +171,8 @@
           </div>
           {% else %}
           <div class="caso-empty caso-empty--compact">
-            <i class="bi bi-folder2"></i>
-            <p>Aún no se ha cargado ningún documento en este caso.</p>
+            <i class="bi bi-journal-check"></i>
+            <p>Aún no hay documentación marcada en este caso.</p>
           </div>
           {% endif %}
         </div>
@@ -169,7 +188,7 @@
             <p>{% if datos_etapa %}Etapa «{{ caso.etapa_actual.nombre }}»{% else %}Expediente del caso{% endif %}</p>
           </div>
           {% if datos_pend_count %}<span class="caso-chip caso-chip--warn">{{ datos_pend_count }} pendiente{{ 's' if datos_pend_count != 1 }}</span>
-          {% elif datos_etapa %}<span class="caso-chip" style="background:rgba(91,82,232,.10);color:#5B52E8">Completo</span>{% endif %}
+          {% elif datos_etapa %}<span class="caso-chip" style="background:#f1f5f9;color:#1a1a2e">Completo</span>{% endif %}
         </header>
         <div class="caso-card__body">
           {% if datos_etapa %}
@@ -178,12 +197,6 @@
               {% for ed in datos_etapa %}
                 {{ campo_dato(ed, datos_valores.get(ed.dato_id, ''), puede_actuar, datos_pendientes, intent_errs, field_errors|default({}), valor_es_ui|default(false), 'half', datos_api_readonly) }}
               {% endfor %}
-              {% if puede_actuar %}
-              <div class="data-actions">
-                <button type="submit" class="btn-caso-secondary"><i class="bi bi-check2"></i> Guardar datos</button>
-                <a class="btn-caso-ghost" href="/casos/{{ caso.id }}/datos" style="width:auto">Abrir formulario completo</a>
-              </div>
-              {% endif %}
             </form>
             {% else %}
             {# > 6 campos en esta etapa: capturar/editar en formulario dedicado #}
@@ -524,73 +537,114 @@
       </div>
     </aside>
   </div>
+
+  {# Barra fija inferior: guardar sin scrollear #}
+  {% if puede_actuar and (docs_etapa or (datos_etapa and datos_inline) or transiciones) %}
+  <div class="caso-sticky-bar" role="region" aria-label="Acciones de guardado">
+    <div class="caso-sticky-bar__inner">
+      <div class="caso-sticky-bar__hint">
+        {% if pendientes_total %}
+        <span class="st st-bad">{{ pendientes_total }} pendiente{{ 's' if pendientes_total != 1 }}</span>
+        {% else %}
+        <span class="st st-ok">Requisitos al día</span>
+        {% endif %}
+        <span class="caso-sticky-bar__muted">Guarde los cambios antes de avanzar</span>
+      </div>
+      <div class="caso-sticky-bar__actions">
+        {% if docs_etapa %}
+        <button type="submit" form="formDocumentacion" class="btn-caso-secondary">
+          <i class="bi bi-journal-check"></i> Guardar documentación
+        </button>
+        {% endif %}
+        {% if datos_etapa and datos_inline %}
+        <button type="submit" form="formDatosInline" class="btn-caso-secondary">
+          <i class="bi bi-check2"></i> Guardar datos
+        </button>
+        {% elif datos_etapa and not datos_inline %}
+        <a class="btn-caso-secondary" href="/casos/{{ caso.id }}/datos"><i class="bi bi-sliders"></i> Formulario de datos</a>
+        {% endif %}
+        {% if transiciones %}
+        <a href="#seccion-acciones" class="btn-caso-primary" id="ctaStickyAccion">
+          <i class="bi bi-arrow-right"></i> Ir a acciones
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <style>
   .caso-shell {
-    --c-ink: var(--hx-ink, #0f172a);
-    --c-muted: var(--hx-muted, #64748b);
-    --c-line: var(--hx-line, #e2e8f0);
-    --c-bg: var(--hx-bg, #f1f5f9);
-    --c-card: var(--hx-surface, #ffffff);
-    --c-accent: var(--hx-accent, #5B52E8);
-    --c-accent-soft: var(--hx-accent-soft, rgba(91, 82, 232, 0.10));
-    --c-warn: var(--hx-warn, #a16207);
-    --c-warn-soft: var(--hx-warn-soft, #fefce8);
-    --c-danger: var(--hx-danger, #b91c1c);
-    --c-ok: var(--hx-accent, #5B52E8);
-    --c-ok-soft: rgba(91, 82, 232, 0.10);
-    --c-info: var(--hx-info, #4A9FF5);
-    font-family: var(--hx-font, "Montserrat", system-ui, sans-serif);
+    --c-ink: #1a1a2e;
+    --c-muted: #6b7280;
+    --c-line: #e1e3e8;
+    --c-bg: #eef0f5;
+    --c-card: #ffffff;
+    --c-accent: #1a1a2e;
+    --c-accent-soft: rgba(26, 26, 46, 0.06);
+    --c-brand: #5B52E8;
+    --c-brand-soft: rgba(91, 82, 232, 0.08);
+    --c-warn: #a16207;
+    --c-warn-soft: #fefce8;
+    --c-danger: #b91c1c;
+    --c-ok: #15803d;
+    --c-ok-soft: #f0fdf4;
+    --c-info: #4b5563;
+    font-family: "Montserrat", system-ui, sans-serif;
     color: var(--c-ink);
     max-width: 1280px;
+    padding-bottom: 5.5rem;
   }
   .caso-bc { font-size: .8rem; color: var(--c-muted); margin-bottom: 1rem; display: flex; gap: .4rem; align-items: center; }
-  .caso-bc a { color: var(--c-accent); text-decoration: none; font-weight: 500; }
+  .caso-bc a { color: var(--c-ink); text-decoration: none; font-weight: 600; }
   .caso-bc a:hover { text-decoration: underline; }
 
   .caso-hero {
     display: flex; justify-content: space-between; gap: 1.5rem; align-items: flex-start;
-    background: linear-gradient(135deg, #0B0A1F 0%, #14132B 48%, #5B52E8 140%);
-    color: #fff; border-radius: 16px; padding: 1.5rem 1.75rem; margin-bottom: 1.25rem;
-    box-shadow: 0 12px 40px rgba(91, 82, 232, .22);
+    background: #1a1a2e;
+    color: #fff; border-radius: 14px; padding: 1.35rem 1.5rem; margin-bottom: 1.15rem;
+    border: 1px solid #2A2942;
+    box-shadow: 0 1px 2px rgba(26, 26, 46, .06), 0 8px 24px rgba(26, 26, 46, .08);
   }
   .caso-hero__kicker { display: flex; gap: .6rem; align-items: center; margin-bottom: .5rem; flex-wrap: wrap; }
-  .caso-kicker-muted { opacity: .7; font-size: .8rem; }
-  .caso-hero__title { font-size: 1.85rem; font-weight: 700; letter-spacing: -.02em; margin: 0 0 .65rem; }
-  .caso-hero__meta { display: flex; flex-wrap: wrap; gap: .55rem; align-items: center; font-size: .85rem; opacity: .9; }
-  .caso-meta-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,.45); }
+  .caso-kicker-muted { opacity: .65; font-size: .8rem; color: #94A3B8; }
+  .caso-hero__title { font-size: 1.7rem; font-weight: 700; letter-spacing: -.02em; margin: 0 0 .65rem; }
+  .caso-hero__meta { display: flex; flex-wrap: wrap; gap: .55rem; align-items: center; font-size: .85rem; color: #CBD5E1; }
+  .caso-meta-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,.35); }
   .caso-client-link {
     display: inline-flex; align-items: center; gap: .4rem; padding: .25rem .55rem;
-    background: rgba(255,255,255,.12); border-radius: 999px; color: #fff; text-decoration: none;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+    border-radius: 8px; color: #fff; text-decoration: none;
     transition: background .15s;
   }
-  .caso-client-link:hover { background: rgba(255,255,255,.2); color: #fff; }
-  .caso-client-link small { opacity: .75; }
+  .caso-client-link:hover { background: rgba(255,255,255,.14); color: #fff; }
+  .caso-client-link small { opacity: .7; }
   .caso-client-link.is-muted { opacity: .6; }
   .caso-pill {
     font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-    padding: .28rem .6rem; border-radius: 999px;
+    padding: .28rem .6rem; border-radius: 6px;
   }
-  .caso-pill--activo { background: rgba(74, 159, 245, .22); color: #DBEAFE; }
-  .caso-pill--cerrado { background: rgba(91, 82, 232, .28); color: #EAE8FE; }
+  .caso-pill--activo { background: rgba(148,163,184,.2); color: #E2E8F0; }
+  .caso-pill--cerrado { background: rgba(255,255,255,.1); color: #CBD5E1; }
   .caso-pill--cancelado { background: #fee2e2; color: #991b1b; }
   .caso-hero__cta { text-align: right; flex-shrink: 0; }
-  .caso-cta-hint { margin-top: .5rem; font-size: .75rem; opacity: .8; }
+  .caso-cta-hint { margin-top: .5rem; font-size: .75rem; color: #94A3B8; }
 
   .btn-caso-primary {
-    display: inline-flex; align-items: center; gap: .45rem; border: 0; border-radius: 10px;
-    background: linear-gradient(135deg, #5B52E8 0%, #4A9FF5 100%); color: #fff; font-weight: 700; padding: .7rem 1.15rem;
-    text-decoration: none; box-shadow: 0 4px 14px rgba(91, 82, 232, .4); transition: transform .12s, box-shadow .12s;
+    display: inline-flex; align-items: center; gap: .45rem; border: 0; border-radius: 9px;
+    background: #1a1a2e; color: #fff; font-weight: 650; padding: .65rem 1.05rem;
+    text-decoration: none; box-shadow: none; transition: background .12s, transform .12s;
   }
-  .btn-caso-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(91, 82, 232, .5); color: #fff; }
-  .btn-caso-primary:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-caso-primary:hover { background: #2d2d44; color: #fff; transform: none; }
+  .btn-caso-primary:disabled { opacity: .4; cursor: not-allowed; }
   .btn-caso-primary--block { width: 100%; justify-content: center; }
   .btn-caso-secondary {
     display: inline-flex; align-items: center; gap: .35rem; border: 1px solid var(--c-line);
-    background: #fff; border-radius: 9px; padding: .45rem .85rem; font-weight: 600; color: var(--c-ink);
+    background: #fff; border-radius: 9px; padding: .5rem .9rem; font-weight: 600; color: var(--c-ink);
+    cursor: pointer; text-decoration: none;
   }
-  .btn-caso-secondary:hover { border-color: var(--c-accent); color: var(--c-accent); }
+  .btn-caso-secondary:hover { border-color: #9ca3af; background: #f8fafc; color: var(--c-ink); }
   .btn-caso-ghost {
     width: 100%; border: 0; background: transparent; color: var(--c-muted); font-size: .85rem; padding: .4rem;
   }
@@ -601,37 +655,34 @@
   }
   .btn-caso-danger:hover { background: #fef2f2; }
 
-  /* Pipeline */
   .caso-pipeline {
     display: flex; align-items: flex-start; gap: 0; background: var(--c-card);
-    border: 1px solid var(--c-line); border-radius: 14px; padding: 1.1rem 1.25rem;
-    margin-bottom: 1.25rem; overflow-x: auto; box-shadow: 0 1px 2px rgba(15,23,42,.04);
+    border: 1px solid var(--c-line); border-radius: 12px; padding: 1rem 1.15rem;
+    margin-bottom: 1.15rem; overflow-x: auto; box-shadow: 0 1px 2px rgba(26,26,46,.04);
   }
   .pipe-step { display: flex; flex-direction: column; align-items: center; min-width: 88px; text-align: center; }
   .pipe-node {
-    width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
-    font-size: .8rem; font-weight: 700; border: 2px solid var(--c-line); background: #fff; color: var(--c-muted);
+    width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+    font-size: .78rem; font-weight: 700; border: 1.5px solid var(--c-line); background: #fff; color: var(--c-muted);
   }
-  .pipe-step.is-done .pipe-node { background: var(--c-accent); border-color: var(--c-accent); color: #fff; }
+  .pipe-step.is-done .pipe-node { background: #1a1a2e; border-color: #1a1a2e; color: #fff; }
   .pipe-step.is-current .pipe-node {
-    background: var(--c-accent); border-color: var(--c-accent); color: #fff;
-    box-shadow: 0 0 0 4px var(--c-accent-soft);
+    background: #fff; border-color: #1a1a2e; color: #1a1a2e;
+    box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.08);
   }
-  .pipe-label { margin-top: .45rem; }
-  .pipe-label strong { display: block; font-size: .78rem; font-weight: 600; }
-  .pipe-label small { color: var(--c-accent); font-size: .7rem; }
-  .pipe-line { flex: 1; height: 2px; background: var(--c-line); margin-top: 16px; min-width: 28px; }
-  .pipe-line.is-lit { background: linear-gradient(90deg, #5B52E8, #4A9FF5); }
+  .pipe-label { margin-top: .4rem; }
+  .pipe-label strong { display: block; font-size: .76rem; font-weight: 600; color: var(--c-ink); }
+  .pipe-label small { color: var(--c-muted); font-size: .68rem; }
+  .pipe-line { flex: 1; height: 2px; background: var(--c-line); margin-top: 15px; min-width: 28px; }
+  .pipe-line.is-lit { background: #9ca3af; }
 
   .caso-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .9fr); gap: 1.15rem; }
   @media (max-width: 992px) { .caso-grid { grid-template-columns: 1fr; } .caso-hero { flex-direction: column; } }
 
   .caso-card, .aside-card {
-    background: var(--c-card); border: 1px solid var(--c-line); border-radius: 14px;
-    margin-bottom: 1rem; box-shadow: 0 1px 2px rgba(15,23,42,.04);
-    transition: box-shadow .15s;
+    background: var(--c-card); border: 1px solid var(--c-line); border-radius: 12px;
+    margin-bottom: 1rem; box-shadow: 0 1px 2px rgba(26,26,46,.04);
   }
-  .caso-card:hover { box-shadow: 0 4px 16px rgba(15,23,42,.06); }
   .caso-card__head {
     display: flex; align-items: center; gap: .85rem; padding: 1rem 1.15rem;
     border-bottom: 1px solid var(--c-line);
@@ -639,89 +690,95 @@
   .caso-card__head h2 { font-size: 1rem; margin: 0; font-weight: 700; }
   .caso-card__head p { margin: 0; font-size: .78rem; color: var(--c-muted); }
   .caso-card__icon {
-    width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 1.1rem; flex-shrink: 0;
+    width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; font-size: 1.05rem; flex-shrink: 0;
+    background: #f1f2f5; color: #4b5563;
   }
-  .caso-card__icon--docs { background: #eff6ff; color: #1d4ed8; }
-  .caso-card__icon--data { background: #f5f3ff; color: #6d28d9; }
-  .caso-card__icon--hist { background: #ecfdf5; color: #047857; }
-  .caso-card__icon--api { background: #fff7ed; color: #c2410c; }
+  .caso-card__icon--docs,
+  .caso-card__icon--data,
+  .caso-card__icon--hist,
+  .caso-card__icon--api { background: #f1f2f5; color: #4b5563; }
   .caso-card__body { padding: 1rem 1.15rem; }
   .caso-chip {
-    margin-left: auto; font-size: .7rem; font-weight: 700; padding: .25rem .55rem; border-radius: 999px;
+    margin-left: auto; font-size: .7rem; font-weight: 700; padding: .25rem .55rem; border-radius: 6px;
   }
   .caso-chip--warn { background: var(--c-warn-soft); color: var(--c-warn); }
 
-  .caso-empty {
-    text-align: center; padding: 1.75rem 1rem; color: var(--c-muted);
-  }
-  .caso-empty i { font-size: 1.75rem; opacity: .45; display: block; margin-bottom: .4rem; }
+  .caso-empty { text-align: center; padding: 1.75rem 1rem; color: var(--c-muted); }
+  .caso-empty i { font-size: 1.75rem; opacity: .4; display: block; margin-bottom: .4rem; }
   .caso-empty p { margin: 0; font-size: .9rem; }
 
-  .datos-cta {
-    display: flex; flex-direction: column; gap: .85rem;
-    padding: .35rem 0 .15rem;
-  }
+  .datos-cta { display: flex; flex-direction: column; gap: .85rem; padding: .35rem 0 .15rem; }
   .datos-cta__progress { width: 100%; }
   .datos-cta__bar { height: 6px; background: var(--c-line); border-radius: 999px; overflow: hidden; }
-  .datos-cta__bar span {
-    display: block; height: 100%; background: var(--c-accent); border-radius: 999px; transition: width .25s;
-  }
+  .datos-cta__bar span { display: block; height: 100%; background: #1a1a2e; border-radius: 999px; }
   .datos-cta__meta { font-size: .78rem; color: var(--c-muted); margin-top: .4rem; }
   .datos-cta__btn { justify-content: center; text-align: center; width: 100%; }
   .datos-cta__btn--done {
-    border: 1.5px solid rgba(91, 82, 232, .35) !important;
-    background: rgba(91, 82, 232, .08) !important;
-    color: #5B52E8 !important;
+    border: 1px solid var(--c-line) !important;
+    background: #f8fafc !important;
+    color: var(--c-ink) !important;
   }
   .datos-cta__badge {
     display: inline-flex; align-items: center; justify-content: center;
     min-width: 1.35rem; height: 1.35rem; padding: 0 .35rem; margin-left: .35rem;
-    border-radius: 999px; background: rgba(15,23,42,.12); font-size: .75rem; font-weight: 700;
+    border-radius: 999px; background: rgba(26,26,46,.1); font-size: .75rem; font-weight: 700;
   }
   .data-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 
   .doc-section-label {
     font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-    color: var(--c-muted); margin-bottom: .65rem; display: flex; align-items: center; gap: .45rem;
+    color: var(--c-muted); margin-bottom: .75rem; display: flex; align-items: center; gap: .45rem;
   }
   .doc-section-label--spaced { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--c-line); }
   .caso-empty--compact { padding: 1rem .5rem; }
   .doc-row__meta { font-size: .72rem; color: var(--c-muted); margin-top: .2rem; }
   .doc-row--readonly { opacity: .95; }
 
+  .doc-form-grid { display: flex; flex-direction: column; gap: .85rem; }
+  .doc-field {
+    border: 1px solid var(--c-line); border-radius: 10px; padding: .85rem 1rem;
+    background: #fafbfc;
+  }
+  .doc-field.is-error { border-color: #fca5a5; background: #fef2f2; }
+  .doc-field__head { display: flex; align-items: center; gap: .5rem; margin-bottom: .35rem; flex-wrap: wrap; }
+  .doc-field__name { font-weight: 650; font-size: .9rem; margin: 0; color: var(--c-ink); }
+  .doc-field__hint { margin: 0 0 .65rem; font-size: .78rem; color: var(--c-muted); }
+  .doc-field__controls {
+    display: grid; grid-template-columns: minmax(140px, 180px) 1fr; gap: .65rem;
+  }
+  @media (max-width: 640px) { .doc-field__controls { grid-template-columns: 1fr; } }
+  .doc-field__legacy {
+    margin-top: .55rem; font-size: .78rem; color: var(--c-muted);
+  }
+  .doc-field__legacy a { color: var(--c-ink); font-weight: 600; }
+
   .doc-row {
     display: flex; justify-content: space-between; gap: 1rem; align-items: center;
-    padding: .85rem 0; border-bottom: 1px solid var(--c-line);
+    padding: .75rem 0; border-bottom: 1px solid var(--c-line);
   }
   .doc-row:last-child { border-bottom: 0; }
   .doc-row.is-error { background: #fef2f2; margin: 0 -.5rem; padding-left: .5rem; padding-right: .5rem; border-radius: 8px; }
-  .doc-row__name { font-weight: 600; font-size: .92rem; }
+  .doc-row__name { font-weight: 600; font-size: .9rem; }
   .doc-row__status { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center; margin-top: .25rem; }
-  .doc-file { font-size: .78rem; color: var(--c-accent); text-decoration: none; }
-  .st { font-size: .68rem; font-weight: 700; padding: .15rem .45rem; border-radius: 6px; }
-  .st-ok { background: #dcfce7; color: var(--c-ok); }
+  .doc-file { font-size: .78rem; color: #4b5563; text-decoration: none; }
+  .st { font-size: .68rem; font-weight: 700; padding: .15rem .45rem; border-radius: 5px; }
+  .st-ok { background: var(--c-ok-soft); color: var(--c-ok); }
   .st-bad { background: #fee2e2; color: var(--c-danger); }
   .st-muted { background: #f1f5f9; color: var(--c-muted); }
-  .btn-upload {
-    display: inline-flex; align-items: center; gap: .35rem; cursor: pointer;
-    border: 1px dashed var(--c-line); border-radius: 8px; padding: .4rem .65rem; font-size: .8rem; font-weight: 600;
-    color: var(--c-muted); transition: border-color .15s, color .15s;
-  }
-  .btn-upload:hover { border-color: var(--c-accent); color: var(--c-accent); }
-  .btn-upload input { display: none; }
 
   .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.1rem; }
   @media (max-width: 700px) { .data-grid { grid-template-columns: 1fr; } }
   .data-field .df-label-row { margin-bottom: .35rem; }
-  .data-field .df-label { font-size: .78rem; font-weight: 600; color: #334155; }
+  .data-field .df-label { font-size: .78rem; font-weight: 600; color: #374151; }
   .data-field .df-req { color: var(--c-danger); }
   .data-field.is-error .df-label { color: var(--c-danger); }
   .caso-input {
-    width: 100%; border: 1px solid var(--c-line); border-radius: 10px; padding: .55rem .75rem;
+    width: 100%; border: 1px solid var(--c-line); border-radius: 9px; padding: .55rem .75rem;
     font-size: .9rem; background: #fff; transition: border-color .15s, box-shadow .15s; min-height: 40px;
+    color: var(--c-ink);
   }
-  .caso-input:focus { outline: 0; border-color: var(--c-accent); box-shadow: 0 0 0 3px var(--c-accent-soft); }
-  .data-field.is-error .caso-input { border-color: #fca5a5; box-shadow: 0 0 0 3px rgba(239,68,68,.12); }
+  .caso-input:focus { outline: 0; border-color: #9ca3af; box-shadow: 0 0 0 3px rgba(26,26,46,.08); }
+  .data-field.is-error .caso-input { border-color: #fca5a5; box-shadow: 0 0 0 3px rgba(239,68,68,.1); }
   .data-field.is-cond-disabled { opacity: .6; }
   .data-field.is-cond-disabled .caso-input { background: #f8fafc; }
   .field-error {
@@ -729,7 +786,6 @@
     margin-top: .35rem; font-size: .78rem; color: var(--c-danger); line-height: 1.35;
   }
   .field-error.d-none { display: none !important; }
-  .data-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 
   .caso-timeline { list-style: none; margin: 0; padding: 0 0 0 .35rem; }
   .tl-item { display: flex; gap: .85rem; position: relative; padding-bottom: 1.1rem; }
@@ -740,19 +796,19 @@
     width: 16px; height: 16px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0; margin-top: 3px;
     box-shadow: 0 0 0 3px #fff;
   }
-  .tl-item.tl-api .tl-dot { background: var(--hx-info, #4A9FF5); }
-  .tl-item.tl-manual .tl-dot { background: var(--c-accent); }
+  .tl-item.tl-api .tl-dot { background: #64748b; }
+  .tl-item.tl-manual .tl-dot { background: #1a1a2e; }
   .tl-item.tl-sistema .tl-dot { background: #94a3b8; }
   .tl-top { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; font-size: .9rem; }
   .tl-state { color: var(--c-muted); font-size: .82rem; }
   .tl-origen { font-size: .65rem; font-weight: 700; padding: .12rem .4rem; border-radius: 4px; }
-  .origen-api { background: #e0f2fe; color: #0369a1; }
-  .origen-manual { background: var(--c-accent-soft); color: #115e59; }
-  .origen-sistema { background: #f1f5f9; color: #475569; }
+  .origen-api { background: #f1f5f9; color: #475569; }
+  .origen-manual { background: #f1f5f9; color: #1a1a2e; }
+  .origen-sistema { background: #f1f5f9; color: #64748b; }
   .tl-meta { font-size: .75rem; color: var(--c-muted); margin-top: .15rem; }
   .tl-comment { margin-top: .35rem; font-size: .84rem; background: var(--c-bg); border-radius: 8px; padding: .4rem .6rem; }
   .btn-ver-mas {
-    border: 0; background: transparent; color: var(--c-accent); font-weight: 600; font-size: .85rem; padding: .25rem 0;
+    border: 0; background: transparent; color: var(--c-ink); font-weight: 600; font-size: .85rem; padding: .25rem 0;
   }
 
   .api-row { border-bottom: 1px solid var(--c-line); }
@@ -766,7 +822,7 @@
   .api-meta { color: var(--c-muted); font-size: .75rem; }
   .api-detail { padding: 0 1.15rem 1rem; }
   .api-detail pre {
-    background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: .65rem; font-size: .72rem;
+    background: #1a1a2e; color: #e2e8f0; border-radius: 8px; padding: .65rem; font-size: .72rem;
     max-height: 160px; overflow: auto; white-space: pre-wrap;
   }
 
@@ -786,10 +842,10 @@
   }
   .aside-kv dt { color: var(--c-muted); font-weight: 500; }
   .aside-kv dd { margin: 0; font-weight: 600; text-align: right; }
-  .aside-kv__em { color: var(--c-accent); font-size: 1.05rem; }
+  .aside-kv__em { color: var(--c-ink); font-size: 1.05rem; }
   .aside-links { display: flex; flex-direction: column; gap: .35rem; margin-top: .85rem; }
   .aside-links a {
-    display: flex; align-items: center; gap: .4rem; text-decoration: none; color: var(--c-accent);
+    display: flex; align-items: center; gap: .4rem; text-decoration: none; color: var(--c-ink);
     font-size: .85rem; font-weight: 600; padding: .35rem 0;
   }
   .aside-links a:hover { text-decoration: underline; }
@@ -803,28 +859,49 @@
   .aside-alert { border-radius: 10px; padding: .75rem .85rem; font-size: .8rem; margin-bottom: .85rem; }
   .aside-alert--danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
   .aside-alert--ok {
-    background: rgba(91, 82, 232, .08);
-    color: #4338CA;
-    border: 1px solid rgba(91, 82, 232, .28);
+    background: #f8fafc;
+    color: #1a1a2e;
+    border: 1px solid var(--c-line);
   }
   .aside-alert ul { margin: .4rem 0; padding-left: 1.1rem; }
   .aside-alert a { color: inherit; font-weight: 700; }
 
   .action-choices { display: flex; flex-direction: column; gap: .45rem; }
   .action-choice {
-    display: flex; gap: .65rem; align-items: flex-start; border: 1.5px solid var(--c-line);
-    border-radius: 10px; padding: .65rem .75rem; cursor: pointer; transition: border-color .12s, background .12s, box-shadow .12s;
+    display: flex; gap: .65rem; align-items: flex-start; border: 1px solid var(--c-line);
+    border-radius: 10px; padding: .65rem .75rem; cursor: pointer; transition: border-color .12s, background .12s;
     margin: 0;
   }
-  .action-choice:hover { border-color: rgba(91, 82, 232, .45); }
+  .action-choice:hover { border-color: #9ca3af; }
   .action-choice.is-selected {
-    border-color: var(--c-accent); background: var(--c-accent-soft);
-    box-shadow: 0 0 0 1px var(--c-accent);
+    border-color: #1a1a2e; background: rgba(26,26,46,.04);
+    box-shadow: none;
   }
-  .action-choice input { margin-top: .2rem; accent-color: var(--c-accent); }
+  .action-choice input { margin-top: .2rem; accent-color: #1a1a2e; }
   .action-choice__body { display: flex; flex-direction: column; gap: .1rem; }
   .action-choice__body strong { font-size: .9rem; }
   .action-choice__body small { color: var(--c-muted); font-size: .75rem; }
+
+  /* Sticky save bar — siempre visible al pie del viewport */
+  .caso-sticky-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    background: rgba(255,255,255,.96);
+    border-top: 1px solid var(--c-line);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 -4px 20px rgba(26,26,46,.06);
+  }
+  .caso-sticky-bar__inner {
+    max-width: 1280px; margin: 0 auto;
+    padding: .75rem 1.25rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  }
+  .caso-sticky-bar__hint { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; }
+  .caso-sticky-bar__muted { font-size: .8rem; color: var(--c-muted); }
+  .caso-sticky-bar__actions { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+
+  /* En embed Helios (iframe) la barra queda relativa al iframe */
+  body.hx-embed .caso-sticky-bar,
+  html.hx-embed .caso-sticky-bar { position: sticky; }
 </style>
 
 <script>

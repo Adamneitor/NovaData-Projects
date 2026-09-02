@@ -1,6 +1,8 @@
 # Nova Projects — Knowledge Map
 
 ## Changelog
+- **2026-09-02**: Documentación como checklist/form (sin adjuntos) + barra guardar fija; UI caso/shell más neutra.
+- **2026-09-02**: Fix seed docs BigInteger (flush) — el rollback vaciaba clientes en Railway.
 - **2026-09-02**: Fix 500 Clientes 360 (Jinja `dict.items`) + catálogo/expediente Documentación dummy.
 - **2026-09-02**: Flujo multi-rol 8 etapas + 12 clientes 360; fix IdLog SQLite al Ejecutar API.
 - **2026-09-02**: Fix 500 Ejecutar API + identidad NOVA en caso; rail pegado a búsqueda.

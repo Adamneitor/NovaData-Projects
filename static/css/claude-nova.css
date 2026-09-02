@@ -730,9 +730,9 @@ input:focus-visible, button:focus-visible, a:focus-visible {
 a.nv-rail__link { cursor: pointer; }
 a.nv-rail__link:hover { color: #CBD5E1; }
 .nv-rail__link.is-active {
-  border-left-color: var(--nova-primary);
-  background: rgba(91,82,232,.09);
-  font-weight: 700; color: #5B52E8;
+  border-left-color: #CBD5E1;
+  background: rgba(148,163,184,.1);
+  font-weight: 700; color: #F1F5F9;
 }
 .nv-rail__back {
   display: flex; align-items: center; gap: 9px;
@@ -804,7 +804,7 @@ a.nv-rail__link:hover { color: #CBD5E1; }
   .nv-rail { width: 64px; }
   .nv-rail__label, .nv-rail__link span, .nv-rail__back span { display: none; }
   .nv-rail__link { justify-content: center; padding: 10px; border-left-width: 0; }
-  .nv-rail__link.is-active { background: rgba(91,82,232,.14); border-radius: 8px; margin: 0 12px; padding: 8px; width: auto; }
+  .nv-rail__link.is-active { background: rgba(148,163,184,.14); border-radius: 8px; margin: 0 12px; padding: 8px; width: auto; }
   .nv-rail__back { justify-content: center; padding: 10px; }
   .nv-search { display: none; }
   .nv-topbar__brand-slot { width: 64px; padding: 0 10px; justify-content: center; }
