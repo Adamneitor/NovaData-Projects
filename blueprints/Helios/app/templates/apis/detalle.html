@@ -151,17 +151,26 @@ function cambiarOrigen(sel) {
 document.getElementById('btnTestApi')?.addEventListener('click', async () => {
   const casoId = document.getElementById('testCasoId').value;
   const out = document.getElementById('testApiOut');
+  const btn = document.getElementById('btnTestApi');
   if (!casoId) { alert('Indique un Id de caso'); return; }
   out.classList.remove('d-none');
   out.textContent = 'Ejecutando…';
+  if (btn) { btn.disabled = true; }
   const fd = new FormData();
   fd.append('caso_id', casoId);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 20000);
   try {
-    const r = await fetch('/apis/{{ api.id }}/probar', { method: 'POST', body: fd });
+    const r = await fetch('/apis/{{ api.id }}/probar', { method: 'POST', body: fd, signal: ctrl.signal });
     const data = await r.json();
     out.textContent = JSON.stringify(data, null, 2);
   } catch (e) {
-    out.textContent = String(e);
+    out.textContent = (e && e.name === 'AbortError')
+      ? 'Timeout: la API no respondió a tiempo.'
+      : String(e);
+  } finally {
+    clearTimeout(timer);
+    if (btn) { btn.disabled = false; }
   }
 });
 </script>

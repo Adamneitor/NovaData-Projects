@@ -11,7 +11,7 @@
   }
   .hx-datos-kicker {
     margin: 0 0 .3rem; font-size: .72rem; font-weight: 700;
-    letter-spacing: .06em; text-transform: uppercase; color: #0f766e;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--hx-accent, #5B52E8);
   }
   .hx-datos-title {
     margin: 0; font-size: 1.5rem; font-weight: 750; letter-spacing: -.02em;
@@ -34,7 +34,7 @@
   }
   .hx-datos-progress__fill {
     display: block; height: 100%;
-    background: linear-gradient(90deg, #0f766e, #14b8a6);
+    background: linear-gradient(90deg, var(--hx-accent, #5B52E8), var(--hx-info, #4A9FF5));
     border-radius: 999px; transition: width .35s cubic-bezier(.22,1,.36,1);
   }
   .hx-datos-progress__meta {
@@ -109,7 +109,7 @@
   .hx-datos .df-input:focus,
   .hx-datos .caso-input:focus {
     outline: 0 !important;
-    border-color: #0f766e !important;
+    border-color: var(--hx-accent, #5B52E8) !important;
     box-shadow: 0 0 0 3px #ccfbf1 !important;
   }
   .hx-datos .df-input:disabled,
@@ -143,7 +143,7 @@
     display: inline-flex; align-items: center; gap: .4rem;
     font-size: .78rem; color: #64748b;
   }
-  .hx-datos-footer__hint i { color: #0f766e; }
+  .hx-datos-footer__hint i { color: var(--hx-accent, #5B52E8); }
   .hx-datos-footer__actions {
     display: flex; align-items: center; gap: .55rem; margin-left: auto;
   }

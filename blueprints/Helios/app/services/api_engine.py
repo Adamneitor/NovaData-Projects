@@ -1,7 +1,12 @@
 """Ejecucion de API calls configurados y evaluacion de reglas de direccionamiento."""
 
+from __future__ import annotations
+
 import json
+import sys
 from dataclasses import dataclass, field
+from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
 from sqlalchemy.orm import Session, selectinload
@@ -18,6 +23,9 @@ from app.models import (
 )
 from app.services.api_mapeo import resolver_origen
 from app.services.dato_formato import CODIGO_BOOLEANO, tipo_codigo
+
+# Nova Projects root (…/blueprints/Helios/app/services → 4 niveles arriba)
+_NOVA_ROOT = Path(__file__).resolve().parents[4]
 
 
 @dataclass
@@ -198,6 +206,70 @@ def _formatear(valor: object, formato: str) -> object:
     return str(valor)
 
 
+def _demo_apis_module():
+    """Carga demo_apis del root Nova sin depender del paquete Flask activo."""
+    root = str(_NOVA_ROOT)
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    import demo_apis  # type: ignore
+
+    return demo_apis
+
+
+def _auth_bearer_ok(headers: dict) -> bool:
+    auth = ""
+    for k, v in (headers or {}).items():
+        if str(k).lower() == "authorization":
+            auth = str(v or "")
+            break
+    if not auth.lower().startswith("bearer "):
+        return False
+    return auth.split(" ", 1)[1].strip() == "test-token-123"
+
+
+def _as_bool(raw: object) -> bool:
+    if isinstance(raw, str):
+        return raw.strip().lower() in ("1", "true", "si", "sí", "yes")
+    return bool(raw)
+
+
+def _try_demo_api_inprocess(
+    url: str, body: dict, headers: dict
+) -> tuple[int, dict] | None:
+    """
+    Si la URL apunta a /demo-api/* del mismo portal, ejecuta in-process.
+    Evita que Helios se llame a sí mismo por HTTP (deadlock con gunicorn -w 1).
+    """
+    path = (urlparse(url).path or "").rstrip("/")
+    if "/demo-api/" not in path:
+        return None
+
+    demo = _demo_apis_module()
+    if not _auth_bearer_ok(headers):
+        return 401, {"error": "No autorizado. Use Authorization: Bearer test-token-123"}
+
+    if path.endswith("/demo-api/evaluacion"):
+        try:
+            salario = float(body.get("salario") or 0)
+            tiempo = float(body.get("tiempo_laborando") or 0)
+        except (TypeError, ValueError):
+            return 400, {"error": "salario y tiempo_laborando deben ser numéricos"}
+        cedula = demo._cedula_limpia(str(body.get("cedula") or ""))
+        if salario <= 0 or not cedula:
+            return 400, {"error": "Requiere salario > 0 y cedula"}
+        return 200, demo.evaluar_motor(salario, _as_bool(body.get("es_asalariado", False)), tiempo, cedula)
+
+    if path.endswith("/demo-api/buro/reporte"):
+        cedula = demo._cedula_limpia(
+            str(body.get("cedula") or body.get("identificacion") or "")
+        )
+        if len(cedula) < 5:
+            return 400, {"error": "Requiere cedula válida"}
+        return 200, demo.reporte_buro(cedula)
+
+    return None
+
+
 def ejecutar_api(
     api: ApiCall,
     caso: Caso,
@@ -236,20 +308,47 @@ def ejecutar_api(
     )
 
     try:
-        with httpx.Client(timeout=api.timeout_seg or 30) as client:
-            kwargs: dict = {"params": query, "headers": headers}
-            if api.metodo.upper() in ("POST", "PUT", "PATCH"):
-                kwargs["json"] = body
-            respuesta = client.request(api.metodo.upper(), url, **kwargs)
-        resultado.http_status = respuesta.status_code
-        resultado.response_json = respuesta.text[:100_000]
-        respuesta.raise_for_status()
-        data = respuesta.json()
-        for out in api.outputs:
-            resultado.outputs[out.nombre] = _formatear(
-                _extraer_output(data, out), out.formato
+        # Evita deadlock gunicorn (-w 1): no hacer HTTP al mismo proceso /demo-api/*
+        inproc = _try_demo_api_inprocess(url, body, headers)
+        if inproc is not None:
+            status, data_or_err = inproc
+            resultado.http_status = status
+            if status >= 400:
+                resultado.response_json = json.dumps(data_or_err, ensure_ascii=False)[:100_000]
+                resultado.error = (
+                    data_or_err.get("error")
+                    if isinstance(data_or_err, dict)
+                    else str(data_or_err)
+                )
+            else:
+                data = data_or_err if isinstance(data_or_err, dict) else {}
+                resultado.response_json = json.dumps(data, ensure_ascii=False)[:100_000]
+                for out in api.outputs:
+                    resultado.outputs[out.nombre] = _formatear(
+                        _extraer_output(data, out), out.formato
+                    )
+                resultado.exito = True
+        else:
+            timeout = httpx.Timeout(
+                connect=5.0,
+                read=float(min(int(api.timeout_seg or 15), 20)),
+                write=10.0,
+                pool=5.0,
             )
-        resultado.exito = True
+            with httpx.Client(timeout=timeout) as client:
+                kwargs: dict = {"params": query, "headers": headers}
+                if api.metodo.upper() in ("POST", "PUT", "PATCH"):
+                    kwargs["json"] = body
+                respuesta = client.request(api.metodo.upper(), url, **kwargs)
+            resultado.http_status = respuesta.status_code
+            resultado.response_json = respuesta.text[:100_000]
+            respuesta.raise_for_status()
+            data = respuesta.json()
+            for out in api.outputs:
+                resultado.outputs[out.nombre] = _formatear(
+                    _extraer_output(data, out), out.formato
+                )
+            resultado.exito = True
     except Exception as exc:  # noqa: BLE001 - se reporta el error al usuario
         resultado.error = str(exc)
 

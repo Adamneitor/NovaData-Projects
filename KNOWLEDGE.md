@@ -1,6 +1,7 @@
 # Nova Projects — Knowledge Map
 
 ## Changelog
+- **2026-09-02**: Diagnóstico freeze UI al ejecutar APIs Helios: loopback HTTP sync a `/demo-api/*` con gunicorn `-w 1` (deadlock hasta timeout httpx ~30s).
 - **2026-09-02**: Auto-seed demo Helios al arrancar (APIs, flujo, 3 casos, catálogo). Visible en Railway tras deploy.
 - **2026-09-02**: Seed flujo BPM **Demo Originacion TDC** + casos dummy por etapa.
 - **2026-09-01**: Home público v2; login → `/nova` shell vacío.
@@ -44,6 +45,6 @@ python app.py
 | CSS marca | `static/css/claude-nova.css` |
 
 ## Pitfalls
-- Helios BPM (FastAPI + SQL Server en `blueprints/Helios`) es aparte; Railway hostea este portal Flask.
+- Helios (FastAPI) + Flask comparten proceso vía `wsgi.py` (`a2wsgi`). APIs demo apuntan a `{RAILWAY_PUBLIC_DOMAIN}/demo-api/*`. Con `gunicorn -w 1`, `httpx` sync desde Helios hacia ese mismo host **deadlockea** el worker (~30s timeout) → UI “frisada”. Mitigar: workers/threads>1, invocación in-process, o mock en otro servicio.
 - `postgres://` se normaliza a `postgresql://` en `database.py`.
 - Tras deploy, si no hay Postgres, cae a SQLite efímero (no persistente en Railway sin volumen).

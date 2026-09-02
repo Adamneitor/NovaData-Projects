@@ -533,13 +533,13 @@
     --c-line: var(--hx-line, #e2e8f0);
     --c-bg: var(--hx-bg, #f1f5f9);
     --c-card: var(--hx-surface, #ffffff);
-    --c-accent: var(--hx-accent, #0f766e);
+    --c-accent: var(--hx-accent, #5B52E8);
     --c-accent-soft: var(--hx-accent-soft, #ccfbf1);
     --c-warn: var(--hx-warn, #b45309);
     --c-warn-soft: var(--hx-warn-soft, #fef3c7);
     --c-danger: var(--hx-danger, #b91c1c);
     --c-ok: var(--hx-ok, #15803d);
-    font-family: var(--hx-font, Inter, system-ui, sans-serif);
+    font-family: var(--hx-font, "Montserrat", system-ui, sans-serif);
     color: var(--c-ink);
     max-width: 1280px;
   }
@@ -736,7 +736,7 @@
     width: 16px; height: 16px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0; margin-top: 3px;
     box-shadow: 0 0 0 3px #fff;
   }
-  .tl-item.tl-api .tl-dot { background: #0ea5e9; }
+  .tl-item.tl-api .tl-dot { background: var(--hx-info, #4A9FF5); }
   .tl-item.tl-manual .tl-dot { background: var(--c-accent); }
   .tl-item.tl-sistema .tl-dot { background: #94a3b8; }
   .tl-top { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; font-size: .9rem; }
@@ -850,6 +850,21 @@
     submitting = true;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando…';
+  });
+})();
+</script>
+<script>
+(function () {
+  document.querySelectorAll('form[action*="reintentar-api"], form[action*="mover-por-api"], form[action*="mover-por-datos"]').forEach((form) => {
+    form.addEventListener('submit', () => {
+      const btn = form.querySelector('button[type="submit"], input[type="submit"]');
+      if (!btn || btn.disabled) return;
+      btn.disabled = true;
+      if (btn.tagName === 'BUTTON') {
+        btn.dataset._label = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Ejecutando API…';
+      }
+    });
   });
 })();
 </script>

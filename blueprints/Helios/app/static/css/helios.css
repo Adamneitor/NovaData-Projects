@@ -143,26 +143,6 @@ a:hover { color: var(--nova-primary, #5B52E8); }
   max-width: 1440px;
 }
 
-body.hx-embed {
-  background: var(--hx-bg);
-  min-height: 100%;
-}
-body.hx-embed .sidebar,
-body.hx-embed .hx-topbar,
-body.hx-embed .hx-sidebar-backdrop {
-  display: none !important;
-}
-body.hx-embed .contenido,
-body.hx-embed main.contenido,
-.contenido--embed {
-  margin-left: 0 !important;
-  max-width: none !important;
-  min-height: 100%;
-  padding: 20px 24px 28px !important;
-  width: 100% !important;
-  box-sizing: border-box;
-}
-
 /* Mobile topbar */
 .hx-topbar {
   display: none;
@@ -330,15 +310,15 @@ body.hx-embed main.contenido,
   background: var(--hx-cta) !important;
   border-color: var(--hx-cta) !important;
   color: var(--hx-cta-ink) !important;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.28);
+  box-shadow: 0 2px 8px rgba(91, 82, 232, 0.28);
 }
 
 .btn-warning:hover,
 .btn-hx-primary:hover {
-  background: #fbbf24 !important;
-  border-color: #fbbf24 !important;
+  background: #4A41D9 !important;
+  border-color: #4A41D9 !important;
   color: var(--hx-cta-ink) !important;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 4px 12px rgba(91, 82, 232, 0.35);
 }
 
 .btn-dark,
@@ -350,8 +330,8 @@ body.hx-embed main.contenido,
 
 .btn-dark:hover,
 .btn-hx-accent:hover {
-  background: #0d9488 !important;
-  border-color: #0d9488 !important;
+  background: #4A41D9 !important;
+  border-color: #4A41D9 !important;
 }
 
 .btn-outline-dark {
@@ -377,13 +357,13 @@ body.hx-embed main.contenido,
 }
 
 .btn-outline-warning {
-  border-color: rgba(245, 158, 11, 0.45) !important;
-  color: #fbbf24 !important;
+  border-color: rgba(91, 82, 232, 0.45) !important;
+  color: var(--hx-accent, #5B52E8) !important;
 }
 
 .btn-outline-warning:hover {
-  background: rgba(245, 158, 11, 0.15) !important;
-  color: #fde68a !important;
+  background: rgba(91, 82, 232, 0.12) !important;
+  color: #4A41D9 !important;
 }
 
 .btn-outline-danger:hover {
@@ -690,7 +670,7 @@ code, pre, .font-monospace { font-size: 0.8rem; }
   display: block;
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, var(--hx-accent), #14b8a6);
+  background: linear-gradient(90deg, var(--hx-accent), var(--hx-info, #4A9FF5));
   border-radius: 999px;
   transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
