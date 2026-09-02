@@ -77,61 +77,49 @@
     {# ========== COLUMNA PRINCIPAL ========== #}
     <div class="caso-main">
 
-      {# Documentación — formulario checklist (sin adjuntos) #}
+      {# Documentación — adjuntos por requisito #}
       <article class="caso-card" id="seccion-documentos">
         <header class="caso-card__head">
-          <div class="caso-card__icon caso-card__icon--docs"><i class="bi bi-ui-checks"></i></div>
+          <div class="caso-card__icon caso-card__icon--docs"><i class="bi bi-folder2-open"></i></div>
           <div>
             <h2>Documentación</h2>
-            <p>Checklist de requisitos · marque estado y referencia</p>
+            <p>Adjunte los archivos requeridos de la etapa</p>
           </div>
           {% if docs_pend_count %}<span class="caso-chip caso-chip--warn">{{ docs_pend_count }} pendiente{{ 's' if docs_pend_count != 1 }}</span>{% endif %}
         </header>
         <div class="caso-card__body">
           <div class="doc-section-label">Requisitos · {{ caso.etapa_actual.nombre }}</div>
           {% if docs_etapa %}
-          <form method="post" action="/casos/{{ caso.id }}/documentos/checklist" id="formDocumentacion" class="doc-form" autocomplete="off">
-            <div class="doc-form-grid">
+          <div class="doc-list">
             {% for ed in docs_etapa %}
-              {% set meta = docs_meta.get(ed.documento_id, {'estado': 'pendiente', 'nota': '', 'es_archivo': false}) %}
+              {% set cargado = docs_cargados.get(ed.documento_id) %}
               {% set marcado = intent_errs | selectattr('campo', 'equalto', 'documento_' ~ ed.documento_id) | list %}
-              <div class="doc-field {% if marcado %}is-error{% endif %}" id="campo-documento_{{ ed.documento_id }}">
-                <div class="doc-field__head">
-                  <label class="doc-field__name" for="doc_{{ ed.documento_id }}_estado">{{ ed.documento.nombre }}</label>
-                  {% if ed.obligatorio %}
-                    {% if ed.documento_id in docs_pendientes %}<span class="st st-bad">Obligatorio</span>
-                    {% else %}<span class="st st-ok">Completo</span>{% endif %}
-                  {% else %}<span class="st st-muted">Opcional</span>{% endif %}
-                </div>
-                {% if ed.documento.descripcion %}<p class="doc-field__hint">{{ ed.documento.descripcion }}</p>{% endif %}
-                <div class="doc-field__controls">
-                  <div class="doc-field__estado">
-                    <select class="caso-input" name="doc_{{ ed.documento_id }}_estado" id="doc_{{ ed.documento_id }}_estado"
-                            {% if not puede_actuar %}disabled{% endif %}>
-                      <option value="pendiente" {% if meta.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
-                      <option value="recibido" {% if meta.estado == 'recibido' %}selected{% endif %}>Recibido</option>
-                      <option value="verificado" {% if meta.estado == 'verificado' %}selected{% endif %}>Verificado</option>
-                      <option value="no_aplica" {% if meta.estado == 'no_aplica' %}selected{% endif %}>No aplica</option>
-                    </select>
-                  </div>
-                  <div class="doc-field__nota">
-                    <input type="text" class="caso-input" name="doc_{{ ed.documento_id }}_nota"
-                           value="{{ meta.nota if not meta.es_archivo else '' }}"
-                           placeholder="N.º referencia, folio o comentario…"
-                           {% if not puede_actuar %}disabled{% endif %}>
+              <div class="doc-row {% if marcado %}is-error{% endif %}" id="campo-documento_{{ ed.documento_id }}">
+                <div class="doc-row__info">
+                  <div class="doc-row__name">{{ ed.documento.nombre }}</div>
+                  {% if ed.documento.descripcion %}<div class="doc-row__meta">{{ ed.documento.descripcion }}</div>{% endif %}
+                  <div class="doc-row__status">
+                    {% if ed.obligatorio %}
+                      {% if ed.documento_id in docs_pendientes %}<span class="st st-bad">Obligatorio · pendiente</span>
+                      {% else %}<span class="st st-ok">Obligatorio · listo</span>{% endif %}
+                    {% else %}<span class="st st-muted">Opcional</span>{% endif %}
+                    {% if cargado %}
+                      <a class="doc-file" href="/casos/{{ caso.id }}/documentos/{{ cargado.id }}/descargar"><i class="bi bi-paperclip"></i> {{ cargado.nombre_original }}</a>
+                    {% endif %}
                   </div>
                 </div>
-                {% if meta.es_archivo and docs_cargados.get(ed.documento_id) %}
-                <div class="doc-field__legacy">
-                  <i class="bi bi-paperclip"></i>
-                  Adjunto previo:
-                  <a href="/casos/{{ caso.id }}/documentos/{{ docs_cargados[ed.documento_id].id }}/descargar">{{ meta.nota }}</a>
-                </div>
+                {% if puede_actuar %}
+                <form method="post" action="/casos/{{ caso.id }}/documentos/{{ ed.documento_id }}/cargar" enctype="multipart/form-data" class="doc-upload">
+                  <label class="btn-upload">
+                    <i class="bi bi-upload"></i>
+                    <span>{% if cargado %}Reemplazar{% else %}Subir{% endif %}</span>
+                    <input type="file" name="archivo" required onchange="this.form.submit()">
+                  </label>
+                </form>
                 {% endif %}
               </div>
             {% endfor %}
-            </div>
-          </form>
+          </div>
           {% else %}
           <div class="caso-empty caso-empty--compact">
             <i class="bi bi-inbox"></i>
@@ -140,26 +128,20 @@
           {% endif %}
 
           <div class="doc-section-label doc-section-label--spaced">
-            Expediente · registros
+            Expediente · todos los cargados
             {% if docs_expediente %}<span class="st st-muted">{{ docs_expediente|length }}</span>{% endif %}
           </div>
           {% if docs_expediente %}
           <div class="doc-list">
             {% for cd in docs_expediente %}
               {% set etapa_doc = etapas_por_id.get(cd.etapa_id) %}
-              {% set em = docs_expediente_meta.get(cd.id, {}) %}
               <div class="doc-row doc-row--readonly">
                 <div class="doc-row__info">
                   <div class="doc-row__name">{{ cd.documento.nombre if cd.documento else 'Documento' }}</div>
                   <div class="doc-row__status">
                     <span class="st st-muted">{{ etapa_doc.nombre if etapa_doc else 'Etapa' }}</span>
-                    {% if em.estado == 'verificado' %}<span class="st st-ok">Verificado</span>
-                    {% elif em.estado == 'no_aplica' %}<span class="st st-muted">No aplica</span>
-                    {% elif em.estado == 'recibido' %}<span class="st st-ok">Recibido</span>
-                    {% else %}<span class="st st-ok">Registrado</span>{% endif %}
-                    {% if em.es_archivo %}
-                      <a class="doc-file" href="/casos/{{ caso.id }}/documentos/{{ cd.id }}/descargar"><i class="bi bi-paperclip"></i> {{ cd.nombre_original }}</a>
-                    {% elif em.nota %}<span class="doc-file">{{ em.nota }}</span>{% endif %}
+                    <span class="st st-ok">Cargado</span>
+                    <a class="doc-file" href="/casos/{{ caso.id }}/documentos/{{ cd.id }}/descargar"><i class="bi bi-paperclip"></i> {{ cd.nombre_original }}</a>
                   </div>
                   <div class="doc-row__meta">
                     {{ cd.fecha_carga.strftime('%d/%m/%Y %H:%M') if cd.fecha_carga else '—' }}
@@ -171,8 +153,8 @@
           </div>
           {% else %}
           <div class="caso-empty caso-empty--compact">
-            <i class="bi bi-journal-check"></i>
-            <p>Aún no hay documentación marcada en este caso.</p>
+            <i class="bi bi-folder2"></i>
+            <p>Aún no se ha cargado ningún documento en este caso.</p>
           </div>
           {% endif %}
         </div>
@@ -539,7 +521,7 @@
   </div>
 
   {# Barra fija inferior: guardar sin scrollear #}
-  {% if puede_actuar and (docs_etapa or (datos_etapa and datos_inline) or transiciones) %}
+  {% if puede_actuar and ((datos_etapa and datos_inline) or transiciones or (datos_etapa and not datos_inline)) %}
   <div class="caso-sticky-bar" role="region" aria-label="Acciones de guardado">
     <div class="caso-sticky-bar__inner">
       <div class="caso-sticky-bar__hint">
@@ -551,11 +533,6 @@
         <span class="caso-sticky-bar__muted">Guarde los cambios antes de avanzar</span>
       </div>
       <div class="caso-sticky-bar__actions">
-        {% if docs_etapa %}
-        <button type="submit" form="formDocumentacion" class="btn-caso-secondary">
-          <i class="bi bi-journal-check"></i> Guardar documentación
-        </button>
-        {% endif %}
         {% if datos_etapa and datos_inline %}
         <button type="submit" form="formDatosInline" class="btn-caso-secondary">
           <i class="bi bi-check2"></i> Guardar datos
@@ -765,6 +742,13 @@
   .st-ok { background: var(--c-ok-soft); color: var(--c-ok); }
   .st-bad { background: #fee2e2; color: var(--c-danger); }
   .st-muted { background: #f1f5f9; color: var(--c-muted); }
+  .btn-upload {
+    display: inline-flex; align-items: center; gap: .35rem; cursor: pointer;
+    border: 1px dashed var(--c-line); border-radius: 8px; padding: .45rem .7rem;
+    font-size: .8rem; font-weight: 600; color: var(--c-muted); background: #fff;
+  }
+  .btn-upload:hover { border-color: #9ca3af; color: var(--c-ink); }
+  .btn-upload input { display: none; }
 
   .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.1rem; }
   @media (max-width: 700px) { .data-grid { grid-template-columns: 1fr; } }

@@ -1,6 +1,7 @@
 # Nova Projects — Knowledge Map
 
 ## Changelog
+- **2026-09-02**: Docs otra vez como adjuntos; script `migrate_helios_bak.py` (.bak SQL2025 → SQLite/Postgres). Un .bak no entra directo a Railway.
 - **2026-09-02**: Documentación como checklist/form (sin adjuntos) + barra guardar fija; UI caso/shell más neutra.
 - **2026-09-02**: Fix seed docs BigInteger (flush) — el rollback vaciaba clientes en Railway.
 - **2026-09-02**: Fix 500 Clientes 360 (Jinja `dict.items`) + catálogo/expediente Documentación dummy.

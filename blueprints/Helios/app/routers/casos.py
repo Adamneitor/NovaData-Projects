@@ -268,14 +268,12 @@ def detalle(
 
     # Última carga por tipo de documento (para requisitos de etapa actual)
     docs_cargados = {cd.documento_id: cd for cd in caso.documentos}
-    docs_meta = {did: _meta_documento(cd) for did, cd in docs_cargados.items()}
     # Expediente: todas las cargas del caso (cualquier etapa), más recientes primero
     docs_expediente = sorted(
         list(caso.documentos),
         key=lambda cd: (cd.fecha_carga or datetime.min, cd.id),
         reverse=True,
     )
-    docs_expediente_meta = {cd.id: _meta_documento(cd) for cd in docs_expediente}
     etapas_por_id = {e.id: e for e in caso.flujo.etapas}
     datos_valores_all = {cd.dato_id: cd.valor for cd in caso.datos}
     datos_etapa = _datos_etapa_ordenados(etapa)
@@ -380,9 +378,7 @@ def detalle(
             "docs_pend_count": len(docs_pend),
             "datos_pend_count": len(datos_pend),
             "docs_cargados": docs_cargados,
-            "docs_meta": docs_meta,
             "docs_expediente": docs_expediente,
-            "docs_expediente_meta": docs_expediente_meta,
             "datos_expediente": datos_expediente,
             "datos_inline": datos_inline,
             "datos_completados": datos_completados,
@@ -819,8 +815,7 @@ def descargar_documento(
     if not cd or cd.caso_id != caso_id:
         return RedirectResponse(f"/casos/{caso_id}", status_code=303)
     ruta = (cd.ruta_archivo or "").strip()
-    # Checklist / formulario: no hay archivo físico
-    if ruta.startswith(CHECKLIST_PREFIX) or not Path(ruta).is_file():
+    if not ruta or not Path(ruta).is_file():
         return RedirectResponse(f"/casos/{caso_id}#seccion-documentos", status_code=303)
     return FileResponse(ruta, filename=cd.nombre_original)
 
