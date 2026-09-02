@@ -1,8 +1,9 @@
 # Nova Projects — Knowledge Map
 
 ## Changelog
-- **2026-09-02**: Shell pick: Desarrollo junto al dropdown; búsqueda por cédula en sidebar; icono de perfil. APIs demo `/demo-api/evaluacion` (APROBADA/REFERIDA/DECLINADA) y `/demo-api/buro/reporte` + `scripts/seed_demo_apis.py`.
-- **2026-09-01**: Home público v2 (4a): hero orbital animado, pilares BI, carrusel coverflow; login → `/nova` shell vacío con selector.
+- **2026-09-02**: Seed flujo BPM **Demo Originacion TDC** (`scripts/seed_demo_flujo.py`): datos + grupo + etapas Captura→Buró→Motor→finales + reglas AUTO.
+- **2026-09-02**: Shell pick: Desarrollo junto al dropdown; búsqueda por cédula; APIs demo `/demo-api/*` + `seed_demo_apis.py`.
+- **2026-09-01**: Home público v2 (4a): hero orbital; login → `/nova` shell vacío.
 
 ## Stack
 - Flask + Socket.IO en Railway: https://novadata-projects-production.up.railway.app/

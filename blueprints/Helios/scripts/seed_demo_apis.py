@@ -87,6 +87,7 @@ def _ensure_api(
                 origen=p.get("origen", "dato"),
                 valor_fijo=p.get("valor_fijo"),
                 campo_caso=p.get("campo_caso"),
+                dato_id=p.get("dato_id"),
             )
         )
     for o in outputs:
