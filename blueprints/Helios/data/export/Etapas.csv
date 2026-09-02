@@ -1,0 +1,4 @@
+﻿IdEtapa,IdFlujo,Nombre_Etapa,Descripcion,Orden,PermiteRetroceso,EsFinal,SolicitaDocumentacion
+1,1,Solicitud,Captura de datos y documentos,1,True,False,True
+5,1,Analisis,,2,False,False,False
+6,1,Para inclusion,,3,False,False,False

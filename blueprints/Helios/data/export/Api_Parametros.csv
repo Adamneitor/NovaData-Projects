@@ -1,0 +1,5 @@
+﻿IdParametro,IdApi,Nombre,Ubicacion,Origen,ValorFijo,key_dato,CampoCaso
+1,1,salario,body,dato,,1,
+2,1,es_asalariado,body,dato,,2,
+3,1,tiempo_laborando,body,dato,,3,
+4,1,cedula,body,caso,,,cliente_identificacion

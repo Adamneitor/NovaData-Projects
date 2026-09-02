@@ -26,15 +26,19 @@ def main() -> None:
         seed(db)
         if __import__("os").getenv("HELIOS_SEED_DEMO", "1") != "0":
             try:
+                from app.models import Flujo
                 from app.services.seed_demo_presentacion import run_seed_demo
 
-                run_seed_demo(db, force=False, with_casos=True)
-                db.commit()
-                print("Seed demo presentación OK")
+                if db.query(Flujo).count() > 0:
+                    print("Seed demo omitido: ya hay flujos en BD")
+                else:
+                    run_seed_demo(db, force=False, with_casos=True)
+                    db.commit()
+                    print("Seed demo presentación OK")
             except Exception as exc:  # noqa: BLE001
                 db.rollback()
                 print(f"Seed demo (opcional): {exc}")
-    print("Seed Helios OK · usuario admin / admin")
+    print("Seed Helios OK")
 
 
 if __name__ == "__main__":

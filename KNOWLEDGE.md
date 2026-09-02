@@ -1,6 +1,7 @@
 # Nova Projects — Knowledge Map
 
 ## Changelog
+- **2026-09-02**: Import CSV del .bak (`scripts/import_helios_csv.py`, copia en `blueprints/Helios/data/export`); detalle caso con API humana + modal reporte; badges neutros; `.env` con `HELIOS_SEED_DEMO=0`.
 - **2026-09-02**: Docs otra vez como adjuntos; script `migrate_helios_bak.py` (.bak SQL2025 → SQLite/Postgres). Un .bak no entra directo a Railway.
 - **2026-09-02**: Documentación como checklist/form (sin adjuntos) + barra guardar fija; UI caso/shell más neutra.
 - **2026-09-02**: Fix seed docs BigInteger (flush) — el rollback vaciaba clientes en Railway.
@@ -46,8 +47,19 @@ python app.py
 | Soluciones | `solutions.py` |
 | Catálogo UI | `templates/plataforma/marketing_home.html`, `contacto.html` |
 | CSS marca | `static/css/claude-nova.css` |
+| Import Helios CSV | `scripts/import_helios_csv.py` → `instance/helios.db` |
+| Export dummy | `blueprints/Helios/data/export/*.csv` |
+| API UI caso | `blueprints/Helios/app/services/api_result_view.py` + `templates/casos/detalle.html` |
+
+## Local Helios (datos del .bak vía CSV)
+```powershell
+$env:HELIOS_SEED_DEMO="0"
+python scripts/import_helios_csv.py --wipe --dir "$env:USERPROFILE\Downloads\export"
+# Usuarios export: admin + analista (hashes bcrypt del bak)
+```
 
 ## Pitfalls
 - Helios (FastAPI) + Flask comparten proceso vía `wsgi.py` (`a2wsgi`). APIs demo apuntan a `{RAILWAY_PUBLIC_DOMAIN}/demo-api/*`. Con `gunicorn -w 1`, `httpx` sync desde Helios hacia ese mismo host **deadlockea** el worker (~30s timeout) → UI “frisada”. Mitigar: workers/threads>1, invocación in-process, o mock en otro servicio.
 - `postgres://` se normaliza a `postgresql://` en `database.py`.
 - Tras deploy, si no hay Postgres, cae a SQLite efímero (no persistente en Railway sin volumen).
+- `import_helios_csv.py --wipe` borra BPM/casos/clientes/APIs antes de recargar; con `HELIOS_SEED_DEMO=0` el bridge no pisa el export.

@@ -1,0 +1,3 @@
+﻿IdCondicion,IdRegla,IdOutput,Operador,Valor
+3,3,3,=,APROBADO
+4,4,3,=,RECHAZADO

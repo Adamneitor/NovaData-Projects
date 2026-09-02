@@ -1,0 +1,2 @@
+﻿IdLog,IdCaso,IdApi,IdEstado,request_json,response_json,http_status,Exito,fecha
+1,1,1,2,"{""url"": ""http://127.0.0.1:3000/api/evaluacion"", ""metodo"": ""POST"", ""query"": {}, ""body"": {""salario"": 150000.0, ""es_asalariado"": 1, ""tiempo_laborando"": 60, ""cedula"": ""22301179952""}}","{""Monto_DOP"":438322.7,""Monto_USD"":7623.0,""Dictamen"":""APROBADO"",""Razon"":""Score interno favorable según política vigente""}",200,True,2026-09-02 11:53:06.757000

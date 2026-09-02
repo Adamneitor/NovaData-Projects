@@ -251,18 +251,21 @@
         </div>
       </article>
 
-      {# API logs #}
+      {# API logs — resumen de negocio (sin JSON a la vista) #}
       <article class="caso-card" id="seccion-api">
         <header class="caso-card__head">
           <div class="caso-card__icon caso-card__icon--api"><i class="bi bi-plugin"></i></div>
           <div>
             <h2>Integraciones API</h2>
-            <p>Últimas ejecuciones automáticas</p>
+            <p>Resultado de negocio · sin JSON en la vista operativa</p>
           </div>
+          {% if api_result_cards %}
+          <span class="caso-chip caso-chip--neutral">{{ api_result_cards|length }} integración{{ 'es' if api_result_cards|length != 1 }}</span>
+          {% endif %}
         </header>
         <div class="caso-card__body">
           {% if puede_reintentar_api %}
-          <div class="aside-alert {% if ultimo_api_log_estado and not ultimo_api_log_estado.exito %}aside-alert--danger{% else %}aside-alert--ok{% endif %} mb-3" style="margin:0 1rem 1rem">
+          <div class="aside-alert {% if ultimo_api_log_estado and not ultimo_api_log_estado.exito %}aside-alert--danger{% else %}aside-alert--ok{% endif %} mb-3" style="margin:0 0 1rem">
             <strong><i class="bi bi-arrow-repeat"></i> {% if api_estado_nombre %}{{ api_estado_nombre }}{% else %}API del estado{% endif %}</strong>
             {% if ultimo_api_log_estado and not ultimo_api_log_estado.exito %}
             <p class="small mb-2">La última ejecución falló (HTTP {{ ultimo_api_log_estado.http_status or '—' }}). Puede reintentar desde aquí.</p>
@@ -277,7 +280,7 @@
             </form>
           </div>
           {% elif api_fallo_otro_estado and estado_api_fallo %}
-          <div class="aside-alert aside-alert--danger mb-3" style="margin:0 1rem 1rem">
+          <div class="aside-alert aside-alert--danger mb-3" style="margin:0 0 1rem">
             <strong><i class="bi bi-exclamation-triangle"></i> API falló en otro estado</strong>
             <p class="small mb-0">
               El fallo fue en «<strong>{{ estado_api_fallo.nombre }}</strong>».
@@ -286,29 +289,140 @@
             </p>
           </div>
           {% endif %}
-          {% if api_logs %}
-          <div class="api-list">
-            {% for l in api_logs %}
-            <details class="api-row">
-              <summary>
-                {% if l.exito %}<i class="bi bi-check-circle-fill" style="color:#5B52E8"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}
-                <span class="api-name">{{ l.api.nombre }}</span>
-                <span class="api-meta">HTTP {{ l.http_status or '—' }} · {{ l.fecha.strftime('%d/%m %H:%M') }}</span>
-              </summary>
-              <div class="api-detail">
-                <div class="fw-semibold small">Request</div>
-                <pre>{{ l.request_json or '' }}</pre>
-                <div class="fw-semibold small">Response</div>
-                <pre>{{ l.response_json or '' }}</pre>
-                {% if not l.exito and puede_reintentar_api and l.estado_id == caso.estado_actual_id %}
-                <form method="post" action="/casos/{{ caso.id }}/reintentar-api" class="mt-2">
-                  <button type="submit" class="btn-caso-primary btn-sm">
-                    <i class="bi bi-arrow-repeat"></i> Reintentar esta ejecución
-                  </button>
-                </form>
+
+          {% if api_result_cards %}
+          <div class="api-cards">
+            {% for card in api_result_cards %}
+            <div class="api-result-card">
+              <div class="api-result-card__head">
+                {% if card.exito %}
+                <span class="api-status api-status--ok"><i class="bi bi-check-lg"></i> Completado</span>
+                {% else %}
+                <span class="api-status api-status--bad"><i class="bi bi-x-lg"></i> Falló</span>
                 {% endif %}
+                <strong class="api-result-card__title">{{ card.api_nombre }}</strong>
+                <span class="api-result-card__meta">
+                  {% if card.fecha %}{{ card.fecha.strftime('%d/%m %H:%M') }} · {% endif %}
+                  HTTP {{ card.http_status or '—' }}
+                  · {{ card.total_intentos }} intento{{ 's' if card.total_intentos != 1 }}
+                </span>
               </div>
-            </details>
+              <div class="api-result-card__body">
+                {% if card.score is not none %}
+                <div class="api-score">
+                  <div class="api-score__label">Score</div>
+                  <div class="api-score__row">
+                    <span class="api-score__num">{{ card.score }}</span>
+                    {% if card.banda %}<span class="api-status {% if card.banda == 'Bueno' %}api-status--ok{% elif card.banda == 'Regular' %}api-status--warn{% else %}api-status--bad{% endif %}">{{ card.banda }}</span>{% endif %}
+                  </div>
+                </div>
+                {% endif %}
+                <div class="api-result-card__main">
+                  <p class="api-result-card__dictamen">{{ card.titulo }}</p>
+                  {% if card.razon %}<p class="api-result-card__razon">{{ card.razon }}</p>{% endif %}
+                  {% if card.kpis %}
+                  <div class="api-kpis">
+                    {% for k in card.kpis %}
+                    <div class="api-kpi">
+                      <div class="api-kpi__label">{{ k.label }}</div>
+                      <div class="api-kpi__value">{{ k.value }}</div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                  <div class="api-result-card__actions">
+                    <button type="button" class="btn-caso-primary btn-sm"
+                            data-bs-toggle="modal" data-bs-target="#modalApiReporte{{ card.id }}">
+                      <i class="bi bi-file-earmark-text"></i> Ver reporte completo
+                    </button>
+                    {% if not card.exito and puede_reintentar_api %}
+                    <form method="post" action="/casos/{{ caso.id }}/reintentar-api" class="d-inline">
+                      <button type="submit" class="btn-caso-secondary btn-sm">
+                        <i class="bi bi-arrow-repeat"></i> Volver a ejecutar
+                      </button>
+                    </form>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              {% if card.intentos|length > 1 %}
+              <div class="api-attempts">
+                <div class="api-attempts__label">Historial de intentos</div>
+                {% for it in card.intentos %}
+                <div class="api-attempt">
+                  <span class="api-attempt__dot {% if it.exito %}is-ok{% else %}is-bad{% endif %}"></span>
+                  <span class="api-attempt__txt">Intento #{{ it.n }} · {% if it.exito %}completado{% else %}error{% endif %}</span>
+                  <span class="api-attempt__meta">{% if it.fecha %}{{ it.fecha.strftime('%d/%m %H:%M') }} · {% endif %}HTTP {{ it.http_status or '—' }}</span>
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+
+            {# Drawer / modal estilo expediente #}
+            <div class="modal fade" id="modalApiReporte{{ card.id }}" tabindex="-1" aria-labelledby="tituloApiReporte{{ card.id }}" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-scrollable modal-xl modal-api-report">
+                <div class="modal-content">
+                  <div class="modal-header api-report__header">
+                    <div>
+                      <h2 class="modal-title fs-5" id="tituloApiReporte{{ card.id }}">
+                        {% if card.es_buro %}Reporte de crédito{% else %}Resultado de integración{% endif %}
+                      </h2>
+                      <div class="api-report__sub">
+                        {{ card.api_nombre }} · Caso #{{ caso.id }}
+                        {% if caso.cliente %} · {{ caso.cliente.nombre_completo }}{% endif %}
+                      </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                  </div>
+                  <div class="modal-body api-report__body">
+                    {% if caso.cliente %}
+                    <section class="api-report__id">
+                      <div class="api-report__avatar">{{ caso.cliente.nombre_completo[:1] }}</div>
+                      <div class="api-report__id-grid">
+                        <div><span class="lbl">Nombre</span><strong>{{ caso.cliente.nombre_completo }}</strong></div>
+                        <div><span class="lbl">Identificación</span><strong class="mono">{{ caso.cliente.identificacion }}</strong></div>
+                        <div><span class="lbl">Dictamen</span><strong>{{ card.dictamen or ('OK' if card.exito else 'Error') }}</strong></div>
+                        {% if card.score is not none %}
+                        <div><span class="lbl">Score</span><strong class="api-report__score">{{ card.score }}</strong></div>
+                        {% endif %}
+                      </div>
+                    </section>
+                    {% endif %}
+                    {% if card.kpis %}
+                    <section class="api-report__section">
+                      <h3>Resumen consolidado</h3>
+                      <div class="api-kpis api-kpis--report">
+                        {% for k in card.kpis %}
+                        <div class="api-kpi">
+                          <div class="api-kpi__label">{{ k.label }}</div>
+                          <div class="api-kpi__value">{{ k.value }}</div>
+                        </div>
+                        {% endfor %}
+                      </div>
+                      {% if card.razon %}<p class="api-report__razon">{{ card.razon }}</p>{% endif %}
+                    </section>
+                    {% endif %}
+                    <details class="api-tech">
+                      <summary>Payload técnico (request / response) · solo soporte</summary>
+                      <div class="api-tech__grid">
+                        <div>
+                          <div class="api-tech__lbl">Request</div>
+                          <pre>{{ card.request_raw }}</pre>
+                        </div>
+                        <div>
+                          <div class="api-tech__lbl">Response</div>
+                          <pre>{{ card.response_raw }}</pre>
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn-caso-secondary" data-bs-dismiss="modal">Cerrar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
             {% endfor %}
           </div>
           {% else %}
@@ -795,19 +909,118 @@
     border: 0; background: transparent; color: var(--c-ink); font-weight: 600; font-size: .85rem; padding: .25rem 0;
   }
 
-  .api-row { border-bottom: 1px solid var(--c-line); }
-  .api-row summary {
-    list-style: none; cursor: pointer; display: flex; gap: .55rem; align-items: center;
-    padding: .75rem 1.15rem; font-size: .88rem;
+  .caso-chip--neutral { background: #eef0f5; color: #6b7280; }
+  .api-cards { display: flex; flex-direction: column; gap: .85rem; }
+  .api-result-card {
+    border: 1px solid var(--c-line); border-radius: 12px; overflow: hidden; background: #fff;
   }
-  .api-row summary::-webkit-details-marker { display: none; }
-  .api-row summary:hover { background: #f8fafc; }
-  .api-name { font-weight: 600; flex: 1; }
-  .api-meta { color: var(--c-muted); font-size: .75rem; }
-  .api-detail { padding: 0 1.15rem 1rem; }
-  .api-detail pre {
-    background: #1a1a2e; color: #e2e8f0; border-radius: 8px; padding: .65rem; font-size: .72rem;
-    max-height: 160px; overflow: auto; white-space: pre-wrap;
+  .api-result-card__head {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .65rem;
+    padding: .85rem 1rem; background: #F7F8FC; border-bottom: 1px solid var(--c-line);
+  }
+  .api-result-card__title { font-size: .92rem; color: var(--c-ink); flex: 1; min-width: 140px; }
+  .api-result-card__meta { font-size: .75rem; color: var(--c-muted); }
+  .api-status {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    padding: .28rem .55rem; border-radius: 999px;
+  }
+  .api-status--ok { background: #f0fdf4; color: #15803d; }
+  .api-status--bad { background: #fef2f2; color: #b91c1c; }
+  .api-status--warn { background: #fefce8; color: #a16207; }
+  .api-result-card__body {
+    display: grid; grid-template-columns: auto 1fr; gap: 1.25rem; padding: 1rem 1.1rem;
+  }
+  @media (max-width: 700px) { .api-result-card__body { grid-template-columns: 1fr; } }
+  .api-score__label {
+    font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--c-muted);
+  }
+  .api-score__row { display: flex; align-items: baseline; gap: .5rem; margin-top: .25rem; }
+  .api-score__num { font-size: 2rem; font-weight: 800; letter-spacing: -.02em; color: var(--c-ink); }
+  .api-result-card__dictamen { margin: 0 0 .35rem; font-size: .92rem; font-weight: 650; color: var(--c-ink); }
+  .api-result-card__razon { margin: 0 0 .75rem; font-size: .84rem; color: var(--c-muted); line-height: 1.45; }
+  .api-kpis {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .55rem; margin-bottom: .85rem;
+  }
+  .api-kpis--report { margin-bottom: 0; }
+  .api-kpi {
+    border: 1px solid #eef0f5; background: #FAFAFA; border-radius: 9px; padding: .65rem .75rem;
+  }
+  .api-kpi__label {
+    font-size: .65rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--c-muted); margin-bottom: .25rem;
+  }
+  .api-kpi__value { font-size: .95rem; font-weight: 700; color: var(--c-ink); word-break: break-word; }
+  .api-result-card__actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .api-attempts { padding: 0 1.1rem 1rem; }
+  .api-attempts__label {
+    font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--c-muted); margin-bottom: .45rem;
+  }
+  .api-attempt {
+    display: flex; align-items: center; gap: .55rem; padding: .45rem .65rem;
+    border: 1px solid #eef0f5; border-radius: 8px; margin-bottom: .3rem; font-size: .82rem;
+  }
+  .api-attempt__dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: #9ca3af; }
+  .api-attempt__dot.is-ok { background: #15803d; }
+  .api-attempt__dot.is-bad { background: #b91c1c; }
+  .api-attempt__txt { flex: 1; font-weight: 600; color: var(--c-ink); }
+  .api-attempt__meta { color: var(--c-muted); font-size: .75rem; }
+  .btn-caso-primary.btn-sm, .btn-caso-secondary.btn-sm {
+    padding: .45rem .85rem; font-size: .8rem;
+  }
+
+  .modal-api-report .modal-content { border: 0; border-radius: 14px; overflow: hidden; }
+  .api-report__header {
+    background: #fff; border-bottom: 1px solid var(--c-line); padding: 1rem 1.35rem;
+  }
+  .api-report__sub { font-size: .8rem; color: var(--c-muted); margin-top: .2rem; }
+  .api-report__body { background: #f5f7fa; padding: 1.25rem 1.35rem; }
+  .api-report__id {
+    display: flex; gap: 1rem; align-items: center; background: #fff;
+    border: 1px solid var(--c-line); border-radius: 12px; padding: 1rem 1.15rem; margin-bottom: 1rem;
+  }
+  .api-report__avatar {
+    width: 48px; height: 48px; border-radius: 50%; background: #E8EEF9; color: #003CA6;
+    display: grid; place-items: center; font-weight: 700; flex: none;
+  }
+  .api-report__id-grid {
+    flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .75rem;
+  }
+  .api-report__id-grid .lbl {
+    display: block; font-size: .65rem; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--c-muted); margin-bottom: .15rem;
+  }
+  .api-report__id-grid .mono { font-family: ui-monospace, Menlo, monospace; font-size: .9rem; }
+  .api-report__score { color: #003CA6; font-size: 1.25rem; }
+  .api-report__section {
+    background: #fff; border: 1px solid var(--c-line); border-radius: 12px;
+    padding: 1rem 1.15rem; margin-bottom: 1rem;
+  }
+  .api-report__section h3 {
+    font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: #003CA6; margin: 0 0 .85rem;
+  }
+  .api-report__razon { margin: .85rem 0 0; font-size: .88rem; color: #374151; }
+  .api-tech {
+    background: #fff; border: 1px dashed #c6c9d4; border-radius: 10px; padding: .65rem .9rem;
+  }
+  .api-tech summary {
+    cursor: pointer; font-size: .82rem; font-weight: 600; color: var(--c-muted);
+    list-style: none;
+  }
+  .api-tech summary::-webkit-details-marker { display: none; }
+  .api-tech__grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: .75rem;
+  }
+  @media (max-width: 700px) { .api-tech__grid { grid-template-columns: 1fr; } }
+  .api-tech__lbl {
+    font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--c-muted); margin-bottom: .35rem;
+  }
+  .api-tech pre {
+    background: #1a1a2e; color: #e2e8f0; border-radius: 8px; padding: .65rem;
+    font-size: .7rem; max-height: 220px; overflow: auto; white-space: pre-wrap; margin: 0;
   }
 
   .aside-sticky { position: sticky; top: 1rem; }

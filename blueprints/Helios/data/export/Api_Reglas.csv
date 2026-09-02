@@ -1,0 +1,3 @@
+﻿IdRegla,IdEstado,IdOutput,Operador,Valor,IdEtapaDestino,IdEstadoDestino,Prioridad,Logica,ModoEjecucion,Nombre
+3,2,3,=,APROBADO,6,9,1,AND,AUTO,Dictamen APROBADO
+4,2,3,=,RECHAZADO,5,8,2,AND,AUTO,Dictamen RECHAZADO

@@ -199,7 +199,7 @@ a:hover { color: #2d2d44; }
   gap: 0.5rem;
 }
 
-.page-title i { color: var(--hx-accent); font-size: 1.2rem; }
+.page-title i { color: var(--hx-ink); font-size: 1.2rem; }
 
 .page-subtitle {
   margin: 0.25rem 0 0;
@@ -434,13 +434,13 @@ a:hover { color: #2d2d44; }
 }
 
 .badge-etapa {
-  background: #eef2ff !important;
-  color: #3730a3 !important;
+  background: #eef0f5 !important;
+  color: #3F4657 !important;
 }
 
 .badge.text-bg-primary {
-  background: var(--hx-info-soft) !important;
-  color: var(--hx-info) !important;
+  background: #eef0f5 !important;
+  color: #3F4657 !important;
 }
 
 .badge.text-bg-success {

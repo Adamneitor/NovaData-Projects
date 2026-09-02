@@ -1,0 +1,4 @@
+﻿IdHistorial,IdCaso,IdEtapa,IdEstado,fecha,key_usuario,Comentario,Origen
+1,1,1,1,2026-09-02 11:52:18.953000,1,Caso creado,SISTEMA
+2,1,1,2,2026-09-02 11:53:05.587000,1,,MANUAL
+3,1,6,9,2026-09-02 11:53:06.817000,1,"API 'Motor de Credito TC' respondio (Monto_DOP=438322.7, Monto_USD=7623.0, Dictamen=APROBADO, Razon=Score interno favorable según política vigente); regla aplicada (auto): Dictamen APROBADO: Si Dictamen = APROBADO ? Para inclusion / Pendiente.",API

@@ -1,0 +1,2 @@
+﻿IdFlujo,cod_tipo_flujo,Nombre,Descripcion,Activo,fecha_creacion,IdApiConclusion
+1,1,Tarjeta de Crédito,Flujo demo TC con evaluación API mock,True,2026-09-02 11:44:13.453000,

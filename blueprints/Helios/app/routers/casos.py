@@ -296,6 +296,9 @@ def detalle(
     api_logs = (
         db.query(CasoApiLog).filter(CasoApiLog.caso_id == caso.id).order_by(CasoApiLog.id.desc()).limit(20).all()
     )
+    from app.services.api_result_view import group_api_logs_by_api
+
+    api_result_cards = group_api_logs_by_api(api_logs)
     # Solo importa el intento MÁS RECIENTE (si ya hubo éxito después de un fallo, no advertir)
     ultimo_api_log = api_logs[0] if api_logs else None
     ultimo_api_log_estado = next(
@@ -387,6 +390,7 @@ def detalle(
             "datos_valores": datos_valores,
             "datos_api_readonly": datos_api_readonly,
             "api_logs": api_logs,
+            "api_result_cards": api_result_cards,
             "puede_reintentar_api": puede_reintentar_api,
             "ultimo_api_log_estado": ultimo_api_log_estado,
             "api_estado_nombre": api_estado_nombre,

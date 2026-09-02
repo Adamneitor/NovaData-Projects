@@ -1,0 +1,5 @@
+﻿id_perfil,nombre,descripcion
+1,Super Usuario,Tiene todos los accesos
+2,Administrador de Credenciales,Crea usuarios y asigna el nivel de acceso
+3,Soporte Operativo,"Puede cambiar etapas, reasignar casos, etc."
+4,Operativo,Trabaja los casos en las etapas donde su grupo interviene

@@ -66,3 +66,7 @@ htmlcov/
 instance/
 *.db
 
+
+instance/Helios.bak
+*.bak
+

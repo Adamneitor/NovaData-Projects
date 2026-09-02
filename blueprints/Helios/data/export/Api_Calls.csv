@@ -1,0 +1,2 @@
+﻿IdApi,Nombre,Descripcion,Metodo,Url,Headers,TimeoutSeg,Activo
+1,Motor de Credito TC,Mock evaluación crediticia local (puerto 3000),POST,http://127.0.0.1:3000/api/evaluacion,"{""Authorization"": ""Bearer test-token-123"", ""Content-Type"": ""application/json""}",30,True

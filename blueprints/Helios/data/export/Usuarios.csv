@@ -1,0 +1,3 @@
+﻿key_usuario,usuarioAd,Nombre_Usuario,Tipo_Autenticacion,password_hash,Debe_Cambiar_Password,Dias_Vigencia_Password,Password_Fecha_Cambio,id_perfil,flag_activo,fecha_inactivacion
+1,admin,Administrador Helios,APP,bcrypt$$2b$12$f.vnSDyVgwJixRu2Rq206OVLZj6uGQTtATjp31KWQoceP5HgwIPlu,False,,2026-09-02 11:22:47.050000,1,True,
+2,analista,Analista de Credito,APP,bcrypt$$2b$12$/hSV1LsxTQRMBQbf.HimIeJPHTBi6TxJuF5aDw13MIEoc573yQyRu,False,,2026-09-02 11:55:06.647000,4,True,

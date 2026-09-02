@@ -1,0 +1,10 @@
+﻿key_tipo_dato,Tipo_Dato,input_html,Codigo
+1,Texto,text,texto
+2,Numero,number,numero
+3,Fecha,date,fecha
+4,Booleano,checkbox,booleano
+5,Lista,select,lista
+6,Numero decimal,text,numero_decimal
+7,Telefono,tel,telefono
+8,Moneda,text,moneda
+9,Moneda decimal,text,moneda_decimal

@@ -1,0 +1,5 @@
+﻿IdOutput,IdApi,Nombre,JsonPath,Formato
+1,1,Monto_DOP,Monto_DOP,numero
+2,1,Monto_USD,Monto_USD,numero
+3,1,Dictamen,Dictamen,texto
+4,1,Razon,Razon,texto

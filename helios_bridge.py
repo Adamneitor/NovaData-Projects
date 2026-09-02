@@ -96,13 +96,19 @@ def _ensure_helios_db() -> None:
     with SessionLocal() as db:
         seed(db)
         # Presentación: APIs + flujo + casos dummy (idempotente). Opt-out: HELIOS_SEED_DEMO=0
+        # Tras import CSV/bak, dejar HELIOS_SEED_DEMO=0 para no pisar datos reales/dummy exportados.
         if os.getenv("HELIOS_SEED_DEMO", "1") != "0":
             try:
+                from app.models import Flujo  # type: ignore
                 from app.services.seed_demo_presentacion import run_seed_demo  # type: ignore
 
-                run_seed_demo(db, force=False, with_casos=True)
-                db.commit()
-                print("[helios_bridge] Seed demo presentación OK")
+                # Si ya hay flujos importados (p.ej. CSV del .bak), no sembrar demo encima
+                if db.query(Flujo).count() > 0:
+                    print("[helios_bridge] Seed demo omitido: ya hay flujos en BD")
+                else:
+                    run_seed_demo(db, force=False, with_casos=True)
+                    db.commit()
+                    print("[helios_bridge] Seed demo presentación OK")
             except Exception as exc:  # noqa: BLE001
                 db.rollback()
                 print(f"[helios_bridge] Seed demo (opcional): {exc}")

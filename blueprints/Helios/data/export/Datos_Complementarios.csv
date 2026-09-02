@@ -1,0 +1,8 @@
+﻿key_dato,Dato,Descripcion,key_tipo_dato,Opciones,Formato_Visualizacion,Decimales,Activo
+1,Salario,Ingreso mensual,8,,,,True
+2,Es asalariado,,4,,,,True
+3,Tiempo laborando (meses),,2,,,,True
+4,Monto DOP,Resultado API,9,,,,True
+5,Monto USD,Resultado API,9,,,,True
+6,Dictamen,APROBADO / RECHAZADO,1,,,,True
+7,Razón evaluación,,1,,,,True
