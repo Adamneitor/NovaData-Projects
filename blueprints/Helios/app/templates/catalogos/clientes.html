@@ -4,7 +4,7 @@
 <div class="page-header">
   <div>
     <h1 class="page-title"><i class="bi bi-people"></i>Clientes</h1>
-    <p class="page-subtitle">Búsqueda indexada · no se cargan los 100k+ registros en pantalla</p>
+    <p class="page-subtitle">Clientes recientes · use el buscador para filtrar en volúmenes grandes</p>
   </div>
   <div class="page-actions">
     <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo cliente</button>
@@ -59,7 +59,7 @@
         </td></tr>
         {% endif %}
       {% else %}
-        <tr><td colspan="6"><div class="empty-state"><i class="bi bi-people"></i><p>Use el buscador para localizar clientes.<br>La lista completa no se descarga (volúmenes bancarios).</p></div></td></tr>
+        <tr><td colspan="6"><div class="empty-state"><i class="bi bi-people"></i><p>No hay clientes registrados aún.<br>Cree uno con «Nuevo cliente» o ejecute el seed demo.</p></div></td></tr>
       {% endif %}
       </tbody>
     </table>

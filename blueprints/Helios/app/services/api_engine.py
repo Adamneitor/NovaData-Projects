@@ -292,8 +292,12 @@ def ejecutar_api(
     except Exception as exc:  # noqa: BLE001 - se reporta el error al usuario
         resultado.error = str(exc)
 
-    db.add(
-        CasoApiLog(
+    from app.services.sqlite_ids import apply_bigint_id
+
+    log_kwargs = apply_bigint_id(
+        db,
+        CasoApiLog,
+        dict(
             caso_id=caso.id,
             api_id=api.id,
             estado_id=estado_id or (estado.id if estado else None),
@@ -301,8 +305,9 @@ def ejecutar_api(
             response_json=resultado.response_json,
             http_status=resultado.http_status,
             exito=resultado.exito,
-        )
+        ),
     )
+    db.add(CasoApiLog(**log_kwargs))
     db.flush()
     return resultado
 

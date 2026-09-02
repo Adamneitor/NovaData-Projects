@@ -113,13 +113,20 @@ def crear_caso(db: Session, flujo: Flujo, usuario: Usuario, cliente_id: int | No
     primera = min(etapas, key=lambda e: e.orden)
     estado = estado_inicial_de_etapa(primera)
 
-    caso = Caso(
-        flujo_id=flujo.id,
-        cliente_id=cliente_id,
-        etapa_actual_id=primera.id,
-        estado_actual_id=estado.id,
-        creado_por_id=usuario.id,
+    from app.services.sqlite_ids import apply_bigint_id
+
+    kwargs = apply_bigint_id(
+        db,
+        Caso,
+        dict(
+            flujo_id=flujo.id,
+            cliente_id=cliente_id,
+            etapa_actual_id=primera.id,
+            estado_actual_id=estado.id,
+            creado_por_id=usuario.id,
+        ),
     )
+    caso = Caso(**kwargs)
     db.add(caso)
     db.flush()
     _nuevo_historial(
@@ -181,20 +188,20 @@ def _nuevo_historial(
     comentario: str | None,
     origen: str,
 ) -> CasoHistorial:
-    from sqlalchemy import func
+    from app.services.sqlite_ids import apply_bigint_id
 
-    from app.database import engine
-
-    kwargs = dict(
-        caso_id=caso_id,
-        etapa_id=etapa_id,
-        estado_id=estado_id,
-        usuario_id=usuario_id,
-        comentario=comentario,
-        origen=origen,
+    kwargs = apply_bigint_id(
+        db,
+        CasoHistorial,
+        dict(
+            caso_id=caso_id,
+            etapa_id=etapa_id,
+            estado_id=estado_id,
+            usuario_id=usuario_id,
+            comentario=comentario,
+            origen=origen,
+        ),
     )
-    if engine.dialect.name == "sqlite":
-        kwargs["id"] = int(db.query(func.max(CasoHistorial.id)).scalar() or 0) + 1
     h = CasoHistorial(**kwargs)
     db.add(h)
     return h

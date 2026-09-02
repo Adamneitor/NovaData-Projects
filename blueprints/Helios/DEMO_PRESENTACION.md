@@ -1,54 +1,44 @@
-# Guía rápida — Demo Helios (presentación)
+# Guía — Demo Helios multi-rol
 
-## Por qué no veía flujos/APIs
+## Ejecutar API (fix SQLite IdLog)
 
-El seed anterior escribió en **SQLite local** (`instance/helios.db`). En Railway Helios usa **Postgres** (`DATABASE_URL`). Ahora el seed demo corre solo al arrancar Helios (`helios_bridge` + `init_helios_db`).
+Si fallaba con `Casos_Api_Log.IdLog`, ya está corregido: PKs BigInteger en SQLite se asignan de forma segura.
 
-Tras el deploy, refresca Helios (o reinicia el servicio). Debes ver:
-- **APIs**: Demo Motor Credito, Demo Buro Reporte
-- **Flujos**: Demo Originacion TDC
-- **Casos**: 3 dummy (Captura / Consulta Buro / Aprobacion cerrada)
-- **Catálogos**: 14 datos, 2 documentos, 3 clientes, grupo Demo Operaciones
+## Clientes 360
 
-Opt-out: `HELIOS_SEED_DEMO=0`
+Al abrir **Clientes** se listan los recientes (12 demo). También puedes buscar por cédula/nombre.
 
----
+## Flujo «Demo Originacion TDC» (8 etapas)
 
-## Endpoints demo
+| # | Etapa | Rol |
+|---|--------|-----|
+| 1 | Captura | Ejecutivo de Servicio |
+| 2 | Documentación | Ejecutivo de Servicio |
+| 3 | Consulta Buró (API) | Analista de Crédito |
+| 4 | Evaluación Motor (API) | Analista de Crédito |
+| 5 | Aprobación Gerente | Gerente Análisis (si motor = APROBADA) |
+| 5b | Comité / Referimiento | Comité (si motor = REFERIDA) |
+| 5c | Declinada | Final (si motor = DECLINADA) |
+| 6 | Formalización | Operaciones Cierre |
 
-| API | URL | Dictamen |
-|-----|-----|----------|
-| Motor | `POST /demo-api/evaluacion` | APROBADA / REFERIDA / DECLINADA |
-| Buró | `POST /demo-api/buro/reporte` | OK / ALERTA / RIESGO |
+Post-buró → siempre Evaluación Motor → ramifica a Gerente / Comité / Declinada.
 
-Auth: `Authorization: Bearer test-token-123`
+## Usuarios demo (password `demo123`)
 
----
+| Usuario | Rol |
+|---------|-----|
+| `admin` / `admin` | Super (todos los grupos) |
+| `ejecutivo` | Ejecutivo de Servicio |
+| `analista` | Analista de Crédito |
+| `gerente` | Gerente Análisis |
+| `comite` | Comité de Crédito |
+| `operaciones` | Operaciones Cierre |
 
-## Seed manual (local o forzar)
+## Seed
 
 ```powershell
 cd blueprints\Helios
-python scripts\seed_demo_flujo.py --base-url https://novadata-projects-production.up.railway.app
-python scripts\seed_demo_flujo.py --force   # recrea flujo+casos
+python scripts\seed_demo_flujo.py --force --base-url https://novadata-projects-production.up.railway.app
 ```
 
----
-
-## Casos dummy
-
-| Cliente | Cédula | Etapa |
-|---------|--------|-------|
-| Ana María Pérez Rosario | 001-1234567-8 | Captura (datos llenos) |
-| Carlos Enrique Méndez Ruiz | 002-9876543-2 | Consulta Buro (ALERTA) |
-| Laura Beatriz Fernández Díaz | 003-4567890-1 | Aprobacion CERRADO |
-
----
-
-## Checklist presentación
-
-1. Login NOVA → Helios
-2. Flujos → **Demo Originacion TDC**
-3. APIs → las 2 demo
-4. Casos → abrir Ana y avanzar Captura → Buro → Motor
-5. Catálogos → datos / documentos / clientes
+También corre solo al arrancar Helios (`HELIOS_SEED_DEMO=1`).

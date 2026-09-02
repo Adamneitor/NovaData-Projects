@@ -18,6 +18,33 @@ def _solo_digitos(q: str) -> str:
     return re.sub(r"\D", "", q or "")
 
 
+def listar_clientes_recientes(
+    db: Session,
+    *,
+    page: int = 1,
+    page_size: int = 25,
+) -> dict:
+    """Listado reciente para el módulo Clientes 360 (sin forzar búsqueda)."""
+    page = max(1, page)
+    page_size = min(max(1, page_size), 50)
+    offset = (page - 1) * page_size
+    total = db.query(Cliente).count()
+    rows = (
+        db.query(Cliente)
+        .order_by(Cliente.id.desc())
+        .offset(offset)
+        .limit(page_size)
+        .all()
+    )
+    return {
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "items": [cliente_resumen(c) for c in rows],
+        "mode": "recientes",
+    }
+
+
 def buscar_clientes(
     db: Session,
     q: str,

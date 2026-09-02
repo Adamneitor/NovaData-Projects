@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.auth import PERFIL_SOPORTE, get_current_user, require_perfil
 from app.database import get_db
 from app.models import Caso, Cliente, DatoComplementario, Documento, Flujo, TipoDato, TipoFlujo
-from app.services.clientes import buscar_clientes
+from app.services.clientes import buscar_clientes, listar_clientes_recientes
 from app.services.dato_formato import (
     TIPOS_CON_DECIMALES,
     resolve_formato,
@@ -191,7 +191,10 @@ def crear_tipo_flujo(request: Request, nombre: str = Form(...), db: Session = De
 
 @router.get("/clientes")
 def clientes(request: Request, q: str = "", db: Session = Depends(get_db)):
-    resultado = buscar_clientes(db, q, page=1, page_size=25) if q.strip() else None
+    if q.strip():
+        resultado = buscar_clientes(db, q, page=1, page_size=25)
+    else:
+        resultado = listar_clientes_recientes(db, page=1, page_size=25)
     return render(
         request,
         "catalogos/clientes.html",

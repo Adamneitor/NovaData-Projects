@@ -1,15 +1,25 @@
 """
-Seed de presentación Helios: APIs, catálogo, flujo BPM, grupo y casos dummy.
+Seed de presentación Helios — flujo multi-rol + catálogos + casos.
 
-Idempotente. Se invoca desde helios_bridge / init_helios_db / CLI.
+Flujo «Demo Originacion TDC»:
+  Ejecutivo → Documentación → Buró → Evaluación Motor
+    → Aprobación Gerente | Comité Referimiento | Declinada
+    → Formalización (si aprobado)
+
+Roles/grupos: Ejecutivo de Servicio, Analista de Crédito,
+Gerente Análisis de Crédito, Comité de Crédito, Operaciones Cierre.
+
+Idempotente. CLI / helios_bridge / init_helios_db.
 """
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.config import AUTH_APP
 from app.models import (
     ApiCall,
     ApiOutput,
@@ -37,26 +47,54 @@ from app.models import (
     Usuario,
 )
 from app.seed import ensure_tipos_dato
-
-# motor import no requerido: casos demo se crean con IDs explicitos (SQLite BigInt)
+from app.services.password_policy import hash_password
 
 FLUJO_NOMBRE = "Demo Originacion TDC"
-GRUPO_NOMBRE = "Demo Operaciones"
 
 HEADERS_JSON = (
     '{"Authorization":"Bearer test-token-123","Content-Type":"application/json"}'
 )
 
+# (usuario_ad, nombre, password, perfil_id, grupo)
+DEMO_USERS = [
+    ("ejecutivo", "María López · Ejecutivo Servicio", "demo123", 4, "Ejecutivo de Servicio"),
+    ("analista", "Pedro Gómez · Analista Crédito", "demo123", 4, "Analista de Crédito"),
+    ("gerente", "Sofía Reyes · Gerente Análisis", "demo123", 4, "Gerente Análisis de Crédito"),
+    ("comite", "Comité Crédito Demo", "demo123", 4, "Comité de Crédito"),
+    ("operaciones", "Luis Méndez · Operaciones", "demo123", 4, "Operaciones Cierre"),
+]
+
+GRUPOS = [
+    ("Ejecutivo de Servicio", "Captura y documentación con el cliente"),
+    ("Analista de Crédito", "Consulta buró y evaluación motor"),
+    ("Gerente Análisis de Crédito", "Aprueba originaciones sugeridas por motor"),
+    ("Comité de Crédito", "Decide casos referidos"),
+    ("Operaciones Cierre", "Formalización y cierre operativo"),
+]
+
 DEMO_CLIENTES = [
     ("001-1234567-8", "Ana María Pérez Rosario", "809-555-0101"),
     ("002-9876543-2", "Carlos Enrique Méndez Ruiz", "829-555-0202"),
     ("003-4567890-1", "Laura Beatriz Fernández Díaz", "849-555-0303"),
+    ("004-1112233-4", "José Miguel Santos Peña", "809-555-0404"),
+    ("005-2223344-5", "Patricia Elena Vargas Núñez", "829-555-0505"),
+    ("006-3334455-6", "Ricardo Antonio Cruz Mejía", "849-555-0606"),
+    ("007-4445566-7", "Carmen Isabel Torres Acosta", "809-555-0707"),
+    ("008-5556677-8", "Miguel Ángel Rosario Feliz", "829-555-0808"),
+    ("009-6667788-9", "Yolanda Mercedes Díaz Polanco", "849-555-0909"),
+    ("010-7778899-0", "Francisco Javier Peña Ortiz", "809-555-1010"),
+    ("011-8889900-1", "Empresa Demo SRL", "809-555-1111"),
+    ("012-9990011-2", "Inversiones Nova RD", "829-555-1212"),
 ]
 
 DATOS_DEMO = [
+    ("Producto solicitado", 5, "Tipo de producto TDC"),
+    ("Monto solicitado DOP", 8, "Monto que pide el cliente"),
     ("Salario", 8, "Ingreso mensual del solicitante (DOP)"),
     ("Asalariado", 4, "Indica si es asalariado"),
     ("Tiempo laborando (meses)", 2, "Antigüedad laboral en meses"),
+    ("Empleador", 1, "Nombre del empleador"),
+    ("Observación ejecutivo", 1, "Notas de captura"),
     ("Score Buró", 2, "Score del reporte de buró (API)"),
     ("Chance Favor", 2, "Chance a favor (API buró)"),
     ("EIC Máximo", 8, "EIC máximo reportado (API)"),
@@ -68,11 +106,17 @@ DATOS_DEMO = [
     ("Monto Aprobado DOP", 8, "Monto sugerido en DOP (API)"),
     ("Monto Aprobado USD", 8, "Monto sugerido en USD (API)"),
     ("Razón Motor", 1, "Motivo del dictamen del motor (API)"),
+    ("Dictamen Gerente", 5, "Confirma o ajusta la aprobación"),
+    ("Comentario Gerente", 1, "Justificación gerencial"),
+    ("Dictamen Comité", 5, "Resolución del comité"),
+    ("Motivo Decl Soft", 1, "Motivo de declinación"),
 ]
 
 DOCS_DEMO = [
     ("Cédula de identidad", "Documento de identidad del solicitante"),
     ("Carta laboral", "Constancia de empleo e ingresos"),
+    ("Estado de cuenta", "Extracto bancario reciente"),
+    ("Formulario KYC", "Conozca su cliente firmado"),
 ]
 
 
@@ -88,7 +132,6 @@ def resolve_demo_api_base(base_url: str | None = None) -> str:
         if not d.startswith("http"):
             d = "https://" + d
         return d.rstrip("/")
-    # Fallback presentación NOVA en Railway
     if os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID"):
         return "https://novadata-projects-production.up.railway.app"
     return "http://127.0.0.1:5012"
@@ -105,11 +148,14 @@ def _ensure_clientes(db: Session) -> dict[str, Cliente]:
         if c is None:
             c = Cliente(
                 nombre_completo=nombre,
-                tipo_identificacion="Cedula",
+                tipo_identificacion="Cedula" if not ident.startswith("01") else "Cedula",
                 identificacion=ident,
                 telefono=tel,
                 correo=f"{ident.replace('-', '')}@demo.nova.local",
             )
+            # RNC-like for empresas
+            if "SRL" in nombre or "Inversiones" in nombre:
+                c.tipo_identificacion = "RNC"
             db.add(c)
             db.flush()
             _log(f"+ cliente {ident}")
@@ -126,7 +172,6 @@ def _ensure_api(
     parametros: list[dict],
     outputs: list[dict],
 ) -> ApiCall:
-    """Upsert API sin borrar params/outputs (evita romper FKs de reglas/mapeos)."""
     api = db.query(ApiCall).filter(ApiCall.nombre == nombre).first()
     if api is None:
         api = ApiCall(
@@ -206,10 +251,18 @@ def _ensure_dato(db: Session, nombre: str, tipo_id: int, descripcion: str | None
     if d is None:
         if db.get(TipoDato, tipo_id) is None:
             raise RuntimeError(f"Falta TipoDato id={tipo_id}")
+        opts = None
+        if nombre == "Producto solicitado":
+            opts = "TDC Clasica;TDC Gold;TDC Platinum;TDC Empresarial"
+        elif nombre == "Dictamen Gerente":
+            opts = "Confirmar aprobacion;Ajustar monto;Enviar a comite"
+        elif nombre == "Dictamen Comité":
+            opts = "Aprobar;Declinar;Solicitar info"
         d = DatoComplementario(
             nombre=nombre,
             descripcion=descripcion,
             tipo_dato_id=tipo_id,
+            opciones=opts,
             activo=True,
             decimales=2 if tipo_id in (6, 8, 9) else None,
         )
@@ -239,23 +292,54 @@ def _ensure_docs(db: Session) -> dict[str, Documento]:
     return out
 
 
-def _ensure_grupo(db: Session) -> GrupoUsuario:
-    g = db.query(GrupoUsuario).filter(GrupoUsuario.nombre == GRUPO_NOMBRE).first()
-    if g is None:
-        g = GrupoUsuario(nombre=GRUPO_NOMBRE, descripcion="Grupo operativo para demo Helios")
-        db.add(g)
-        db.flush()
-        _log(f"+ grupo {GRUPO_NOMBRE}")
+def _ensure_grupos_y_users(db: Session) -> dict[str, GrupoUsuario]:
+    grupos: dict[str, GrupoUsuario] = {}
+    for nombre, desc in GRUPOS:
+        g = db.query(GrupoUsuario).filter(GrupoUsuario.nombre == nombre).first()
+        if g is None:
+            g = GrupoUsuario(nombre=nombre, descripcion=desc)
+            db.add(g)
+            db.flush()
+            _log(f"+ grupo {nombre}")
+        grupos[nombre] = g
+
+    # Admin en todos los grupos (puede operar la demo completa)
     admin = db.query(Usuario).filter(Usuario.usuario_ad == "admin").first()
-    if admin is not None:
+    if admin:
+        for g in grupos.values():
+            link = (
+                db.query(GrupoXUsuario)
+                .filter(GrupoXUsuario.grupo_id == g.id, GrupoXUsuario.usuario_id == admin.id)
+                .first()
+            )
+            if link is None:
+                db.add(GrupoXUsuario(grupo_id=g.id, usuario_id=admin.id))
+
+    for user_ad, nombre, pwd, perfil, gname in DEMO_USERS:
+        u = db.query(Usuario).filter(Usuario.usuario_ad == user_ad).first()
+        if u is None:
+            u = Usuario(
+                usuario_ad=user_ad,
+                nombre=nombre,
+                tipo_autenticacion=AUTH_APP,
+                password_hash=hash_password(pwd),
+                debe_cambiar_password=False,
+                password_fecha_cambio=datetime.now(),
+                perfil_id=perfil,
+                activo=True,
+            )
+            db.add(u)
+            db.flush()
+            _log(f"+ usuario {user_ad} / {pwd}")
+        g = grupos[gname]
         link = (
             db.query(GrupoXUsuario)
-            .filter(GrupoXUsuario.grupo_id == g.id, GrupoXUsuario.usuario_id == admin.id)
+            .filter(GrupoXUsuario.grupo_id == g.id, GrupoXUsuario.usuario_id == u.id)
             .first()
         )
         if link is None:
-            db.add(GrupoXUsuario(grupo_id=g.id, usuario_id=admin.id))
-    return g
+            db.add(GrupoXUsuario(grupo_id=g.id, usuario_id=u.id))
+    return grupos
 
 
 def _vincular_params(db: Session, datos: dict[str, DatoComplementario]) -> tuple[ApiCall, ApiCall]:
@@ -344,7 +428,7 @@ def _build_flujo(
     db: Session,
     *,
     tipo: TipoFlujo,
-    grupo: GrupoUsuario,
+    grupos: dict[str, GrupoUsuario],
     datos: dict[str, DatoComplementario],
     docs: dict[str, Documento],
     api_motor: ApiCall,
@@ -353,56 +437,58 @@ def _build_flujo(
     flujo = Flujo(
         tipo_flujo_id=tipo.id,
         nombre=FLUJO_NOMBRE,
-        descripcion="Originacion TDC demo: captura -> buro -> motor -> dictamen final.",
+        descripcion=(
+            "Originacion TDC multi-rol: Ejecutivo captura → Analista buró/motor → "
+            "Gerente aprueba | Comité refiere | Declinada | Formalización."
+        ),
         activo=True,
     )
     db.add(flujo)
     db.flush()
 
-    e_captura = Etapa(
-        flujo_id=flujo.id, nombre="Captura", descripcion="Datos laborales", orden=1, es_final=False
-    )
-    e_buro = Etapa(
-        flujo_id=flujo.id, nombre="Consulta Buro", descripcion="Reporte buro demo", orden=2, es_final=False, permite_retroceso=True
-    )
-    e_eval = Etapa(
-        flujo_id=flujo.id, nombre="Evaluacion", descripcion="Motor de credito demo", orden=3, es_final=False
-    )
-    e_apr = Etapa(flujo_id=flujo.id, nombre="Aprobacion", descripcion="Caso aprobado", orden=4, es_final=True)
-    e_ref = Etapa(
-        flujo_id=flujo.id, nombre="Comite / Referimiento", descripcion="Referido a comite", orden=5, es_final=True
-    )
-    e_dec = Etapa(flujo_id=flujo.id, nombre="Declinada", descripcion="Caso declinado", orden=6, es_final=True)
-    for e in (e_captura, e_buro, e_eval, e_apr, e_ref, e_dec):
+    # Etapas
+    e_cap = Etapa(flujo_id=flujo.id, nombre="1. Captura", descripcion="Ejecutivo de Servicio", orden=1)
+    e_doc = Etapa(flujo_id=flujo.id, nombre="2. Documentacion", descripcion="KYC y evidencias", orden=2, permite_retroceso=True)
+    e_buro = Etapa(flujo_id=flujo.id, nombre="3. Consulta Buro", descripcion="Analista · API buró", orden=3)
+    e_eval = Etapa(flujo_id=flujo.id, nombre="4. Evaluacion Motor", descripcion="Analista · API motor", orden=4)
+    e_apr = Etapa(flujo_id=flujo.id, nombre="5. Aprobacion Gerente", descripcion="Gerente Análisis", orden=5, permite_retroceso=True)
+    e_ref = Etapa(flujo_id=flujo.id, nombre="5b. Comite / Referimiento", descripcion="Comité de Crédito", orden=6, es_final=False)
+    e_dec = Etapa(flujo_id=flujo.id, nombre="5c. Declinada", descripcion="Cierre declinado", orden=7, es_final=True)
+    e_form = Etapa(flujo_id=flujo.id, nombre="6. Formalizacion", descripcion="Operaciones · cierre", orden=8, es_final=True)
+    for e in (e_cap, e_doc, e_buro, e_eval, e_apr, e_ref, e_dec, e_form):
         db.add(e)
     db.flush()
 
-    for e in (e_captura, e_buro, e_eval, e_apr, e_ref, e_dec):
-        db.add(EtapaGrupo(etapa_id=e.id, grupo_id=grupo.id))
+    # Grupos por etapa
+    asign = {
+        e_cap: ["Ejecutivo de Servicio"],
+        e_doc: ["Ejecutivo de Servicio"],
+        e_buro: ["Analista de Crédito"],
+        e_eval: ["Analista de Crédito"],
+        e_apr: ["Gerente Análisis de Crédito"],
+        e_ref: ["Comité de Crédito", "Gerente Análisis de Crédito"],
+        e_dec: ["Analista de Crédito", "Gerente Análisis de Crédito"],
+        e_form: ["Operaciones Cierre"],
+    }
+    for etapa, names in asign.items():
+        for n in names:
+            db.add(EtapaGrupo(etapa_id=etapa.id, grupo_id=grupos[n].id))
 
-    for nombre_doc, oblig in (("Cédula de identidad", True), ("Carta laboral", False)):
-        db.add(
-            EtapaDocumento(
-                etapa_id=e_captura.id,
-                documento_id=docs[nombre_doc].id,
-                obligatorio=oblig,
-            )
-        )
+    # Docs
+    db.add(EtapaDocumento(etapa_id=e_cap.id, documento_id=docs["Cédula de identidad"].id, obligatorio=True))
+    db.add(EtapaDocumento(etapa_id=e_doc.id, documento_id=docs["Carta laboral"].id, obligatorio=True))
+    db.add(EtapaDocumento(etapa_id=e_doc.id, documento_id=docs["Estado de cuenta"].id, obligatorio=False))
+    db.add(EtapaDocumento(etapa_id=e_doc.id, documento_id=docs["Formulario KYC"].id, obligatorio=True))
 
-    _add_etapa_dato(db, e_captura, datos["Salario"], obligatorio=True, orden=1)
-    _add_etapa_dato(db, e_captura, datos["Asalariado"], obligatorio=True, orden=2)
-    _add_etapa_dato(db, e_captura, datos["Tiempo laborando (meses)"], obligatorio=True, orden=3)
+    # Datos captura
+    for i, key in enumerate(
+        ["Producto solicitado", "Monto solicitado DOP", "Salario", "Asalariado", "Tiempo laborando (meses)", "Empleador", "Observación ejecutivo"],
+        start=1,
+    ):
+        _add_etapa_dato(db, e_cap, datos[key], obligatorio=key != "Observación ejecutivo", orden=i)
 
     for i, key in enumerate(
-        [
-            "Score Buró",
-            "Chance Favor",
-            "EIC Máximo",
-            "Mora Máx Días",
-            "Dictamen Buró",
-            "Resumen Buró",
-            "Cuentas Abiertas",
-        ],
+        ["Score Buró", "Chance Favor", "EIC Máximo", "Mora Máx Días", "Dictamen Buró", "Resumen Buró", "Cuentas Abiertas"],
         start=1,
     ):
         _add_etapa_dato(db, e_buro, datos[key], obligatorio=False, orden=i)
@@ -413,36 +499,58 @@ def _build_flujo(
     ):
         _add_etapa_dato(db, e_eval, datos[key], obligatorio=False, orden=i)
 
-    st_cap_ini = Estado(etapa_id=e_captura.id, nombre="En captura", es_inicial=True, cierra_etapa=False)
-    st_cap_ok = Estado(etapa_id=e_captura.id, nombre="Lista para buro", es_inicial=False, cierra_etapa=True)
-    st_buro = Estado(
-        etapa_id=e_buro.id, nombre="Consultando", es_inicial=True, cierra_etapa=False, api_call_id=api_buro.id
-    )
-    st_eval = Estado(
-        etapa_id=e_eval.id, nombre="Ejecutando motor", es_inicial=True, cierra_etapa=False, api_call_id=api_motor.id
-    )
-    st_apr = Estado(etapa_id=e_apr.id, nombre="Aprobada", es_inicial=True, cierra_etapa=True)
-    st_ref = Estado(etapa_id=e_ref.id, nombre="Referida", es_inicial=True, cierra_etapa=True)
+    _add_etapa_dato(db, e_apr, datos["Dictamen Gerente"], obligatorio=True, orden=1)
+    _add_etapa_dato(db, e_apr, datos["Comentario Gerente"], obligatorio=False, orden=2)
+    _add_etapa_dato(db, e_ref, datos["Dictamen Comité"], obligatorio=True, orden=1)
+    _add_etapa_dato(db, e_dec, datos["Motivo Decl Soft"], obligatorio=False, orden=1)
+
+    # Estados
+    st_cap_ini = Estado(etapa_id=e_cap.id, nombre="En captura", es_inicial=True)
+    st_cap_ok = Estado(etapa_id=e_cap.id, nombre="Captura completa", cierra_etapa=True)
+    st_doc_ini = Estado(etapa_id=e_doc.id, nombre="Pendiente documentos", es_inicial=True)
+    st_doc_ok = Estado(etapa_id=e_doc.id, nombre="Documentacion OK", cierra_etapa=True)
+    st_buro = Estado(etapa_id=e_buro.id, nombre="Consultando buro", es_inicial=True, api_call_id=api_buro.id)
+    st_eval = Estado(etapa_id=e_eval.id, nombre="Ejecutando motor", es_inicial=True, api_call_id=api_motor.id)
+    st_apr_ini = Estado(etapa_id=e_apr.id, nombre="Pendiente gerente", es_inicial=True)
+    st_apr_ok = Estado(etapa_id=e_apr.id, nombre="Aprobado por gerente", cierra_etapa=True)
+    st_ref_ini = Estado(etapa_id=e_ref.id, nombre="En comite", es_inicial=True)
+    st_ref_apr = Estado(etapa_id=e_ref.id, nombre="Comite aprueba", cierra_etapa=True)
+    st_ref_dec = Estado(etapa_id=e_ref.id, nombre="Comite declina", cierra_etapa=True)
     st_dec = Estado(etapa_id=e_dec.id, nombre="Declinada", es_inicial=True, cierra_etapa=True)
-    for s in (st_cap_ini, st_cap_ok, st_buro, st_eval, st_apr, st_ref, st_dec):
+    st_form = Estado(etapa_id=e_form.id, nombre="Formalizado", es_inicial=True, cierra_etapa=True)
+
+    estados = [
+        st_cap_ini, st_cap_ok, st_doc_ini, st_doc_ok, st_buro, st_eval,
+        st_apr_ini, st_apr_ok, st_ref_ini, st_ref_apr, st_ref_dec, st_dec, st_form,
+    ]
+    for s in estados:
         db.add(s)
     db.flush()
 
-    db.add(
-        Transicion(
-            estado_origen_id=st_cap_ini.id,
-            etapa_destino_id=e_captura.id,
-            estado_destino_id=st_cap_ok.id,
+    # Transiciones manuales
+    trans = [
+        (st_cap_ini, e_cap, st_cap_ok),
+        (st_cap_ok, e_doc, st_doc_ini),
+        (st_doc_ini, e_doc, st_doc_ok),
+        (st_doc_ok, e_buro, st_buro),
+        (st_apr_ini, e_apr, st_apr_ok),
+        (st_apr_ok, e_form, st_form),
+        (st_apr_ini, e_ref, st_ref_ini),  # gerente puede enviar a comité
+        (st_ref_ini, e_ref, st_ref_apr),
+        (st_ref_ini, e_ref, st_ref_dec),
+        (st_ref_apr, e_form, st_form),
+        (st_ref_dec, e_dec, st_dec),
+    ]
+    for origen, etapa_d, destino in trans:
+        db.add(
+            Transicion(
+                estado_origen_id=origen.id,
+                etapa_destino_id=etapa_d.id,
+                estado_destino_id=destino.id,
+            )
         )
-    )
-    db.add(
-        Transicion(
-            estado_origen_id=st_cap_ok.id,
-            etapa_destino_id=e_buro.id,
-            estado_destino_id=st_buro.id,
-        )
-    )
 
+    # Mapeos buró
     for p in api_buro.parametros or []:
         if p.nombre == "cedula":
             db.add(
@@ -470,6 +578,7 @@ def _build_flujo(
             )
         )
 
+    # Buró → Evaluación (siempre post-buró)
     out_db = _output(api_buro, "DictamenBuro")
     for i, val in enumerate(("OK", "ALERTA", "RIESGO"), start=1):
         _add_regla(
@@ -483,6 +592,7 @@ def _build_flujo(
             nombre=f"Buro {val} -> Evaluacion",
         )
 
+    # Mapeos motor
     motor_in = {
         "salario": ("dato", datos["Salario"].id, None),
         "es_asalariado": ("dato", datos["Asalariado"].id, None),
@@ -516,46 +626,23 @@ def _build_flujo(
             )
         )
 
+    # Post evaluación: Aprobación | Referimiento | Declinada
     out_dictamen = _output(api_motor, "Dictamen")
-    for valor, etapa_d, estado_d, prio, nom in (
-        ("APROBADA", e_apr, st_apr, 1, "Motor APROBADA"),
-        ("REFERIDA", e_ref, st_ref, 2, "Motor REFERIDA"),
-        ("DECLINADA", e_dec, st_dec, 3, "Motor DECLINADA"),
-    ):
-        _add_regla(
-            db,
-            estado=st_eval,
-            output=out_dictamen,
-            valor=valor,
-            etapa_dest=etapa_d,
-            estado_dest=estado_d,
-            prioridad=prio,
-            nombre=nom,
-        )
+    _add_regla(db, estado=st_eval, output=out_dictamen, valor="APROBADA", etapa_dest=e_apr, estado_dest=st_apr_ini, prioridad=1, nombre="Motor -> Gerente")
+    _add_regla(db, estado=st_eval, output=out_dictamen, valor="REFERIDA", etapa_dest=e_ref, estado_dest=st_ref_ini, prioridad=2, nombre="Motor -> Comite")
+    _add_regla(db, estado=st_eval, output=out_dictamen, valor="DECLINADA", etapa_dest=e_dec, estado_dest=st_dec, prioridad=3, nombre="Motor -> Declinada")
 
-    _log(f"+ flujo {FLUJO_NOMBRE} id={flujo.id}")
+    _log(f"+ flujo {FLUJO_NOMBRE} id={flujo.id} (8 etapas multi-rol)")
     return flujo
 
 
-def _set_dato(
-    db: Session,
-    caso: Caso,
-    dato: DatoComplementario,
-    valor: str,
-    usuario: Usuario,
-    *,
-    next_dato_id: list[int],
-) -> None:
-    row = (
-        db.query(CasoDato)
-        .filter(CasoDato.caso_id == caso.id, CasoDato.dato_id == dato.id)
-        .first()
-    )
+def _set_dato(db, caso, dato, valor, usuario, next_dato):
+    row = db.query(CasoDato).filter(CasoDato.caso_id == caso.id, CasoDato.dato_id == dato.id).first()
     if row is None:
-        next_dato_id[0] += 1
+        next_dato[0] += 1
         db.add(
             CasoDato(
-                id=next_dato_id[0],
+                id=next_dato[0],
                 caso_id=caso.id,
                 dato_id=dato.id,
                 etapa_id=caso.etapa_actual_id,
@@ -568,24 +655,17 @@ def _set_dato(
         row.valor = valor
 
 
-def _mover(
-    db: Session,
-    caso: Caso,
-    etapa: Etapa,
-    estado: Estado,
-    usuario: Usuario,
-    comentario: str,
-    *,
-    next_hist_id: list[int],
-) -> None:
+def _mover(db, caso, etapa, estado, usuario, comentario, next_hist):
+    from sqlalchemy import func
+
     from app.models import CasoHistorial
 
     caso.etapa_actual_id = etapa.id
     caso.estado_actual_id = estado.id
-    next_hist_id[0] += 1
+    next_hist[0] = max(next_hist[0], int(db.query(func.max(CasoHistorial.id)).scalar() or 0)) + 1
     db.add(
         CasoHistorial(
-            id=next_hist_id[0],
+            id=next_hist[0],
             caso_id=caso.id,
             etapa_id=etapa.id,
             estado_id=estado.id,
@@ -597,102 +677,109 @@ def _mover(
     db.flush()
 
 
-def _etapa_por_orden(flujo: Flujo, orden: int) -> Etapa:
-    for e in flujo.etapas:
-        if e.orden == orden:
-            return e
-    raise RuntimeError(f"Etapa orden={orden} no encontrada")
-
-
-def _estado_inicial(etapa: Etapa) -> Estado:
-    for s in etapa.estados:
-        if s.es_inicial:
-            return s
-    if etapa.estados:
-        return etapa.estados[0]
-    raise RuntimeError(f"Etapa {etapa.nombre} sin estados")
-
-
-def _ensure_casos_demo(
-    db: Session,
-    flujo: Flujo,
-    clientes: dict[str, Cliente],
-    datos: dict[str, DatoComplementario],
-) -> None:
+def _ensure_casos_demo(db, flujo, clientes, datos):
     if db.query(Caso).filter(Caso.flujo_id == flujo.id).count() > 0:
         _log("casos demo ya existen; omitidos")
         return
 
     admin = db.query(Usuario).filter(Usuario.usuario_ad == "admin").first()
-    if admin is None:
-        _log("sin admin; no se crean casos")
+    if not admin:
         return
 
-    e_cap = _etapa_por_orden(flujo, 1)
-    e_buro = _etapa_por_orden(flujo, 2)
-    e_apr = _etapa_por_orden(flujo, 4)
-    st_cap = _estado_inicial(e_cap)
-    st_buro = _estado_inicial(e_buro)
-    st_apr = _estado_inicial(e_apr)
-
     from sqlalchemy import func
-    from app.models import CasoHistorial
 
-    next_caso = [int(db.query(func.max(Caso.id)).scalar() or 0)]
-    next_hist = [int(db.query(func.max(CasoHistorial.id)).scalar() or 0)]
+    from app.models import CasoHistorial
+    from app.services import motor
+
+    etapas = {e.orden: e for e in flujo.etapas}
+    e1, e2, e3, e4, e5, e5b, e5c, e6 = [etapas[i] for i in (1, 2, 3, 4, 5, 6, 7, 8)]
+
+    def st0(e):
+        for s in e.estados:
+            if s.es_inicial:
+                return s
+        return e.estados[0]
+
+    next_hist = [0]
     next_dato = [int(db.query(func.max(CasoDato.id)).scalar() or 0)]
 
-    def _nuevo(cliente: Cliente) -> Caso:
-        next_caso[0] += 1
-        caso = Caso(
-            id=next_caso[0],
-            flujo_id=flujo.id,
-            cliente_id=cliente.id,
-            etapa_actual_id=e_cap.id,
-            estado_actual_id=st_cap.id,
-            creado_por_id=admin.id,
-        )
-        db.add(caso)
-        db.flush()
-        _mover(db, caso, e_cap, st_cap, admin, "Caso demo creado", next_hist_id=next_hist)
-        return caso
+    def nuevo(cliente):
+        return motor.crear_caso(db, flujo, admin, cliente.id)
 
-    def _d(caso: Caso, key: str, valor: str) -> None:
-        _set_dato(db, caso, datos[key], valor, admin, next_dato_id=next_dato)
+    def d(caso, key, val):
+        next_dato[0] = max(next_dato[0], int(db.query(func.max(CasoDato.id)).scalar() or 0))
+        _set_dato(db, caso, datos[key], val, admin, next_dato)
 
-    c1 = _nuevo(clientes["001-1234567-8"])
-    _d(c1, "Salario", "45000")
-    _d(c1, "Asalariado", "true")
-    _d(c1, "Tiempo laborando (meses)", "24")
-    _log(f"+ caso #{c1.id} Captura (Ana)")
+    # 1 Ana — Captura (ejecutivo)
+    c1 = nuevo(clientes["001-1234567-8"])
+    d(c1, "Producto solicitado", "TDC Gold")
+    d(c1, "Monto solicitado DOP", "150000")
+    d(c1, "Salario", "45000")
+    d(c1, "Asalariado", "true")
+    d(c1, "Tiempo laborando (meses)", "24")
+    d(c1, "Empleador", "Banco Demo SA")
+    _log(f"+ caso #{c1.id} Captura (Ana / ejecutivo)")
 
-    c2 = _nuevo(clientes["002-9876543-2"])
-    _d(c2, "Salario", "28000")
-    _d(c2, "Asalariado", "true")
-    _d(c2, "Tiempo laborando (meses)", "10")
-    _mover(db, c2, e_buro, st_buro, admin, "Demo: posicionado en Consulta Buro", next_hist_id=next_hist)
-    _d(c2, "Score Buró", "640")
-    _d(c2, "Chance Favor", "58")
-    _d(c2, "EIC Máximo", "120000")
-    _d(c2, "Mora Máx Días", "45")
-    _d(c2, "Dictamen Buró", "ALERTA")
-    _d(c2, "Resumen Buró", "Demo: mora reciente leve")
-    _d(c2, "Cuentas Abiertas", "4")
-    _log(f"+ caso #{c2.id} Consulta Buro (Carlos)")
+    # 2 Carlos — Consulta Buró
+    c2 = nuevo(clientes["002-9876543-2"])
+    d(c2, "Producto solicitado", "TDC Clasica")
+    d(c2, "Monto solicitado DOP", "80000")
+    d(c2, "Salario", "28000")
+    d(c2, "Asalariado", "true")
+    d(c2, "Tiempo laborando (meses)", "10")
+    d(c2, "Empleador", "Comercial del Este")
+    _mover(db, c2, e3, st0(e3), admin, "Demo: en Consulta Buro", next_hist)
+    d(c2, "Score Buró", "640")
+    d(c2, "Dictamen Buró", "ALERTA")
+    d(c2, "Resumen Buró", "Mora reciente leve")
+    _log(f"+ caso #{c2.id} Consulta Buro (Carlos / analista)")
 
-    c3 = _nuevo(clientes["003-4567890-1"])
-    _d(c3, "Salario", "62000")
-    _d(c3, "Asalariado", "true")
-    _d(c3, "Tiempo laborando (meses)", "48")
-    _d(c3, "Score Buró", "782")
-    _d(c3, "Dictamen Buró", "OK")
-    _d(c3, "Dictamen Motor", "APROBADA")
-    _d(c3, "Monto Aprobado DOP", "185000")
-    _d(c3, "Monto Aprobado USD", "3217.39")
-    _d(c3, "Razón Motor", "Demo: perfil solvente")
-    _mover(db, c3, e_apr, st_apr, admin, "Demo: caso aprobado", next_hist_id=next_hist)
-    c3.estado_general = "CERRADO"
-    _log(f"+ caso #{c3.id} Aprobacion CERRADO (Laura)")
+    # 3 Laura — Aprobación Gerente (post motor APROBADA)
+    c3 = nuevo(clientes["003-4567890-1"])
+    d(c3, "Producto solicitado", "TDC Platinum")
+    d(c3, "Monto solicitado DOP", "250000")
+    d(c3, "Salario", "62000")
+    d(c3, "Asalariado", "true")
+    d(c3, "Tiempo laborando (meses)", "48")
+    d(c3, "Dictamen Buró", "OK")
+    d(c3, "Dictamen Motor", "APROBADA")
+    d(c3, "Monto Aprobado DOP", "185000")
+    d(c3, "Razón Motor", "Perfil solvente")
+    _mover(db, c3, e5, st0(e5), admin, "Demo: pendiente gerente", next_hist)
+    _log(f"+ caso #{c3.id} Aprobacion Gerente (Laura)")
+
+    # 4 José — Comité
+    c4 = nuevo(clientes["004-1112233-4"])
+    d(c4, "Producto solicitado", "TDC Gold")
+    d(c4, "Salario", "35000")
+    d(c4, "Asalariado", "true")
+    d(c4, "Tiempo laborando (meses)", "18")
+    d(c4, "Dictamen Motor", "REFERIDA")
+    d(c4, "Razón Motor", "Monto requiere comité")
+    _mover(db, c4, e5b, st0(e5b), admin, "Demo: en comite", next_hist)
+    _log(f"+ caso #{c4.id} Comite (Jose)")
+
+    # 5 Patricia — Formalizado CERRADO
+    c5 = nuevo(clientes["005-2223344-5"])
+    d(c5, "Producto solicitado", "TDC Clasica")
+    d(c5, "Salario", "55000")
+    d(c5, "Dictamen Motor", "APROBADA")
+    d(c5, "Dictamen Gerente", "Confirmar aprobacion")
+    d(c5, "Monto Aprobado DOP", "120000")
+    _mover(db, c5, e6, st0(e6), admin, "Demo: formalizado", next_hist)
+    c5.estado_general = "CERRADO"
+    _log(f"+ caso #{c5.id} Formalizacion CERRADO (Patricia)")
+
+    # 6 Ricardo — Declinada
+    c6 = nuevo(clientes["006-3334455-6"])
+    d(c6, "Salario", "12000")
+    d(c6, "Asalariado", "false")
+    d(c6, "Tiempo laborando (meses)", "3")
+    d(c6, "Dictamen Motor", "DECLINADA")
+    d(c6, "Motivo Decl Soft", "Ingresos insuficientes")
+    _mover(db, c6, e5c, st0(e5c), admin, "Demo: declinado", next_hist)
+    c6.estado_general = "CERRADO"
+    _log(f"+ caso #{c6.id} Declinada (Ricardo)")
 
 
 def run_seed_demo(
@@ -702,12 +789,12 @@ def run_seed_demo(
     force: bool = False,
     with_casos: bool = True,
 ) -> dict[str, Any]:
-    """Siembra catálogo + APIs + flujo (+ casos). No hace commit (el caller decide)."""
     base = resolve_demo_api_base(base_url)
     _log(f"base URL APIs: {base}")
 
     ensure_tipos_dato(db)
     clientes = _ensure_clientes(db)
+    grupos = _ensure_grupos_y_users(db)
 
     _ensure_api(
         db,
@@ -718,12 +805,7 @@ def run_seed_demo(
             {"nombre": "salario", "ubicacion": "body", "origen": "dato"},
             {"nombre": "es_asalariado", "ubicacion": "body", "origen": "dato"},
             {"nombre": "tiempo_laborando", "ubicacion": "body", "origen": "dato"},
-            {
-                "nombre": "cedula",
-                "ubicacion": "body",
-                "origen": "caso",
-                "campo_caso": "cliente_identificacion",
-            },
+            {"nombre": "cedula", "ubicacion": "body", "origen": "caso", "campo_caso": "cliente_identificacion"},
         ],
         outputs=[
             {"nombre": "Dictamen", "json_path": "Dictamen", "formato": "texto"},
@@ -735,15 +817,10 @@ def run_seed_demo(
     _ensure_api(
         db,
         nombre="Demo Buro Reporte",
-        descripcion="Buro demo: Score, ChanceFavor, MoraMaxDias, EIC, DictamenBuro.",
+        descripcion="Buro demo: Score, ChanceFavor, Mora, EIC, DictamenBuro.",
         url=f"{base}/demo-api/buro/reporte",
         parametros=[
-            {
-                "nombre": "cedula",
-                "ubicacion": "body",
-                "origen": "caso",
-                "campo_caso": "cliente_identificacion",
-            },
+            {"nombre": "cedula", "ubicacion": "body", "origen": "caso", "campo_caso": "cliente_identificacion"},
         ],
         outputs=[
             {"nombre": "Score", "json_path": "Score", "formato": "numero"},
@@ -757,7 +834,6 @@ def run_seed_demo(
     )
 
     tipo = _ensure_tipo_flujo(db)
-    grupo = _ensure_grupo(db)
     docs = _ensure_docs(db)
     datos = {n: _ensure_dato(db, n, tid, desc) for n, tid, desc in DATOS_DEMO}
     api_motor, api_buro = _vincular_params(db, datos)
@@ -765,22 +841,17 @@ def run_seed_demo(
     existente = db.query(Flujo).filter(Flujo.nombre == FLUJO_NOMBRE).first()
     if existente is not None:
         n_casos = db.query(Caso).filter(Caso.flujo_id == existente.id).count()
-        if n_casos and not force:
+        # Si el flujo viejo tiene < 8 etapas, recrear
+        n_etapas = len(existente.etapas or [])
+        if (n_casos and not force and n_etapas >= 8):
             _log(f"flujo ya existe id={existente.id} con {n_casos} caso(s)")
-            # Asegura URLs de API actualizadas aunque el flujo no se recree
             if with_casos:
                 _ensure_casos_demo(db, existente, clientes, datos)
             return {"flujo_id": existente.id, "created": False, "base_url": base}
         _purge_flujo(db, existente)
 
     flujo = _build_flujo(
-        db,
-        tipo=tipo,
-        grupo=grupo,
-        datos=datos,
-        docs=docs,
-        api_motor=api_motor,
-        api_buro=api_buro,
+        db, tipo=tipo, grupos=grupos, datos=datos, docs=docs, api_motor=api_motor, api_buro=api_buro
     )
     if with_casos:
         _ensure_casos_demo(db, flujo, clientes, datos)
