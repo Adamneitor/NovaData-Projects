@@ -496,15 +496,14 @@ def reintentar_api(
     try:
         mensajes = motor.reintentar_api_estado(db, caso, usuario)
         if comentario.strip():
-            db.add(
-                CasoHistorial(
-                    caso_id=caso.id,
-                    etapa_id=caso.etapa_actual_id,
-                    estado_id=caso.estado_actual_id,
-                    usuario_id=usuario.id,
-                    comentario=f"Reintento API: {comentario.strip()}"[:500],
-                    origen="API",
-                )
+            motor._nuevo_historial(
+                db,
+                caso_id=caso.id,
+                etapa_id=caso.etapa_actual_id,
+                estado_id=caso.estado_actual_id,
+                usuario_id=usuario.id,
+                comentario=f"Reintento API: {comentario.strip()}"[:500],
+                origen="API",
             )
         db.commit()
         for m in mensajes:
@@ -513,6 +512,10 @@ def reintentar_api(
     except motor.MotorError as e:
         db.rollback()
         flash(request, e.mensaje, "danger")
+        return RedirectResponse(f"/casos/{caso_id}#seccion-acciones", status_code=303)
+    except Exception as e:  # noqa: BLE001
+        db.rollback()
+        flash(request, f"Error al ejecutar API: {e}", "danger")
         return RedirectResponse(f"/casos/{caso_id}#seccion-acciones", status_code=303)
 
 

@@ -17,8 +17,8 @@
   --hx-accent-soft: var(--nova-primary-soft, rgba(91, 82, 232, 0.08));
   --hx-cta: var(--nova-primary, #5B52E8);
   --hx-cta-ink: #ffffff;
-  --hx-ok: var(--nova-ok, #15803d);
-  --hx-ok-soft: var(--nova-ok-soft, #f0fdf4);
+  --hx-ok: var(--nova-primary, #5B52E8);
+  --hx-ok-soft: var(--nova-primary-soft, rgba(91, 82, 232, 0.08));
   --hx-warn: var(--nova-warn, #a16207);
   --hx-warn-soft: var(--nova-warn-soft, #fefce8);
   --hx-danger: var(--nova-danger, #d4183d);

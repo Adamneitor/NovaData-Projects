@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import json
-import sys
 from dataclasses import dataclass, field
-from pathlib import Path
 from urllib.parse import urlparse
 
 import httpx
@@ -23,9 +21,7 @@ from app.models import (
 )
 from app.services.api_mapeo import resolver_origen
 from app.services.dato_formato import CODIGO_BOOLEANO, tipo_codigo
-
-# Nova Projects root (…/blueprints/Helios/app/services → 4 niveles arriba)
-_NOVA_ROOT = Path(__file__).resolve().parents[4]
+from app.services.demo_credit_api import ejecutar_demo_por_path
 
 
 @dataclass
@@ -206,68 +202,12 @@ def _formatear(valor: object, formato: str) -> object:
     return str(valor)
 
 
-def _demo_apis_module():
-    """Carga demo_apis del root Nova sin depender del paquete Flask activo."""
-    root = str(_NOVA_ROOT)
-    if root not in sys.path:
-        sys.path.insert(0, root)
-    import demo_apis  # type: ignore
-
-    return demo_apis
-
-
-def _auth_bearer_ok(headers: dict) -> bool:
-    auth = ""
-    for k, v in (headers or {}).items():
-        if str(k).lower() == "authorization":
-            auth = str(v or "")
-            break
-    if not auth.lower().startswith("bearer "):
-        return False
-    return auth.split(" ", 1)[1].strip() == "test-token-123"
-
-
-def _as_bool(raw: object) -> bool:
-    if isinstance(raw, str):
-        return raw.strip().lower() in ("1", "true", "si", "sí", "yes")
-    return bool(raw)
-
-
 def _try_demo_api_inprocess(
     url: str, body: dict, headers: dict
 ) -> tuple[int, dict] | None:
-    """
-    Si la URL apunta a /demo-api/* del mismo portal, ejecuta in-process.
-    Evita que Helios se llame a sí mismo por HTTP (deadlock con gunicorn -w 1).
-    """
+    """Ejecuta /demo-api/* in-process (sin HTTP al mismo gunicorn)."""
     path = (urlparse(url).path or "").rstrip("/")
-    if "/demo-api/" not in path:
-        return None
-
-    demo = _demo_apis_module()
-    if not _auth_bearer_ok(headers):
-        return 401, {"error": "No autorizado. Use Authorization: Bearer test-token-123"}
-
-    if path.endswith("/demo-api/evaluacion"):
-        try:
-            salario = float(body.get("salario") or 0)
-            tiempo = float(body.get("tiempo_laborando") or 0)
-        except (TypeError, ValueError):
-            return 400, {"error": "salario y tiempo_laborando deben ser numéricos"}
-        cedula = demo._cedula_limpia(str(body.get("cedula") or ""))
-        if salario <= 0 or not cedula:
-            return 400, {"error": "Requiere salario > 0 y cedula"}
-        return 200, demo.evaluar_motor(salario, _as_bool(body.get("es_asalariado", False)), tiempo, cedula)
-
-    if path.endswith("/demo-api/buro/reporte"):
-        cedula = demo._cedula_limpia(
-            str(body.get("cedula") or body.get("identificacion") or "")
-        )
-        if len(cedula) < 5:
-            return 400, {"error": "Requiere cedula válida"}
-        return 200, demo.reporte_buro(cedula)
-
-    return None
+    return ejecutar_demo_por_path(path, body or {}, headers or {})
 
 
 def ejecutar_api(

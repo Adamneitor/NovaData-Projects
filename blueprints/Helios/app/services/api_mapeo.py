@@ -140,15 +140,25 @@ def aplicar_outputs_a_datos(
                 if not cd.etapa_id:
                     cd.etapa_id = caso.etapa_actual_id
         else:
-            cd = CasoDato(
+            from sqlalchemy import func
+
+            from app.database import engine
+
+            kwargs = dict(
                 caso_id=caso.id,
                 dato_id=m.dato_id,
                 etapa_id=caso.etapa_actual_id,
                 valor=texto,
                 usuario_adicion_id=uid or 1,
             )
+            # SQLite + BigInteger PK no autoincrementa; asignar id explícito
+            if engine.dialect.name == "sqlite":
+                next_id = int(db.query(func.max(CasoDato.id)).scalar() or 0) + 1
+                kwargs["id"] = next_id
+            cd = CasoDato(**kwargs)
             db.add(cd)
             existentes[m.dato_id] = cd
+            db.flush()
 
         mensajes.append(f"{out.nombre} → {nombre_dato} = {texto or '(vacío)'}")
 

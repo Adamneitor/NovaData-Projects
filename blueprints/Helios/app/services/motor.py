@@ -122,15 +122,14 @@ def crear_caso(db: Session, flujo: Flujo, usuario: Usuario, cliente_id: int | No
     )
     db.add(caso)
     db.flush()
-    db.add(
-        CasoHistorial(
-            caso_id=caso.id,
-            etapa_id=primera.id,
-            estado_id=estado.id,
-            usuario_id=usuario.id,
-            comentario="Caso creado",
-            origen="SISTEMA",
-        )
+    _nuevo_historial(
+        db,
+        caso_id=caso.id,
+        etapa_id=primera.id,
+        estado_id=estado.id,
+        usuario_id=usuario.id,
+        comentario="Caso creado",
+        origen="SISTEMA",
     )
     db.flush()
     return caso
@@ -172,19 +171,47 @@ def pendientes_etapa(db: Session, caso: Caso) -> tuple[list[EtapaDocumento], lis
     return docs_pendientes, datos_pendientes
 
 
+def _nuevo_historial(
+    db: Session,
+    *,
+    caso_id: int,
+    etapa_id: int,
+    estado_id: int,
+    usuario_id: int | None,
+    comentario: str | None,
+    origen: str,
+) -> CasoHistorial:
+    from sqlalchemy import func
+
+    from app.database import engine
+
+    kwargs = dict(
+        caso_id=caso_id,
+        etapa_id=etapa_id,
+        estado_id=estado_id,
+        usuario_id=usuario_id,
+        comentario=comentario,
+        origen=origen,
+    )
+    if engine.dialect.name == "sqlite":
+        kwargs["id"] = int(db.query(func.max(CasoHistorial.id)).scalar() or 0) + 1
+    h = CasoHistorial(**kwargs)
+    db.add(h)
+    return h
+
+
 def _registrar(db: Session, caso: Caso, etapa_id: int, estado_id: int, usuario_id: int | None,
                comentario: str | None, origen: str) -> None:
     caso.etapa_actual_id = etapa_id
     caso.estado_actual_id = estado_id
-    db.add(
-        CasoHistorial(
-            caso_id=caso.id,
-            etapa_id=etapa_id,
-            estado_id=estado_id,
-            usuario_id=usuario_id,
-            comentario=comentario,
-            origen=origen,
-        )
+    _nuevo_historial(
+        db,
+        caso_id=caso.id,
+        etapa_id=etapa_id,
+        estado_id=estado_id,
+        usuario_id=usuario_id,
+        comentario=comentario,
+        origen=origen,
     )
     db.flush()
 
@@ -212,15 +239,14 @@ def _cerrar_si_corresponde(db: Session, caso: Caso, usuario: Usuario | None) -> 
             mensajes.append(
                 f"API de conclusion '{flujo.api_conclusion.nombre}' fallo: {resultado.error}"
             )
-        db.add(
-            CasoHistorial(
-                caso_id=caso.id,
-                etapa_id=etapa.id,
-                estado_id=estado.id,
-                usuario_id=usuario.id if usuario else None,
-                comentario=mensajes[-1][:500],
-                origen="API",
-            )
+        _nuevo_historial(
+            db,
+            caso_id=caso.id,
+            etapa_id=etapa.id,
+            estado_id=estado.id,
+            usuario_id=usuario.id if usuario else None,
+            comentario=mensajes[-1][:500],
+            origen="API",
         )
     db.flush()
     return mensajes
@@ -239,15 +265,14 @@ def _procesar_apis_de_estado(db: Session, caso: Caso, usuario: Usuario | None) -
         resultado = ejecutar_api(api, caso, db, estado_id=estado.id, estado=estado)
         if not resultado.exito:
             mensajes.append(f"API '{api.nombre}' fallo: {resultado.error}. El caso permanece en '{estado.nombre}'.")
-            db.add(
-                CasoHistorial(
-                    caso_id=caso.id,
-                    etapa_id=caso.etapa_actual_id,
-                    estado_id=estado.id,
-                    usuario_id=usuario.id if usuario else None,
-                    comentario=mensajes[-1][:500],
-                    origen="API",
-                )
+            _nuevo_historial(
+                db,
+                caso_id=caso.id,
+                etapa_id=caso.etapa_actual_id,
+                estado_id=estado.id,
+                usuario_id=usuario.id if usuario else None,
+                comentario=mensajes[-1][:500],
+                origen="API",
             )
             db.flush()
             break
@@ -267,15 +292,14 @@ def _procesar_apis_de_estado(db: Session, caso: Caso, usuario: Usuario | None) -
                 f"API '{api.nombre}' respondio ({outputs_txt}) pero ninguna regla aplico. "
                 f"El caso permanece en '{estado.nombre}'."
             )
-            db.add(
-                CasoHistorial(
-                    caso_id=caso.id,
-                    etapa_id=caso.etapa_actual_id,
-                    estado_id=estado.id,
-                    usuario_id=usuario.id if usuario else None,
-                    comentario=mensajes[-1][:500],
-                    origen="API",
-                )
+            _nuevo_historial(
+                db,
+                caso_id=caso.id,
+                etapa_id=caso.etapa_actual_id,
+                estado_id=estado.id,
+                usuario_id=usuario.id if usuario else None,
+                comentario=mensajes[-1][:500],
+                origen="API",
             )
             db.flush()
             break
@@ -298,15 +322,14 @@ def _procesar_apis_de_estado(db: Session, caso: Caso, usuario: Usuario | None) -
                     f"{preview} → {destino_txt}. Complete datos/documentos obligatorios "
                     f"para avanzar automáticamente."
                 )
-            db.add(
-                CasoHistorial(
-                    caso_id=caso.id,
-                    etapa_id=caso.etapa_actual_id,
-                    estado_id=estado.id,
-                    usuario_id=usuario.id if usuario else None,
-                    comentario=mensajes[-1][:500],
-                    origen="API",
-                )
+            _nuevo_historial(
+                db,
+                caso_id=caso.id,
+                etapa_id=caso.etapa_actual_id,
+                estado_id=estado.id,
+                usuario_id=usuario.id if usuario else None,
+                comentario=mensajes[-1][:500],
+                origen="API",
             )
             db.flush()
             break
@@ -608,14 +631,13 @@ def cancelar_caso(db: Session, caso: Caso, usuario: Usuario, comentario: str | N
         raise MotorError("El caso no esta activo.")
     caso.estado_general = "CANCELADO"
     caso.fecha_cierre = datetime.now()
-    db.add(
-        CasoHistorial(
-            caso_id=caso.id,
-            etapa_id=caso.etapa_actual_id,
-            estado_id=caso.estado_actual_id,
-            usuario_id=usuario.id,
-            comentario=comentario or "Caso cancelado",
-            origen="MANUAL",
-        )
+    _nuevo_historial(
+        db,
+        caso_id=caso.id,
+        etapa_id=caso.etapa_actual_id,
+        estado_id=caso.estado_actual_id,
+        usuario_id=usuario.id,
+        comentario=comentario or "Caso cancelado",
+        origen="MANUAL",
     )
     db.flush()

@@ -169,7 +169,7 @@
             <p>{% if datos_etapa %}Etapa «{{ caso.etapa_actual.nombre }}»{% else %}Expediente del caso{% endif %}</p>
           </div>
           {% if datos_pend_count %}<span class="caso-chip caso-chip--warn">{{ datos_pend_count }} pendiente{{ 's' if datos_pend_count != 1 }}</span>
-          {% elif datos_etapa %}<span class="caso-chip" style="background:#dcfce7;color:#15803d">Completo</span>{% endif %}
+          {% elif datos_etapa %}<span class="caso-chip" style="background:rgba(91,82,232,.10);color:#5B52E8">Completo</span>{% endif %}
         </header>
         <div class="caso-card__body">
           {% if datos_etapa %}
@@ -296,7 +296,7 @@
             {% for l in api_logs %}
             <details class="api-row">
               <summary>
-                {% if l.exito %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}
+                {% if l.exito %}<i class="bi bi-check-circle-fill" style="color:#5B52E8"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}
                 <span class="api-name">{{ l.api.nombre }}</span>
                 <span class="api-meta">HTTP {{ l.http_status or '—' }} · {{ l.fecha.strftime('%d/%m %H:%M') }}</span>
               </summary>
@@ -534,11 +534,13 @@
     --c-bg: var(--hx-bg, #f1f5f9);
     --c-card: var(--hx-surface, #ffffff);
     --c-accent: var(--hx-accent, #5B52E8);
-    --c-accent-soft: var(--hx-accent-soft, #ccfbf1);
-    --c-warn: var(--hx-warn, #b45309);
-    --c-warn-soft: var(--hx-warn-soft, #fef3c7);
+    --c-accent-soft: var(--hx-accent-soft, rgba(91, 82, 232, 0.10));
+    --c-warn: var(--hx-warn, #a16207);
+    --c-warn-soft: var(--hx-warn-soft, #fefce8);
     --c-danger: var(--hx-danger, #b91c1c);
-    --c-ok: var(--hx-ok, #15803d);
+    --c-ok: var(--hx-accent, #5B52E8);
+    --c-ok-soft: rgba(91, 82, 232, 0.10);
+    --c-info: var(--hx-info, #4A9FF5);
     font-family: var(--hx-font, "Montserrat", system-ui, sans-serif);
     color: var(--c-ink);
     max-width: 1280px;
@@ -549,9 +551,9 @@
 
   .caso-hero {
     display: flex; justify-content: space-between; gap: 1.5rem; align-items: flex-start;
-    background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%);
+    background: linear-gradient(135deg, #0B0A1F 0%, #14132B 48%, #5B52E8 140%);
     color: #fff; border-radius: 16px; padding: 1.5rem 1.75rem; margin-bottom: 1.25rem;
-    box-shadow: 0 12px 40px rgba(15, 23, 42, .22);
+    box-shadow: 0 12px 40px rgba(91, 82, 232, .22);
   }
   .caso-hero__kicker { display: flex; gap: .6rem; align-items: center; margin-bottom: .5rem; flex-wrap: wrap; }
   .caso-kicker-muted { opacity: .7; font-size: .8rem; }
@@ -570,18 +572,18 @@
     font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
     padding: .28rem .6rem; border-radius: 999px;
   }
-  .caso-pill--activo { background: #d1fae5; color: #065f46; }
-  .caso-pill--cerrado { background: #e0e7ff; color: #3730a3; }
+  .caso-pill--activo { background: rgba(74, 159, 245, .22); color: #DBEAFE; }
+  .caso-pill--cerrado { background: rgba(91, 82, 232, .28); color: #EAE8FE; }
   .caso-pill--cancelado { background: #fee2e2; color: #991b1b; }
   .caso-hero__cta { text-align: right; flex-shrink: 0; }
   .caso-cta-hint { margin-top: .5rem; font-size: .75rem; opacity: .8; }
 
   .btn-caso-primary {
     display: inline-flex; align-items: center; gap: .45rem; border: 0; border-radius: 10px;
-    background: #fbbf24; color: #0f172a; font-weight: 700; padding: .7rem 1.15rem;
-    text-decoration: none; box-shadow: 0 4px 14px rgba(251,191,36,.35); transition: transform .12s, box-shadow .12s;
+    background: linear-gradient(135deg, #5B52E8 0%, #4A9FF5 100%); color: #fff; font-weight: 700; padding: .7rem 1.15rem;
+    text-decoration: none; box-shadow: 0 4px 14px rgba(91, 82, 232, .4); transition: transform .12s, box-shadow .12s;
   }
-  .btn-caso-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(251,191,36,.45); color: #0f172a; }
+  .btn-caso-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(91, 82, 232, .5); color: #fff; }
   .btn-caso-primary:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
   .btn-caso-primary--block { width: 100%; justify-content: center; }
   .btn-caso-secondary {
@@ -610,7 +612,7 @@
     width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
     font-size: .8rem; font-weight: 700; border: 2px solid var(--c-line); background: #fff; color: var(--c-muted);
   }
-  .pipe-step.is-done .pipe-node { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .pipe-step.is-done .pipe-node { background: var(--c-accent); border-color: var(--c-accent); color: #fff; }
   .pipe-step.is-current .pipe-node {
     background: var(--c-accent); border-color: var(--c-accent); color: #fff;
     box-shadow: 0 0 0 4px var(--c-accent-soft);
@@ -619,7 +621,7 @@
   .pipe-label strong { display: block; font-size: .78rem; font-weight: 600; }
   .pipe-label small { color: var(--c-accent); font-size: .7rem; }
   .pipe-line { flex: 1; height: 2px; background: var(--c-line); margin-top: 16px; min-width: 28px; }
-  .pipe-line.is-lit { background: #86efac; }
+  .pipe-line.is-lit { background: linear-gradient(90deg, #5B52E8, #4A9FF5); }
 
   .caso-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .9fr); gap: 1.15rem; }
   @media (max-width: 992px) { .caso-grid { grid-template-columns: 1fr; } .caso-hero { flex-direction: column; } }
@@ -667,7 +669,9 @@
   .datos-cta__meta { font-size: .78rem; color: var(--c-muted); margin-top: .4rem; }
   .datos-cta__btn { justify-content: center; text-align: center; width: 100%; }
   .datos-cta__btn--done {
-    border: 1.5px solid #86efac !important; background: #f0fdf4 !important; color: #166534 !important;
+    border: 1.5px solid rgba(91, 82, 232, .35) !important;
+    background: rgba(91, 82, 232, .08) !important;
+    color: #5B52E8 !important;
   }
   .datos-cta__badge {
     display: inline-flex; align-items: center; justify-content: center;
@@ -798,7 +802,11 @@
 
   .aside-alert { border-radius: 10px; padding: .75rem .85rem; font-size: .8rem; margin-bottom: .85rem; }
   .aside-alert--danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-  .aside-alert--ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+  .aside-alert--ok {
+    background: rgba(91, 82, 232, .08);
+    color: #4338CA;
+    border: 1px solid rgba(91, 82, 232, .28);
+  }
   .aside-alert ul { margin: .4rem 0; padding-left: 1.1rem; }
   .aside-alert a { color: inherit; font-weight: 700; }
 
@@ -808,7 +816,7 @@
     border-radius: 10px; padding: .65rem .75rem; cursor: pointer; transition: border-color .12s, background .12s, box-shadow .12s;
     margin: 0;
   }
-  .action-choice:hover { border-color: #99f6e4; }
+  .action-choice:hover { border-color: rgba(91, 82, 232, .45); }
   .action-choice.is-selected {
     border-color: var(--c-accent); background: var(--c-accent-soft);
     box-shadow: 0 0 0 1px var(--c-accent);
