@@ -34,22 +34,15 @@
           {% endif %}
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg>
         </button>
+        <span class="nv-env-badge nv-env-badge--plain">Desarrollo</span>
       </div>
       <div class="nv-topbar__right">
-        {% if not pick %}
-        <div class="nv-search" id="nvSearch">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
-          <input type="search" id="nvSearchInput" class="nv-search__input" placeholder="Buscar caso, cliente o cédula" autocomplete="off" enterkeyhint="search">
-          <div class="nv-search__results" id="nvSearchResults" hidden></div>
-        </div>
-        {% else %}
-        <div class="nv-search nv-search--ghost" aria-hidden="true"><span></span></div>
-        {% endif %}
         <div class="nv-user-tray">
-          <span class="nv-env-badge nv-env-badge--plain">Desarrollo</span>
           {% if user %}
           <span class="nv-user-name">{{ user.name }}</span>
-          <span class="nv-avatar nv-avatar--silhouette" aria-hidden="true"></span>
+          <span class="nv-avatar nv-avatar--profile" title="{{ user.name }}" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19.5c0-3.4 2.8-5.5 7-5.5s7 2.1 7 5.5"></path></svg>
+          </span>
           <a class="nv-logout" href="{{ url_for('logout') }}">Salir</a>
           {% endif %}
         </div>
@@ -101,6 +94,9 @@
   <div class="nv-body">
     <aside class="nv-rail{% if pick %} nv-rail--ghost{% endif %}" id="appRail">
       {% if pick %}
+      <div class="nv-rail__search nv-rail__search--ghost" aria-hidden="true">
+        <span></span>
+      </div>
       <div class="nv-rail__ghost" aria-hidden="true">
         <span class="nv-rail__ghost-label"></span>
         <span class="nv-rail__ghost-line"></span>
@@ -113,6 +109,11 @@
         <span class="nv-rail__ghost-line nv-rail__ghost-line--short"></span>
       </div>
       {% else %}
+      <div class="nv-rail__search" id="nvSearch">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+        <input type="search" id="nvSearchInput" class="nv-rail__search-input" placeholder="Buscar por cédula" autocomplete="off" enterkeyhint="search">
+        <div class="nv-search__results nv-rail__search-results" id="nvSearchResults" hidden></div>
+      </div>
       <div class="nv-rail__groups">
         <div>
           <div class="nv-rail__label">Producto</div>

@@ -2443,6 +2443,13 @@ a.nv-astro--locked {
   border: 1px solid rgba(148,163,184,.22);
   box-shadow: none; color: transparent; font-size: 0;
 }
+.nv-avatar--profile {
+  width: 32px; height: 32px; border-radius: 999px;
+  display: grid; place-items: center;
+  background: rgba(91,82,232,.16);
+  border: 1px solid rgba(139,132,255,.35);
+  color: #A9A3FF;
+}
 .nv-logout {
   font: 600 12.5px var(--font-ui); color: #8496AC; text-decoration: none;
   padding: 6px 10px; border-radius: 8px;
@@ -2454,6 +2461,37 @@ a.nv-astro--locked {
   background: rgba(91,82,232,.2);
   border-color: rgba(139,132,255,.55);
   color: #C4BFFF;
+}
+
+.nv-rail__search {
+  position: relative;
+  margin: 12px 12px 6px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 10px; height: 36px; border-radius: 9px;
+  background: rgba(148,163,184,.08);
+  border: 1px solid rgba(148,163,184,.16);
+  color: #8496AC; flex: none;
+}
+.nv-rail__search-input {
+  flex: 1; min-width: 0;
+  border: 0; outline: 0; background: transparent;
+  font: 400 12.5px var(--font-ui); color: #E7EDF5;
+  padding: 0;
+}
+.nv-rail__search-input::placeholder { color: #64748B; }
+.nv-rail__search-results {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+  background: #1a1a2e; border: 1px solid #24334A;
+  border-radius: 12px; overflow: hidden; z-index: 40;
+  box-shadow: 0 18px 40px -16px rgba(0,0,0,.75);
+  max-height: 320px; overflow-y: auto;
+}
+.nv-rail__search--ghost {
+  pointer-events: none;
+}
+.nv-rail__search--ghost span {
+  display: block; width: 70%; height: 10px; margin: 0 auto;
+  border-radius: 999px; background: rgba(148,163,184,.14);
 }
 
 .nv-search--ghost {

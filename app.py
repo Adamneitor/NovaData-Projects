@@ -30,6 +30,7 @@ except ImportError:
     pass
 
 from database import User, create_and_seed, db, init_app as init_database
+from demo_apis import demo_api_bp
 from solutions import (
     SOLUTIONS,
     default_entitlements,
@@ -54,6 +55,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 from blueprints.buro_credito import buro_bp  # noqa: E402
 
 app.register_blueprint(buro_bp)
+app.register_blueprint(demo_api_bp)
 
 # Portales legacy (herramientas internas)
 PORTALS_DB = [

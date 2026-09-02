@@ -1,8 +1,8 @@
 # Nova Projects — Knowledge Map
 
 ## Changelog
-- **2026-09-01**: Home público v2 (4a): hero orbital animado, pilares BI, carrusel coverflow; **sin post-login** — login → `/helios` directo; eliminados hub `/constelacion` y templates `launcher.html`/`constelacion.html`.
-- **2026-08-25**: BD persistente (SQLite local / Postgres Railway); catálogo NOVA público → login → Helios; shell alineado a marca; `init_db.py` + Procfile release.
+- **2026-09-02**: Shell pick: Desarrollo junto al dropdown; búsqueda por cédula en sidebar; icono de perfil. APIs demo `/demo-api/evaluacion` (APROBADA/REFERIDA/DECLINADA) y `/demo-api/buro/reporte` + `scripts/seed_demo_apis.py`.
+- **2026-09-01**: Home público v2 (4a): hero orbital animado, pilares BI, carrusel coverflow; login → `/nova` shell vacío con selector.
 
 ## Stack
 - Flask + Socket.IO en Railway: https://novadata-projects-production.up.railway.app/
