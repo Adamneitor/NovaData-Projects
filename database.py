@@ -63,24 +63,38 @@ def init_app(app):
 
 
 def create_and_seed(app) -> None:
-    """Crea tablas e inserta admin si no existe."""
+    """Crea tablas e inserta admin + perfiles demo Helios si no existen."""
+    demo_users = [
+        ("admin", "admin", "Administrator", "admin@novadatasolutions.local", "admin"),
+        ("ejecutivo", "demo123", "María López · Ejecutivo Servicio", "ejecutivo@demo.nova.local", "user"),
+        ("analista", "demo123", "Pedro Gómez · Analista Crédito", "analista@demo.nova.local", "user"),
+        ("gerente", "demo123", "Sofía Reyes · Gerente Análisis", "gerente@demo.nova.local", "user"),
+        ("comite", "demo123", "Comité Crédito Demo", "comite@demo.nova.local", "user"),
+        ("operaciones", "demo123", "Luis Méndez · Operaciones", "operaciones@demo.nova.local", "user"),
+    ]
     with app.app_context():
         db.create_all()
-        admin = User.query.filter_by(username="admin").first()
-        if not admin:
-            admin = User(
-                username="admin",
-                password_hash=generate_password_hash("admin"),
-                name="Administrator",
-                email="admin@novadatasolutions.local",
-                role="admin",
-                active=True,
+        created = 0
+        for username, password, name, email, role in demo_users:
+            row = User.query.filter_by(username=username).first()
+            if row:
+                continue
+            db.session.add(
+                User(
+                    username=username,
+                    password_hash=generate_password_hash(password),
+                    name=name,
+                    email=email,
+                    role=role,
+                    active=True,
+                )
             )
-            db.session.add(admin)
+            created += 1
+        if created:
             db.session.commit()
-            print("Seed: usuario admin / admin creado.")
+            print(f"Seed: {created} usuario(s) demo creados (admin + roles Helios).")
         else:
-            print("Seed: admin ya existe.")
+            print("Seed: usuarios demo ya existen.")
         # Diagnóstico
         engine = db.engine
         print(f"BD: {engine.url.render_as_string(hide_password=True)}")
