@@ -90,15 +90,14 @@ def _coerce_valor_api(raw: object, codigo: str | None) -> object | None:
         return booleano_a_api(raw)
 
     if cod in ("numero", "numero_decimal", "moneda", "moneda_decimal"):
-        s = str(raw).strip().replace("$", "").replace(",", "").replace(" ", "")
-        if not s:
+        from app.services.dato_formato import _parse_decimal
+
+        num = _parse_decimal(str(raw))
+        if num is None:
             return None
-        try:
-            if cod in ("numero",) and "." not in s:
-                return int(s)
-            return float(s)
-        except ValueError:
-            return raw
+        if cod in ("numero", "moneda"):
+            return int(num)
+        return float(num)
 
     # Si/No sueltos (p.ej. valor fijo o dato mal tipado) → 1/0
     if _es_booleano_helios(raw):
@@ -241,6 +240,15 @@ def ejecutar_api(
                 headers[p.nombre] = str(valor)
         else:  # body
             body[p.nombre] = valor
+
+    from app.services.demo_credit_api import cedula_limpia
+
+    ced = body.get("cedula")
+    if ced is None or str(ced).strip() == "":
+        ident = ""
+        if getattr(caso, "cliente", None) is not None:
+            ident = getattr(caso.cliente, "identificacion", None) or ""
+        body["cedula"] = cedula_limpia(ident) or f"{caso.id:011d}"
 
     resultado = ResultadoApi(exito=False)
     resultado.request_json = json.dumps(

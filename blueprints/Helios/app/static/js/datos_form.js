@@ -55,22 +55,36 @@
     banner.innerHTML = `<strong><i class="bi bi-exclamation-triangle-fill"></i> ${escapeHtml(text)}</strong>`;
   }
 
+  function isSiNo(val) {
+    return /^(si|sí|no|true|false|yes|s|n)$/i.test(String(val || "").trim());
+  }
+
+  function digitsOf(val) {
+    return String(val || "")
+      .replace(/RD\s*\$/gi, "")
+      .replace(/[\s\u00a0\u202f\u2007,$]/g, "")
+      .replace(/,/g, "");
+  }
+
   function clientValidate(form) {
     const errors = [];
     form.querySelectorAll("[name^='dato_']").forEach((el) => {
+      if (el.type === "hidden") return;
       if (el.disabled) return;
       const field = el.closest(".data-field, .df-field");
       if (field?.classList.contains("is-cond-disabled")) return;
-      const formato = el.dataset.datoFormato || "";
-      const codigo = el.dataset.datoCodigo || "";
+      const formato = el.dataset.datoFormato || field?.dataset.datoFormato || "";
+      const codigo = el.dataset.datoCodigo || field?.dataset.datoCodigo || "";
       const val = (el.value || "").trim();
       const required =
         field?.dataset.effectiveRequired === "1" || field?.dataset.baseRequired === "1";
-      const digitsOnly = val.replace(/RD\$/gi, "").replace(/[\s,$]/g, "").replace(/,/g, "");
-      if (!val || digitsOnly === "") {
+      const isSelect = el.tagName === "SELECT" || codigo === "booleano" || codigo === "lista";
+      if (!val) {
         if (required) errors.push({ field: el.name, message: "Este campo es obligatorio." });
         return;
       }
+      if (isSelect || isSiNo(val)) return;
+      const digitsOnly = digitsOf(val);
       if (formato === "telefono" || codigo === "telefono") {
         const digits = val.replace(/\D/g, "");
         if (digits.length < 10) {
@@ -81,6 +95,7 @@
         } else if (digits.length > 15) {
           errors.push({ field: el.name, message: "El teléfono no puede superar 15 dígitos." });
         }
+        return;
       }
       if (codigo === "numero" || codigo === "moneda" || formato === "numero" || formato === "moneda") {
         const normalized = digitsOnly.replace(/\.0+$/, "");
@@ -100,6 +115,17 @@
       }
     });
     return errors;
+  }
+
+  function collectPayload(form) {
+    const payload = { return_to: "form" };
+    const ret = form.querySelector('[name="return_to"]');
+    if (ret) payload.return_to = ret.value || "form";
+    form.querySelectorAll("[name^='dato_']").forEach((el) => {
+      if (el.type === "hidden" && !el.name.startsWith("dato_")) return;
+      payload[el.name] = el.value || "";
+    });
+    return payload;
   }
 
   function validateField(el) {
@@ -152,11 +178,13 @@
     }
 
     try {
-      const body = new FormData(form);
-      const res = await fetch(form.action, {
+      const res = await fetch(form.getAttribute("action") || window.location.pathname, {
         method: "POST",
-        body,
-        headers: { Accept: "application/json" },
+        body: JSON.stringify(collectPayload(form)),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
         credentials: "same-origin",
       });
       let json = null;

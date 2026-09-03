@@ -244,15 +244,26 @@ def ejecutar_demo_por_path(path: str, body: dict, headers: dict) -> tuple[int, d
         return 401, {"error": "No autorizado. Use Authorization: Bearer test-token-123"}
 
     if _es_path_motor(p):
+        from app.services.dato_formato import _parse_decimal
+
         try:
-            salario = float(body.get("salario") or 0)
-            tiempo = float(body.get("tiempo_laborando") or body.get("tiempo") or 0)
+            sal_raw = body.get("salario")
+            tim_raw = body.get("tiempo_laborando") or body.get("tiempo")
+            sal_num = _parse_decimal(str(sal_raw)) if sal_raw not in (None, "") else None
+            tim_num = _parse_decimal(str(tim_raw)) if tim_raw not in (None, "") else None
+            salario = float(sal_num) if sal_num is not None else float(sal_raw or 0)
+            tiempo = float(tim_num) if tim_num is not None else float(tim_raw or 0)
         except (TypeError, ValueError):
             return 400, {"error": "salario y tiempo_laborando deben ser numéricos"}
         cedula = cedula_limpia(str(body.get("cedula") or ""))
-        if salario <= 0 or not cedula:
+        faltan = []
+        if salario <= 0:
+            faltan.append("Salario")
+        if not cedula:
+            faltan.append("cédula del cliente")
+        if faltan:
             return 400, {
-                "error": "Complete Salario, cédula del cliente y Tiempo laborando, luego reintente el Motor."
+                "error": "Complete " + ", ".join(faltan) + " y vuelva a ejecutar el Motor de Crédito TC."
             }
         asal = body.get("es_asalariado", body.get("asalariado", False))
         return 200, evaluar_motor(salario, as_bool(asal), tiempo, cedula)

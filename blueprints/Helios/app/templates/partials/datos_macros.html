@@ -28,7 +28,7 @@
       </label>
       <div class="df-label-meta">
         {% if api_ro %}<span class="df-chip df-chip--api" title="Rellenado por API"><i class="bi bi-plug"></i> API</span>{% endif %}
-        {% if ed.dato_id in datos_pendientes %}<span class="df-chip df-chip--pend">Pendiente</span>{% endif %}
+        {% if ed.dato_id in datos_pendientes and not (valor|string|trim) %}<span class="df-chip df-chip--pend">Pendiente</span>{% endif %}
         {% if dep and not api_ro %}
         <span class="df-chip df-chip--cond" title="Depende de {{ ed.depende_de.nombre if ed.depende_de else ('dato #' ~ dep) }}">
           <i class="bi bi-link-45deg"></i>{{ ed.depende_de.nombre if ed.depende_de else 'Condicional' }}
@@ -44,12 +44,14 @@
     <p class="df-hint df-hint--cond d-none" data-cond-hint>Deshabilitado hasta cumplir la condición.</p>
     {% endif %}
     {% if tipo == 'select' or codigo == 'lista' %}
-      <select class="df-input caso-input" id="input-dato_{{ ed.dato_id }}" name="dato_{{ ed.dato_id }}" {% if locked %}disabled{% endif %}>
+      <select class="df-input caso-input" id="input-dato_{{ ed.dato_id }}" name="dato_{{ ed.dato_id }}"
+              data-dato-codigo="{{ codigo }}" data-dato-formato="{{ attrs['data-dato-formato'] }}" {% if locked %}disabled{% endif %}>
         <option value="">Seleccione…</option>
         {% for op in (ed.dato.opciones or '').split(';') %}{% if op %}<option {% if valor == op %}selected{% endif %}>{{ op }}</option>{% endif %}{% endfor %}
       </select>
     {% elif tipo == 'checkbox' or codigo == 'booleano' %}
-      <select class="df-input caso-input" id="input-dato_{{ ed.dato_id }}" name="dato_{{ ed.dato_id }}" {% if locked %}disabled{% endif %}>
+      <select class="df-input caso-input" id="input-dato_{{ ed.dato_id }}" name="dato_{{ ed.dato_id }}"
+              data-dato-codigo="booleano" data-dato-formato="texto" {% if locked %}disabled{% endif %}>
         <option value="">Seleccione…</option>
         <option value="Si" {% if valor == 'Si' %}selected{% endif %}>Sí</option>
         <option value="No" {% if valor == 'No' %}selected{% endif %}>No</option>

@@ -1013,15 +1013,26 @@ async def guardar_datos(
         flash(request, "No puede editar datos en este caso.", "danger")
         return RedirectResponse(f"/casos/{caso_id}", status_code=303)
 
-    form = await request.form()
-    return_to = str(form.get("return_to") or "").strip()
+    ctype = (request.headers.get("content-type") or "").lower()
+    values_ui: dict[str, str] = {}
+    return_to = ""
+    if "application/json" in ctype:
+        payload = await request.json()
+        if not isinstance(payload, dict):
+            payload = {}
+        return_to = str(payload.get("return_to") or "").strip()
+        for clave, valor in payload.items():
+            if str(clave).startswith("dato_"):
+                values_ui[str(clave)] = "" if valor is None else str(valor).strip()
+    else:
+        form = await request.form()
+        return_to = str(form.get("return_to") or "").strip()
+        for clave, valor in form.items():
+            if clave.startswith("dato_"):
+                values_ui[clave] = str(valor).strip()
 
     datos_etapa = _datos_etapa_ordenados(caso.etapa_actual)
     bloqueados_api = dato_ids_output_de_caso(db, caso)
-    values_ui: dict[str, str] = {}
-    for clave, valor in form.items():
-        if clave.startswith("dato_"):
-            values_ui[clave] = str(valor).strip()
 
     # Valores para evaluar condiciones (campos deshabilitados no llegan en el POST)
     valores_eval: dict[int, str] = {
@@ -1043,7 +1054,11 @@ async def guardar_datos(
         if dato_id in bloqueados_api:
             continue
 
-        valor_ui = valores_eval.get(dato_id, "")
+        valor_ui = (valores_eval.get(dato_id) or "").strip()
+        if not valor_ui:
+            valor_ui = (existentes_prev.get(dato_id) or "").strip()
+            if valor_ui:
+                valores_eval[dato_id] = valor_ui
         st = evaluar_campo(ed, valores_eval)
 
         if not st["enabled"]:

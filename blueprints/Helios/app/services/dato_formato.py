@@ -139,13 +139,26 @@ def _solo_digitos(s: str) -> str:
     return re.sub(r"\D", "", s or "")
 
 
+_SI_NO = frozenset({"si", "sí", "no", "true", "false", "yes", "s", "n"})
+
+
+def es_valor_si_no(value: Any) -> bool:
+    return str(value or "").strip().lower() in _SI_NO
+
+
+def _limpiar_entrada_numerica(raw: str) -> str:
+    s = (raw or "").strip()
+    s = re.sub(r"(?i)\brd\s*\$?", "", s)
+    s = s.replace("$", "").replace("+", "")
+    s = re.sub(r"[\s\u00a0\u202f\u2007\u2009\u2008\ufeff']+", "", s)
+    return s
+
+
 def _parse_decimal(raw: str) -> Decimal | None:
     """Normaliza entrada de usuario a Decimal. Acepta 1,000.50 / 1000.50 / $1.000,50."""
-    s = (raw or "").strip()
+    s = _limpiar_entrada_numerica(raw)
     if not s:
         return None
-    s = re.sub(r"(?i)\brd\$?", "", s)
-    s = s.replace("$", "").replace(" ", "").replace("+", "")
     # Quitar paréntesis de teléfono residuales
     s = s.replace("(", "").replace(")", "").replace("-", "")
     if "," in s and "." in s:
@@ -184,6 +197,14 @@ def parse_value(
     codigo = tipo_codigo(tipo_dato if tipo_dato is not None else (getattr(dato, "tipo_dato", None) if dato else None))
     prec = resolve_decimales(dato=dato, decimales=decimales, tipo_dato=tipo_dato)
 
+    if es_valor_si_no(s) and codigo not in TIPOS_NUMERICOS:
+        low = s.lower()
+        if low in ("si", "sí", "true", "yes", "s", "1"):
+            return "Si"
+        if low in ("no", "false", "n", "0"):
+            return "No"
+        return s
+
     if codigo == CODIGO_TELEFONO:
         return _solo_digitos(s)
 
@@ -219,6 +240,9 @@ def validate_value(
     """Devuelve mensaje de error o None si es válido."""
     raw = parse_value(value, tipo_dato, dato=dato, decimales=decimales)
     codigo = tipo_codigo(tipo_dato if tipo_dato is not None else (getattr(dato, "tipo_dato", None) if dato else None))
+
+    if es_valor_si_no(value) and codigo not in (CODIGO_TELEFONO,):
+        return None
 
     if not raw:
         return "Este campo es obligatorio." if requerido else None
