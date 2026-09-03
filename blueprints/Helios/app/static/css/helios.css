@@ -1023,3 +1023,228 @@ code, pre, .font-monospace { font-size: 0.8rem; }
   font-size: 0.72rem;
   font-weight: 700;
 }
+
+/* =========================================================
+   HELIOS Inframe (Claude Design) — bandeja + superficie clara
+   ========================================================= */
+.hx-inframe {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.25rem 0 2rem;
+}
+.hx-page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.hx-page-head__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--hx-ink);
+}
+.hx-page-head__sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.84rem;
+  color: var(--hx-muted);
+}
+.hx-page-head__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+.hx-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 264px;
+  max-width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid var(--hx-line);
+  color: var(--hx-muted);
+}
+.hx-search input {
+  border: 0;
+  outline: 0;
+  width: 100%;
+  background: transparent;
+  font: 400 0.82rem var(--hx-font);
+  color: var(--hx-ink);
+}
+.hx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.84rem;
+  padding: 0.65rem 1rem;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.2;
+}
+.hx-btn--primary {
+  background: #1a1a2e;
+  color: #fff;
+}
+.hx-btn--primary:hover { background: #2d2d44; color: #fff; }
+.hx-btn--ghost {
+  background: #fff;
+  color: var(--hx-ink);
+  border: 1px solid #c6c9d4;
+  font-weight: 600;
+}
+.hx-btn--ghost:hover { background: #f7f8fc; color: var(--hx-ink); }
+.hx-btn--sm { padding: 0.4rem 0.75rem; font-size: 0.78rem; border-radius: 7px; }
+.hx-filter-row { margin-bottom: 0.9rem; }
+.hx-chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.hx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid var(--hx-line);
+  color: #3F4657;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+.hx-chip:hover { border-color: #c6c9d4; color: var(--hx-ink); }
+.hx-chip.is-active {
+  background: #1a1a2e;
+  border-color: #1a1a2e;
+  color: #fff;
+}
+.hx-table-card {
+  background: #fff;
+  border: 1px solid var(--hx-line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.hx-table-head,
+.hx-table-row {
+  display: grid;
+  grid-template-columns: 52px 1.1fr 1.4fr 120px 1fr 96px 116px 76px;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.7rem 1.1rem;
+}
+.hx-table-head {
+  background: #F7F8FC;
+  border-bottom: 1px solid var(--hx-line);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hx-muted);
+}
+.hx-table-row {
+  border-bottom: 1px solid #eef0f5;
+  font-size: 0.84rem;
+}
+.hx-table-row:last-child { border-bottom: 0; }
+.hx-table-row.is-alt { background: #FAFAFE; }
+.hx-table-id {
+  font-weight: 700;
+  color: var(--hx-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: #c6c9d4;
+}
+.hx-table-id:hover { color: var(--hx-ink); text-decoration-color: var(--hx-ink); }
+.hx-table-muted { color: #3F4657; }
+.hx-table-date { font-size: 0.75rem; color: var(--hx-muted); }
+.hx-table-client { min-width: 0; }
+.hx-table-client strong {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--hx-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hx-table-client small {
+  display: block;
+  font-size: 0.72rem;
+  font-family: ui-monospace, Menlo, monospace;
+  color: #9ca3af;
+  margin-top: 0.1rem;
+}
+.hx-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #2d2d44;
+  background: #eef0f5;
+  border: 1px solid var(--hx-line);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  justify-self: start;
+}
+.hx-status {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: #eef0f5;
+  color: #3F4657;
+}
+.hx-status--ok { background: #f0fdf4; color: #15803d; }
+.hx-status--bad { background: #fef2f2; color: #b91c1c; }
+.hx-empty {
+  text-align: center;
+  padding: 2.5rem 1.25rem;
+  color: var(--hx-muted);
+}
+.hx-empty i { font-size: 1.75rem; opacity: 0.4; display: block; margin-bottom: 0.5rem; }
+.hx-empty__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--hx-ink);
+  margin-bottom: 0.35rem;
+}
+.hx-empty p { margin: 0 0 1rem; font-size: 0.85rem; }
+.hx-modal { border: 0; border-radius: 14px; overflow: hidden; }
+.btn-caso-secondary--danger {
+  color: #d4183d !important;
+  border-color: #F7C3CF !important;
+}
+.btn-caso-secondary--danger:hover { background: #fef2f2 !important; }
+
+/* Home Helios — Inframe tiles sobrios */
+body.hx-embed .helios-hero,
+.hx-app.hx-embed .helios-hero {
+  background: #fff !important;
+  color: var(--hx-ink) !important;
+  border: 1px solid var(--hx-line);
+  border-radius: 14px;
+  box-shadow: none;
+}
+body.hx-embed .helios-hero h1,
+.hx-app.hx-embed .helios-hero h1 { color: var(--hx-ink) !important; }
+body.hx-embed .helios-hero p,
+.hx-app.hx-embed .helios-hero p { color: var(--hx-muted) !important; opacity: 1 !important; }
+
+@media (max-width: 992px) {
+  .hx-table-head { display: none; }
+  .hx-table-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem 0.75rem;
+  }
+  .hx-table-row > :nth-child(1) { grid-column: 1; }
+  .hx-table-row > :nth-child(8) { grid-column: 2; justify-self: end; }
+}

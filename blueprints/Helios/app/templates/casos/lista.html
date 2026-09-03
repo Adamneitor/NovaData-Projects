@@ -1,72 +1,101 @@
 {% extends "base.html" %}
 {% block titulo %}Casos{% endblock %}
 {% block contenido %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title"><i class="bi bi-briefcase"></i>Casos</h1>
-    <p class="page-subtitle">Gestión operativa de préstamos y procesos</p>
+<div class="hx-inframe">
+  <div class="hx-page-head">
+    <div class="hx-page-head__text">
+      <h1 class="hx-page-head__title">Casos</h1>
+      <p class="hx-page-head__sub">Bandeja de trabajo · se listan los casos donde tu grupo actúa</p>
+    </div>
+    <div class="hx-page-head__actions">
+      <form class="hx-search" method="get" action="/casos" role="search">
+        {% if filtro %}<input type="hidden" name="estado_general" value="{{ filtro }}">{% endif %}
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input type="search" name="q" value="{{ q or '' }}" placeholder="Caso, cliente o identificación" autocomplete="off">
+      </form>
+      <button type="button" class="hx-btn hx-btn--primary" data-bs-toggle="modal" data-bs-target="#modalNuevo">
+        <i class="bi bi-plus-lg"></i> Nuevo caso
+      </button>
+    </div>
   </div>
-  <div class="page-actions">
-    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo caso</button>
+
+  <div class="hx-filter-row">
+    <div class="hx-chips">
+      <a class="hx-chip {% if not filtro %}is-active{% endif %}" href="/casos{% if q %}?q={{ q|urlencode }}{% endif %}">Todos</a>
+      <a class="hx-chip {% if filtro == 'ACTIVO' %}is-active{% endif %}" href="/casos?estado_general=ACTIVO{% if q %}&q={{ q|urlencode }}{% endif %}">Activos</a>
+      <a class="hx-chip {% if filtro == 'CERRADO' %}is-active{% endif %}" href="/casos?estado_general=CERRADO{% if q %}&q={{ q|urlencode }}{% endif %}">Cerrados</a>
+      <a class="hx-chip {% if filtro == 'CANCELADO' %}is-active{% endif %}" href="/casos?estado_general=CANCELADO{% if q %}&q={{ q|urlencode }}{% endif %}">Cancelados</a>
+    </div>
   </div>
-</div>
 
-<div class="filter-bar">
-  <a class="btn btn-sm {% if not filtro %}btn-dark{% else %}btn-outline-dark{% endif %}" href="/casos">Todos</a>
-  <a class="btn btn-sm {% if filtro == 'ACTIVO' %}btn-dark{% else %}btn-outline-dark{% endif %}" href="/casos?estado_general=ACTIVO">Activos</a>
-  <a class="btn btn-sm {% if filtro == 'CERRADO' %}btn-dark{% else %}btn-outline-dark{% endif %}" href="/casos?estado_general=CERRADO">Cerrados</a>
-  <a class="btn btn-sm {% if filtro == 'CANCELADO' %}btn-dark{% else %}btn-outline-dark{% endif %}" href="/casos?estado_general=CANCELADO">Cancelados</a>
-</div>
-
-<div class="card">
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead><tr>
-        <th>#</th><th>Flujo</th><th>Cliente</th><th>Etapa actual</th><th>Estado</th><th>Situación</th><th>Creado</th><th></th>
-      </tr></thead>
-      <tbody>
-      {% for c in casos %}
-        <tr>
-          <td class="fw-semibold">{{ c.id }}</td>
-          <td>{{ c.flujo.nombre }}</td>
-          <td>
-            {% if c.cliente %}
-              <a href="/catalogos/clientes/{{ c.cliente.id }}" class="text-decoration-none">{{ c.cliente.nombre_completo }}</a>
-            {% else %}—{% endif %}
-          </td>
-          <td><span class="badge badge-etapa">{{ c.etapa_actual.nombre }}</span></td>
-          <td>{{ c.estado_actual.nombre }}</td>
-          <td>
-            {% if c.estado_general == 'ACTIVO' %}<span class="badge text-bg-primary">Activo</span>
-            {% elif c.estado_general == 'CERRADO' %}<span class="badge text-bg-success">Cerrado</span>
-            {% else %}<span class="badge text-bg-danger">Cancelado</span>{% endif %}
-          </td>
-          <td class="small text-muted">{{ c.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
-          <td class="text-end"><a class="btn btn-sm btn-outline-dark" href="/casos/{{ c.id }}">Abrir</a></td>
-        </tr>
-      {% else %}
-        <tr><td colspan="8"><div class="empty-state"><i class="bi bi-inbox"></i><p>No hay casos en este filtro.</p></div></td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
+  <div class="hx-table-card">
+    <div class="hx-table-head">
+      <span>#</span>
+      <span>Flujo</span>
+      <span>Cliente</span>
+      <span>Etapa actual</span>
+      <span>Estado</span>
+      <span>Situación</span>
+      <span>Creado</span>
+      <span></span>
+    </div>
+    {% for c in casos %}
+    <div class="hx-table-row {% if loop.index is even %}is-alt{% endif %}">
+      <a class="hx-table-id" href="/casos/{{ c.id }}">{{ c.id }}</a>
+      <span class="hx-table-muted">{{ c.flujo.nombre }}</span>
+      <span class="hx-table-client">
+        {% if c.cliente %}
+          <strong>{{ c.cliente.nombre_completo }}</strong>
+          <small>{{ c.cliente.identificacion }}</small>
+        {% else %}
+          <strong class="text-muted">Sin cliente</strong>
+        {% endif %}
+      </span>
+      <span class="hx-pill">{{ c.etapa_actual.nombre }}</span>
+      <span class="hx-table-muted">{{ c.estado_actual.nombre }}</span>
+      <span>
+        {% if c.estado_general == 'ACTIVO' %}<span class="hx-status">Activo</span>
+        {% elif c.estado_general == 'CERRADO' %}<span class="hx-status hx-status--ok">Cerrado</span>
+        {% else %}<span class="hx-status hx-status--bad">Cancelado</span>{% endif %}
+      </span>
+      <span class="hx-table-muted hx-table-date">{{ c.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</span>
+      <a class="hx-btn hx-btn--ghost hx-btn--sm" href="/casos/{{ c.id }}">Abrir</a>
+    </div>
+    {% else %}
+    <div class="hx-empty">
+      <i class="bi bi-inbox"></i>
+      <div class="hx-empty__title">Sin casos en tu bandeja</div>
+      <p>Cuando haya solicitudes en tus etapas, aparecerán aquí.</p>
+      <button type="button" class="hx-btn hx-btn--primary" data-bs-toggle="modal" data-bs-target="#modalNuevo">Nuevo caso</button>
+    </div>
+    {% endfor %}
   </div>
 </div>
 
 <div class="modal fade" id="modalNuevo" tabindex="-1">
-  <div class="modal-dialog"><div class="modal-content">
-    <form method="post" action="/casos/crear" id="formNuevoCaso">
-      <div class="modal-header"><h5 class="modal-title">Nuevo caso</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <div class="mb-3"><label class="form-label">Flujo</label>
-          <select class="form-select" name="flujo_id" required>
-            {% for f in flujos %}<option value="{{ f.id }}">{{ f.nombre }} ({{ f.tipo_flujo.nombre }})</option>{% endfor %}
-          </select>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content hx-modal">
+      <form method="post" action="/casos/crear" id="formNuevoCaso">
+        <div class="modal-header">
+          <h5 class="modal-title">Nuevo caso</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
-        <div id="clienteSearchMount" class="mb-2"></div>
-      </div>
-      <div class="modal-footer"><button class="btn btn-warning">Crear caso</button></div>
-    </form>
-  </div></div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Flujo</label>
+            <select class="form-select" name="flujo_id" required>
+              {% for f in flujos %}<option value="{{ f.id }}">{{ f.nombre }} ({{ f.tipo_flujo.nombre }})</option>{% endfor %}
+            </select>
+          </div>
+          <div id="clienteSearchMount" class="mb-2"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="hx-btn hx-btn--ghost" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="hx-btn hx-btn--primary">Crear caso</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script src="/static/js/cliente_search.js"></script>
@@ -78,22 +107,8 @@ document.getElementById('modalNuevo')?.addEventListener('shown.bs.modal', () => 
     inputName: 'cliente_id',
     required: true,
     label: 'Cliente (obligatorio)',
-    preselect: {% if cliente_pref %}{
-      id: {{ cliente_pref.id }},
-      nombre_completo: {{ cliente_pref.nombre_completo|tojson }},
-      identificacion: {{ cliente_pref.identificacion|tojson }},
-      tipo_identificacion: {{ cliente_pref.tipo_identificacion|tojson }},
-      telefono: {{ (cliente_pref.telefono or '')|tojson }},
-      label: {{ (cliente_pref.nombre_completo ~ ' · ' ~ cliente_pref.identificacion)|tojson }}
-    }{% else %}null{% endif %}
   });
   mount.dataset.ready = '1';
 });
-{% if cliente_pref %}
-document.addEventListener('DOMContentLoaded', () => {
-  const modal = new bootstrap.Modal(document.getElementById('modalNuevo'));
-  modal.show();
-});
-{% endif %}
 </script>
 {% endblock %}
