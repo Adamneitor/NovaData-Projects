@@ -21,6 +21,7 @@ from app.models import (
     DatoComplementario,
     Estado,
     Etapa,
+    EtapaGrupo,
     Flujo,
     Usuario,
 )
@@ -110,43 +111,153 @@ def _puede_actuar(usuario: Usuario, etapa: Etapa) -> bool:
     return any(g.id in grupos_usuario for g in etapa.grupos)
 
 
+def _etapas_bandeja(db: Session, usuario: Usuario) -> list[int] | None:
+    """None = ve todas (Super/Soporte). Lista vacía = sin grupos."""
+    if usuario.perfil_id in (PERFIL_SUPER, PERFIL_SOPORTE):
+        return None
+    gids = [g.id for g in (usuario.grupos or [])]
+    if not gids:
+        return []
+    rows = (
+        db.query(EtapaGrupo.etapa_id)
+        .filter(EtapaGrupo.grupo_id.in_(gids))
+        .distinct()
+        .all()
+    )
+    return [r[0] for r in rows]
+
+
+def _fmt_creado(dt: datetime | None) -> str:
+    if not dt:
+        return "—"
+    hoy = datetime.now().date()
+    if dt.date() == hoy:
+        return f"Hoy {dt.strftime('%H:%M')}"
+    if (hoy - dt.date()).days == 1:
+        return f"Ayer {dt.strftime('%H:%M')}"
+    return dt.strftime("%d/%m %H:%M")
+
+
+def _etapa_es_warn(nombre: str) -> bool:
+    n = (nombre or "").lower()
+    return any(k in n for k in ("aprob", "refer", "comit", "gerenc"))
+
+
 @router.get("")
 def lista(
     request: Request,
     estado_general: str = "",
     cliente_id: int | None = None,
     q: str = "",
+    scope: str = "bandeja",
+    flujo_id: int | None = None,
+    etapa_id: int | None = None,
+    page: int = 1,
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    query = db.query(Caso).order_by(Caso.id.desc())
-    if estado_general:
-        query = query.filter(Caso.estado_general == estado_general)
-    if cliente_id:
-        query = query.filter(Caso.cliente_id == cliente_id)
-    qn = (q or "").strip()
-    if qn:
-        digitos = "".join(ch for ch in qn if ch.isdigit())
+    scope = (scope or "bandeja").lower()
+    if scope not in ("bandeja", "todos"):
+        scope = "bandeja"
+    if estado_general in ("ACTIVO", "CERRADO", "CANCELADO"):
+        scope = "todos"
+
+    bandeja_ids = _etapas_bandeja(db, usuario)
+
+    def _base():
+        return db.query(Caso)
+
+    def _aplicar_q(query):
+        qn_local = (q or "").strip()
+        if not qn_local:
+            return query
+        digitos = "".join(ch for ch in qn_local if ch.isdigit())
         cli_filtros = [
-            Cliente.nombre_completo.ilike(f"%{qn}%"),
-            Cliente.identificacion.ilike(f"%{qn}%"),
+            Cliente.nombre_completo.ilike(f"%{qn_local}%"),
+            Cliente.identificacion.ilike(f"%{qn_local}%"),
         ]
         if len(digitos) >= 3:
             cli_filtros.append(Cliente.identificacion.ilike(f"%{digitos}%"))
-        if qn.isdigit():
-            cli_filtros.append(cast(Caso.id, String) == qn)
-        query = query.outerjoin(Cliente, Caso.cliente_id == Cliente.id).filter(or_(*cli_filtros))
+        if qn_local.isdigit():
+            cli_filtros.append(cast(Caso.id, String) == qn_local)
+        return query.outerjoin(Cliente, Caso.cliente_id == Cliente.id).filter(or_(*cli_filtros))
+
+    def _aplicar_bandeja(query):
+        if bandeja_ids is None:
+            return query
+        if not bandeja_ids:
+            return query.filter(Caso.id == -1)
+        return query.filter(Caso.etapa_actual_id.in_(bandeja_ids))
+
+    qn = (q or "").strip()
+    query = _aplicar_q(_base())
+    if scope == "bandeja":
+        query = _aplicar_bandeja(query)
+        query = query.filter(Caso.estado_general == "ACTIVO")
+    elif estado_general:
+        query = query.filter(Caso.estado_general == estado_general)
+    if cliente_id:
+        query = query.filter(Caso.cliente_id == cliente_id)
+    if flujo_id:
+        query = query.filter(Caso.flujo_id == flujo_id)
+    if etapa_id:
+        query = query.filter(Caso.etapa_actual_id == etapa_id)
+
+    total = query.order_by(None).count()
+    per_page = 20
+    page = max(1, page)
+    pages = max(1, (total + per_page - 1) // per_page)
+    if page > pages:
+        page = pages
+    casos = query.order_by(Caso.id.desc()).offset((page - 1) * per_page).limit(per_page).all()
+
+    q_all = _aplicar_q(_base())
+    q_ban = _aplicar_bandeja(q_all).filter(Caso.estado_general == "ACTIVO")
+    conteos = {
+        "bandeja": q_ban.order_by(None).count(),
+        "todos": q_all.order_by(None).count(),
+        "activos": q_all.filter(Caso.estado_general == "ACTIVO").order_by(None).count(),
+        "cerrados": q_all.filter(Caso.estado_general == "CERRADO").order_by(None).count(),
+        "cancelados": q_all.filter(Caso.estado_general == "CANCELADO").order_by(None).count(),
+    }
+
     cliente_pref = db.get(Cliente, cliente_id) if cliente_id else None
+    flujos = db.query(Flujo).filter(Flujo.activo).order_by(Flujo.nombre).all()
+    eq = db.query(Etapa).order_by(Etapa.orden)
+    if flujo_id:
+        eq = eq.filter(Etapa.flujo_id == flujo_id)
+    etapas_filtro = eq.all()
+
+    filas = []
+    for c in casos:
+        filas.append(
+            {
+                "caso": c,
+                "creado": _fmt_creado(c.fecha_creacion),
+                "etapa_warn": _etapa_es_warn(c.etapa_actual.nombre if c.etapa_actual else ""),
+            }
+        )
+
     return render(
         request,
         "casos/lista.html",
         {
-            "casos": query.limit(300).all(),
+            "casos": casos,
+            "filas": filas,
             "usuario": usuario,
             "filtro": estado_general,
+            "scope": scope,
             "q": qn,
-            "flujos": db.query(Flujo).filter(Flujo.activo).order_by(Flujo.nombre).all(),
+            "flujo_id": flujo_id,
+            "etapa_id": etapa_id,
+            "flujos": flujos,
+            "etapas_filtro": etapas_filtro,
             "cliente_pref": cliente_pref,
+            "conteos": conteos,
+            "total": total,
+            "page": page,
+            "pages": pages,
+            "per_page": per_page,
         },
     )
 
@@ -361,6 +472,18 @@ def detalle(
 
     historial_ordenado = list(reversed(list(caso.historial)))
     datos_api_readonly = dato_ids_output_de_caso(db, caso)
+    etapas_con_api = {
+        e.id
+        for e in caso.flujo.etapas
+        if any(getattr(st, "api_call_id", None) for st in (e.estados or []))
+    }
+    salida_terminal = next(
+        (e.nombre for e in reversed(list(caso.flujo.etapas)) if e.es_final),
+        "Cierre",
+    )
+    rol_nombre = (
+        usuario.grupos[0].nombre if usuario.grupos else (usuario.perfil.nombre if usuario.perfil else "")
+    )
     return render(
         request,
         "casos/detalle.html",
@@ -404,6 +527,9 @@ def detalle(
             "historial_ordenado": historial_ordenado,
             "historial_visible": historial_ordenado[:6],
             "historial_total": len(historial_ordenado),
+            "etapas_con_api": etapas_con_api,
+            "salida_terminal": salida_terminal,
+            "rol_nombre": rol_nombre,
         },
     )
 

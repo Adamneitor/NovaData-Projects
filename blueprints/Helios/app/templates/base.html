@@ -14,7 +14,8 @@
   <link href="/static/css/nova.css" rel="stylesheet">
   <link href="/static/css/claude-nova.css" rel="stylesheet">
   <link href="/static/css/helios.css" rel="stylesheet">
-  {% if embed %}<style>body.hx-embed .contenido,body.hx-embed main{margin-left:0!important;max-width:none!important;width:100%!important}</style>{% endif %}
+  <link href="/static/css/helios-inframe.css?v=20260903i" rel="stylesheet">
+  {% if embed %}<style>body.hx-embed .contenido,body.hx-embed main{margin-left:0!important;max-width:none!important;width:100%!important;padding:0!important}</style>{% endif %}
   {% block head_extra %}{% endblock %}
 </head>
 {% set perfil = request.session.get('perfil_id', 0) %}

@@ -5,81 +5,84 @@
 {% set intent_sel = intent.estado_destino_id if intent else none %}
 {% set intent_errs = intent.errores if intent else [] %}
 {% set pendientes_total = docs_pend_count + datos_pend_count %}
+{% set etapas_con_api = etapas_con_api if etapas_con_api is defined else [] %}
+{% set salida_terminal = salida_terminal if salida_terminal is defined else 'Cierre' %}
 
-<div class="caso-shell">
-  <nav class="caso-bc" aria-label="breadcrumb">
+<div class="if-canvas">
+  <nav class="if-bc" aria-label="breadcrumb">
     <a href="/casos">Casos</a>
-    <span>/</span>
-    <span>Caso #{{ caso.id }}</span>
+    <span class="if-bc__sep">/</span>
+    <span class="if-bc__now">Caso #{{ caso.id }}</span>
   </nav>
 
-  {# ========== HEADER (Inframe: card clara, no hero oscuro) ========== #}
-  <header class="caso-hero caso-hero--light">
-    <div class="caso-hero__main">
-      <div class="caso-hero__kicker">
-        <h1 class="caso-hero__title">Caso #{{ caso.id }}</h1>
-        <span class="caso-pill caso-pill--{{ caso.estado_general|lower }}">{{ caso.estado_general }}</span>
-        <span class="caso-kicker-muted">{{ caso.flujo.tipo_flujo.nombre }} · {{ caso.flujo.nombre }}</span>
-        <span class="hx-pill">Etapa · {{ caso.etapa_actual.nombre }}</span>
+  <header class="if-hero">
+    <div class="if-hero__main">
+      <div class="if-hero__row">
+        <h1 class="if-hero__title">Caso #{{ caso.id }}</h1>
+        <span class="if-sit">{{ caso.estado_general|capitalize }}</span>
+        <span class="if-hero__flow">{{ caso.flujo.tipo_flujo.nombre }} · {{ caso.flujo.nombre }}</span>
       </div>
-      <div class="caso-hero__meta">
+      <div class="if-hero__meta">
         {% if caso.cliente %}
-        <a class="caso-client-link" href="/catalogos/clientes/{{ caso.cliente.id }}">
-          <span>{{ caso.cliente.nombre_completo }}</span>
-          <small>{{ caso.cliente.identificacion }}</small>
+        <a class="if-client" href="/catalogos/clientes/{{ caso.cliente.id }}">
+          {{ caso.cliente.nombre_completo }} <small>{{ caso.cliente.identificacion }}</small>
         </a>
         {% else %}
-        <span class="caso-client-link is-muted">Sin cliente</span>
+        <span class="if-client">Sin cliente</span>
         {% endif %}
-        <span class="caso-meta-dot"></span>
-        <span>{{ caso.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</span>
-        <span class="caso-meta-dot"></span>
-        <span>{{ caso.creado_por.nombre }}</span>
+        <span class="if-dot"></span>
+        <span>Creado {{ caso.fecha_creacion.strftime('%d/%m %H:%M') }}{% if caso.creado_por %} · {{ caso.creado_por.nombre }}{% endif %}</span>
         {% if monto_fmt %}
-        <span class="caso-meta-dot"></span>
+        <span class="if-dot"></span>
         <span>{{ monto_fmt }}</span>
         {% endif %}
       </div>
     </div>
-    <div class="caso-hero__cta">
-      {% if caso.estado_general == 'ACTIVO' and puede_actuar %}
-      <button type="submit" form="formCancelarCaso" class="btn-caso-secondary btn-caso-secondary--danger" onclick="return confirm('¿Cancelar el caso #{{ caso.id }}?');">Cancelar caso</button>
-      {% endif %}
+    <div class="if-hero__cta">
       {% if puede_actuar and transiciones %}
-      <a href="#seccion-acciones" class="btn-caso-primary" id="ctaTomarAccion">
-        <i class="bi bi-lightning-charge"></i> Tomar acción
+      <a href="#seccion-acciones" class="if-btn" id="ctaTomarAccion">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"></polygon></svg>
+        Tomar acción
       </a>
       {% elif caso.estado_general != 'ACTIVO' %}
-      <button class="btn-caso-primary" disabled>Caso cerrado</button>
+      <button class="if-btn" disabled>Caso cerrado</button>
       {% else %}
-      <button class="btn-caso-primary" disabled>Sin acciones</button>
+      <button class="if-btn" disabled>Sin acciones</button>
+      {% endif %}
+      {% if pendientes_total %}
+      <span class="if-hero__hint">{{ pendientes_total }} pendiente{{ 's' if pendientes_total != 1 }} por completar</span>
+      {% elif puede_actuar %}
+      <span class="if-hero__hint is-ok">Requisitos completos</span>
       {% endif %}
     </div>
   </header>
 
-  {# ========== STEPPER ========== #}
-  <section class="caso-pipeline" aria-label="Flujo del caso">
+  <section class="if-pipe" aria-label="Flujo del caso">
     {% for e in caso.flujo.etapas %}
       {% set done = e.orden < caso.etapa_actual.orden or (e.id == caso.etapa_actual_id and caso.estado_general == 'CERRADO') %}
       {% set current = e.id == caso.etapa_actual_id and caso.estado_general == 'ACTIVO' %}
-      <div class="pipe-step {% if done %}is-done{% endif %} {% if current %}is-current{% endif %}">
-        <div class="pipe-node">
-          {% if done %}<i class="bi bi-check-lg"></i>
-          {% elif current %}<span>{{ e.orden }}</span>
-          {% else %}<span>{{ e.orden }}</span>{% endif %}
-        </div>
-        <div class="pipe-label">
-          <strong>{{ e.nombre }}</strong>
-          {% if current %}<small>{{ caso.estado_actual.nombre }}</small>{% endif %}
-        </div>
+      {% if not loop.first %}<span class="if-pipe__line {% if done or current %}is-lit{% endif %}"></span>{% endif %}
+      <div class="if-pipe__step {% if done %}is-done{% elif current %}is-now{% else %}is-todo{% endif %}">
+        <span class="if-pipe__node">
+          {% if done %}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,13 10,18 19,7"></polyline></svg>
+          {% else %}{{ e.orden }}{% endif %}
+        </span>
+        {% if current %}
+        <span class="if-pipe__lbl">
+          <strong>{{ e.nombre }}{% if e.id in etapas_con_api %} <em class="if-api-tag">API</em>{% endif %}</strong>
+          <small>{{ caso.estado_actual.nombre }}</small>
+        </span>
+        {% else %}
+        <span class="if-pipe__name">{{ e.nombre }}{% if e.id in etapas_con_api %} <em class="if-api-tag">API</em>{% endif %}</span>
+        {% endif %}
       </div>
-      {% if not loop.last %}<div class="pipe-line {% if done or current %}is-lit{% endif %}"></div>{% endif %}
     {% endfor %}
+    <span class="if-pipe__exit">Salida terminal:<br><strong>{{ salida_terminal }}</strong></span>
   </section>
 
-  <div class="caso-grid">
-    {# ========== COLUMNA PRINCIPAL ========== #}
-    <div class="caso-main">
+  <div class="if-grid">
+    <div class="if-main">
 
       {# Documentación — adjuntos por requisito #}
       <article class="caso-card" id="seccion-documentos">
@@ -98,25 +101,25 @@
             {% for ed in docs_etapa %}
               {% set cargado = docs_cargados.get(ed.documento_id) %}
               {% set marcado = intent_errs | selectattr('campo', 'equalto', 'documento_' ~ ed.documento_id) | list %}
-              <div class="doc-row {% if marcado %}is-error{% endif %}" id="campo-documento_{{ ed.documento_id }}">
-                <div class="doc-row__info">
-                  <div class="doc-row__name">{{ ed.documento.nombre }}</div>
-                  {% if ed.documento.descripcion %}<div class="doc-row__meta">{{ ed.documento.descripcion }}</div>{% endif %}
-                  <div class="doc-row__status">
+              {% set es_pend = ed.obligatorio and ed.documento_id in docs_pendientes %}
+              <div class="if-doc {% if es_pend %}is-pend{% endif %} {% if not ed.obligatorio %}is-opt{% endif %} {% if marcado %}is-err{% endif %}" id="campo-documento_{{ ed.documento_id }}">
+                <div class="if-doc__info">
+                  <div class="if-doc__name">{{ ed.documento.nombre }}</div>
+                  <div class="if-doc__meta">
                     {% if ed.obligatorio %}
-                      {% if ed.documento_id in docs_pendientes %}<span class="st st-bad">Obligatorio · pendiente</span>
-                      {% else %}<span class="st st-ok">Obligatorio · listo</span>{% endif %}
-                    {% else %}<span class="st st-muted">Opcional</span>{% endif %}
+                      {% if es_pend %}<span class="if-st-pend">Obligatorio · pendiente</span>
+                      {% else %}<span class="if-st-ok">Obligatorio · listo</span>{% endif %}
+                    {% else %}<span class="if-st-opt">Opcional</span>{% endif %}
                     {% if cargado %}
-                      <a class="doc-file" href="/casos/{{ caso.id }}/documentos/{{ cargado.id }}/descargar"><i class="bi bi-paperclip"></i> {{ cargado.nombre_original }}</a>
+                      <a class="if-file" href="/casos/{{ caso.id }}/documentos/{{ cargado.id }}/descargar">{{ cargado.nombre_original }}</a>
                     {% endif %}
                   </div>
                 </div>
                 {% if puede_actuar %}
-                <form method="post" action="/casos/{{ caso.id }}/documentos/{{ ed.documento_id }}/cargar" enctype="multipart/form-data" class="doc-upload">
-                  <label class="btn-upload">
-                    <i class="bi bi-upload"></i>
-                    <span>{% if cargado %}Reemplazar{% else %}Subir{% endif %}</span>
+                <form method="post" action="/casos/{{ caso.id }}/documentos/{{ ed.documento_id }}/cargar" enctype="multipart/form-data">
+                  <label class="if-up {% if not es_pend %}if-up--ghost{% endif %}">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7,8 12,3 17,8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    {% if cargado %}Reemplazar{% else %}Subir{% endif %}
                     <input type="file" name="archivo" required onchange="this.form.submit()">
                   </label>
                 </form>
@@ -139,19 +142,16 @@
           <div class="doc-list">
             {% for cd in docs_expediente %}
               {% set etapa_doc = etapas_por_id.get(cd.etapa_id) %}
-              <div class="doc-row doc-row--readonly">
-                <div class="doc-row__info">
-                  <div class="doc-row__name">{{ cd.documento.nombre if cd.documento else 'Documento' }}</div>
-                  <div class="doc-row__status">
-                    <span class="st st-muted">{{ etapa_doc.nombre if etapa_doc else 'Etapa' }}</span>
-                    <span class="st st-ok">Cargado</span>
-                    <a class="doc-file" href="/casos/{{ caso.id }}/documentos/{{ cd.id }}/descargar"><i class="bi bi-paperclip"></i> {{ cd.nombre_original }}</a>
-                  </div>
-                  <div class="doc-row__meta">
-                    {{ cd.fecha_carga.strftime('%d/%m/%Y %H:%M') if cd.fecha_carga else '—' }}
-                    · {{ cd.usuario.nombre if cd.usuario else 'Sistema' }}
+              <div class="if-doc is-exp">
+                <div class="if-doc__info">
+                  <div class="if-doc__name">{{ cd.documento.nombre if cd.documento else 'Documento' }}</div>
+                  <div class="if-doc__meta">
+                    <span class="if-etapa-chip">{{ etapa_doc.nombre if etapa_doc else 'Etapa' }}</span>
+                    <span class="if-st-ok">Cargado</span>
+                    <span class="if-when">{{ cd.fecha_carga.strftime('%d/%m %H:%M') if cd.fecha_carga else '—' }} · {{ cd.usuario.nombre if cd.usuario else 'Sistema' }}</span>
                   </div>
                 </div>
+                <a class="if-file" href="/casos/{{ caso.id }}/documentos/{{ cd.id }}/descargar">{{ cd.nombre_original }}</a>
               </div>
             {% endfor %}
           </div>
@@ -295,68 +295,74 @@
           {% endif %}
 
           {% if api_result_cards %}
+          <div class="if-api-tabs" role="tablist">
+            {% for card in api_result_cards %}
+            <button type="button" class="if-api-tab {% if loop.first %}is-on{% endif %}" data-api-tab="{{ card.id }}">
+              {{ card.api_nombre }}
+              {% if not card.exito %}<span class="if-chip__n">Pendiente</span>{% endif %}
+            </button>
+            {% endfor %}
+          </div>
           <div class="api-cards">
             {% for card in api_result_cards %}
-            <div class="api-result-card">
-              <div class="api-result-card__head">
+            <div class="if-api-card" data-api-panel="{{ card.id }}" {% if not loop.first %}hidden{% endif %}>
+              <div class="if-api-card__head">
                 {% if card.exito %}
-                <span class="api-status api-status--ok"><i class="bi bi-check-lg"></i> Completado</span>
+                <span class="if-api-ok"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,13 10,18 19,7"></polyline></svg>Completado</span>
                 {% else %}
-                <span class="api-status api-status--bad"><i class="bi bi-x-lg"></i> Falló</span>
+                <span class="if-api-ok if-api-bad">Falló</span>
                 {% endif %}
-                <strong class="api-result-card__title">{{ card.api_nombre }}</strong>
-                <span class="api-result-card__meta">
+                <span class="if-api-card__title">{{ card.titulo }}</span>
+                <span class="if-api-card__meta">
                   {% if card.fecha %}{{ card.fecha.strftime('%d/%m %H:%M') }} · {% endif %}
-                  HTTP {{ card.http_status or '—' }}
-                  · {{ card.total_intentos }} intento{{ 's' if card.total_intentos != 1 }}
+                  {{ card.total_intentos }} intento{{ 's' if card.total_intentos != 1 }}
                 </span>
               </div>
-              <div class="api-result-card__body">
+              <div class="if-api-card__body">
                 {% if card.score is not none %}
-                <div class="api-score">
-                  <div class="api-score__label">Score</div>
-                  <div class="api-score__row">
-                    <span class="api-score__num">{{ card.score }}</span>
-                    {% if card.banda %}<span class="api-status {% if card.banda == 'Bueno' %}api-status--ok{% elif card.banda == 'Regular' %}api-status--warn{% else %}api-status--bad{% endif %}">{{ card.banda }}</span>{% endif %}
+                <div class="if-score">
+                  <span class="if-score__lbl">Score{% if card.es_buro %} XCORE{% endif %}</span>
+                  <div class="if-score__row">
+                    <span class="if-score__n">{{ card.score }}</span>
+                    <span class="if-score__of">de 999</span>
+                    {% if card.banda %}<span class="if-sit {% if card.banda == 'Bueno' %}if-sit--ok{% elif card.banda == 'Regular' %}{% else %}if-sit--bad{% endif %}">{{ card.banda }}</span>{% endif %}
                   </div>
+                  <div class="if-score__bar"><span style="width: {{ [100, ((card.score|int) * 100 / 999)|int]|min }}%"></span></div>
+                  <div class="if-score__ends"><span>0</span><span>999</span></div>
                 </div>
                 {% endif %}
-                <div class="api-result-card__main">
-                  <p class="api-result-card__dictamen">{{ card.titulo }}</p>
-                  {% if card.razon %}<p class="api-result-card__razon">{{ card.razon }}</p>{% endif %}
+                <div class="if-api-main">
+                  <p class="if-api-dict"><strong>{{ card.titulo }}.</strong>{% if card.razon %} {{ card.razon }}{% endif %}</p>
                   {% if card.kpis %}
-                  <div class="api-kpis">
-                    {% for k in card.kpis %}
-                    <div class="api-kpi">
-                      <div class="api-kpi__label">{{ k.label }}</div>
-                      <div class="api-kpi__value">{{ k.value }}</div>
+                  <div class="if-kpis">
+                    {% for k in card.kpis[:4] %}
+                    <div class="if-kpi">
+                      <div class="if-kpi__l">{{ k.label }}</div>
+                      <div class="if-kpi__v">{{ k.value }}</div>
                     </div>
                     {% endfor %}
                   </div>
                   {% endif %}
-                  <div class="api-result-card__actions">
-                    <button type="button" class="btn-caso-primary btn-sm"
-                            data-bs-toggle="modal" data-bs-target="#modalApiReporte{{ card.id }}">
-                      <i class="bi bi-file-earmark-text"></i> Ver reporte completo
+                  <div class="if-api-acts">
+                    <button type="button" class="if-btn" data-bs-toggle="modal" data-bs-target="#modalApiReporte{{ card.id }}">
+                      Ver reporte completo
                     </button>
                     {% if not card.exito and puede_reintentar_api %}
-                    <form method="post" action="/casos/{{ caso.id }}/reintentar-api" class="d-inline">
-                      <button type="submit" class="btn-caso-secondary btn-sm">
-                        <i class="bi bi-arrow-repeat"></i> Volver a ejecutar
-                      </button>
+                    <form method="post" action="/casos/{{ caso.id }}/reintentar-api">
+                      <button type="submit" class="if-btn if-btn--ghost">Volver a ejecutar</button>
                     </form>
                     {% endif %}
                   </div>
                 </div>
               </div>
               {% if card.intentos|length > 1 %}
-              <div class="api-attempts">
-                <div class="api-attempts__label">Historial de intentos</div>
+              <div style="padding:0 18px 14px;display:flex;flex-direction:column;gap:5px">
+                <div class="if-sec">Historial de intentos</div>
                 {% for it in card.intentos %}
-                <div class="api-attempt">
-                  <span class="api-attempt__dot {% if it.exito %}is-ok{% else %}is-bad{% endif %}"></span>
-                  <span class="api-attempt__txt">Intento #{{ it.n }} · {% if it.exito %}completado{% else %}error{% endif %}</span>
-                  <span class="api-attempt__meta">{% if it.fecha %}{{ it.fecha.strftime('%d/%m %H:%M') }} · {% endif %}HTTP {{ it.http_status or '—' }}</span>
+                <div class="if-try">
+                  <span class="if-try__dot {% if not it.exito %}is-bad{% endif %}"></span>
+                  <span class="if-try__t">Intento #{{ it.n }} · {% if it.exito %}completado{% else %}error{% endif %}</span>
+                  <span class="if-try__m">{% if it.fecha %}{{ it.fecha.strftime('%d/%m %H:%M') }}{% endif %}</span>
                 </div>
                 {% endfor %}
               </div>
@@ -407,7 +413,7 @@
                       {% if card.razon %}<p class="api-report__razon">{{ card.razon }}</p>{% endif %}
                     </section>
                     {% endif %}
-                    <details class="api-tech">
+                    <details class="if-tech api-tech">
                       <summary>Payload técnico (request / response) · solo soporte</summary>
                       <div class="api-tech__grid">
                         <div>
@@ -436,14 +442,12 @@
       </article>
     </div>
 
-    {# ========== PANEL DERECHO ========== #}
-    <aside class="caso-aside">
+    <aside class="if-aside">
       <div class="aside-sticky">
-        <section class="aside-card" id="seccion-acciones">
-          <div class="aside-card__title">
-            <span>Qué hacer ahora</span>
-            {% if intent %}<span class="caso-chip caso-chip--warn">Intentando acción</span>{% endif %}
-          </div>
+        <section class="if-side" id="seccion-acciones">
+          <div class="if-side__h">Qué hacer ahora</div>
+          {% if intent %}<span class="if-badge">Intentando acción</span>{% endif %}
+          <p class="if-side__p">Transiciones válidas desde «{{ caso.estado_actual.nombre }}»</p>
 
           {% if caso.estado_general != 'ACTIVO' %}
             <div class="aside-disabled">
@@ -603,27 +607,25 @@
           {% endif %}
         </section>
 
-        <section class="aside-card">
-          <div class="aside-card__title">Resumen</div>
-          <dl class="aside-kv">
-            <div><dt>Etapa</dt><dd>{{ caso.etapa_actual.nombre }}</dd></div>
-            <div><dt>Estado</dt><dd>{{ caso.estado_actual.nombre }}</dd></div>
-            <div><dt>Tiempo en etapa</dt><dd>{{ tiempo_en_etapa }}</dd></div>
-            <div><dt>Tipo</dt><dd>{{ caso.flujo.tipo_flujo.nombre }}</dd></div>
-            {% if monto %}<div><dt>Monto</dt><dd class="aside-kv__em">{{ monto_fmt or monto }}</dd></div>{% endif %}
-            <div><dt>Pendientes</dt>
-              <dd>{% if pendientes_total %}<span class="st st-bad">{{ pendientes_total }}</span>{% else %}<span class="st st-ok">Ninguno</span>{% endif %}</dd>
+        <section class="if-side if-side--sum">
+          <div class="if-side__k">Resumen</div>
+          <div class="if-kv">
+            <div><span>Etapa</span><strong>{{ caso.etapa_actual.nombre }}</strong></div>
+            <div><span>Estado</span><strong>{{ caso.estado_actual.nombre }}</strong></div>
+            <div><span>Tiempo en etapa</span><strong>{{ tiempo_en_etapa }}</strong></div>
+            {% if monto_fmt %}<div><span>Monto</span><strong>{{ monto_fmt }}</strong></div>{% endif %}
+            <div><span>Pendientes</span>
+              {% if pendientes_total %}<span class="if-badge">{{ pendientes_total }}</span>
+              {% else %}<span class="if-sit if-sit--ok">Ninguno</span>{% endif %}
             </div>
-          </dl>
-          <div class="aside-links">
-            {% if caso.cliente %}
-            <a href="/catalogos/clientes/{{ caso.cliente.id }}"><i class="bi bi-person"></i> Ver cliente</a>
-            {% endif %}
-            <a href="#seccion-historial"><i class="bi bi-clock-history"></i> Ver historial</a>
-            <a href="#seccion-documentos"><i class="bi bi-folder2"></i> Ver documentos</a>
-            {% if datos_etapa %}<a href="{% if datos_inline %}#seccion-datos{% else %}/casos/{{ caso.id }}/datos{% endif %}"><i class="bi bi-sliders"></i> Datos adicionales</a>{% endif %}
           </div>
         </section>
+        {% if rol_nombre %}
+        <div class="if-role">
+          <div class="if-role__k">Rol · {{ rol_nombre }}</div>
+          <p>Captura y documenta. El bloqueo lista cada requisito con ancla al campo (obligatorios completos antes de transicionar).</p>
+        </div>
+        {% endif %}
 
         {% if caso.estado_general == 'ACTIVO' and usuario.perfil_id in (1, 3) %}
         <section class="aside-card aside-card--danger">
@@ -669,441 +671,7 @@
   {% endif %}
 </div>
 
-<style>
-  .caso-shell {
-    --c-ink: #1a1a2e;
-    --c-muted: #6b7280;
-    --c-line: #e1e3e8;
-    --c-bg: #eef0f5;
-    --c-card: #ffffff;
-    --c-accent: #1a1a2e;
-    --c-accent-soft: rgba(26, 26, 46, 0.06);
-    --c-brand: #5B52E8;
-    --c-brand-soft: rgba(91, 82, 232, 0.08);
-    --c-warn: #a16207;
-    --c-warn-soft: #fefce8;
-    --c-danger: #b91c1c;
-    --c-ok: #15803d;
-    --c-ok-soft: #f0fdf4;
-    --c-info: #4b5563;
-    font-family: "Montserrat", system-ui, sans-serif;
-    color: var(--c-ink);
-    max-width: 1280px;
-    padding-bottom: 5.5rem;
-  }
-  .caso-bc { font-size: .8rem; color: var(--c-muted); margin-bottom: 1rem; display: flex; gap: .4rem; align-items: center; }
-  .caso-bc a { color: var(--c-muted); text-decoration: none; font-weight: 600; }
-  .caso-bc a:hover { color: var(--c-ink); text-decoration: underline; }
 
-  .caso-hero {
-    display: flex; justify-content: space-between; gap: 1.5rem; align-items: flex-start;
-    background: #fff;
-    color: var(--c-ink); border-radius: 14px; padding: 1.25rem 1.5rem; margin-bottom: 1.15rem;
-    border: 1px solid var(--c-line);
-    box-shadow: 0 1px 2px rgba(26, 26, 46, .04);
-  }
-  .caso-hero--light { background: #fff; color: var(--c-ink); }
-  .caso-hero__kicker { display: flex; gap: .6rem; align-items: center; margin-bottom: .55rem; flex-wrap: wrap; }
-  .caso-kicker-muted { font-size: .8rem; color: var(--c-muted); }
-  .caso-hero__title { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; margin: 0; color: var(--c-ink); }
-  .caso-hero__meta { display: flex; flex-wrap: wrap; gap: .55rem; align-items: center; font-size: .85rem; color: var(--c-muted); }
-  .caso-meta-dot { width: 4px; height: 4px; border-radius: 50%; background: #c6c9d4; }
-  .caso-client-link {
-    display: inline-flex; align-items: center; gap: .4rem; padding: .25rem .65rem;
-    background: #eef0f5; border: 0;
-    border-radius: 999px; color: var(--c-ink); text-decoration: none; font-weight: 600;
-  }
-  .caso-client-link:hover { background: #e1e3e8; color: var(--c-ink); }
-  .caso-client-link small { opacity: .7; font-weight: 500; }
-  .caso-client-link.is-muted { opacity: .6; }
-  .caso-pill {
-    font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-    padding: .28rem .6rem; border-radius: 999px; background: #eef0f5; color: #3F4657;
-  }
-  .caso-pill--activo { background: #eef0f5; color: #3F4657; }
-  .caso-pill--cerrado { background: #f0fdf4; color: #15803d; }
-  .caso-pill--cancelado { background: #fee2e2; color: #991b1b; }
-  .caso-hero__cta { text-align: right; flex-shrink: 0; display: flex; gap: .55rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
-  .caso-cta-hint { margin-top: .5rem; font-size: .75rem; color: var(--c-muted); }
-
-  .btn-caso-primary {
-    display: inline-flex; align-items: center; gap: .45rem; border: 0; border-radius: 9px;
-    background: #1a1a2e; color: #fff; font-weight: 650; padding: .65rem 1.05rem;
-    text-decoration: none; box-shadow: none; transition: background .12s, transform .12s;
-  }
-  .btn-caso-primary:hover { background: #2d2d44; color: #fff; transform: none; }
-  .btn-caso-primary:disabled { opacity: .4; cursor: not-allowed; }
-  .btn-caso-primary--block { width: 100%; justify-content: center; }
-  .btn-caso-secondary {
-    display: inline-flex; align-items: center; gap: .35rem; border: 1px solid var(--c-line);
-    background: #fff; border-radius: 9px; padding: .5rem .9rem; font-weight: 600; color: var(--c-ink);
-    cursor: pointer; text-decoration: none;
-  }
-  .btn-caso-secondary:hover { border-color: #9ca3af; background: #f8fafc; color: var(--c-ink); }
-  .btn-caso-ghost {
-    width: 100%; border: 0; background: transparent; color: var(--c-muted); font-size: .85rem; padding: .4rem;
-  }
-  .btn-caso-ghost:hover { color: var(--c-ink); }
-  .btn-caso-danger {
-    width: 100%; border: 1px solid #fecaca; background: #fff; color: var(--c-danger);
-    border-radius: 9px; padding: .5rem; font-weight: 600;
-  }
-  .btn-caso-danger:hover { background: #fef2f2; }
-
-  .caso-pipeline {
-    display: flex; align-items: flex-start; gap: 0; background: var(--c-card);
-    border: 1px solid var(--c-line); border-radius: 12px; padding: 1rem 1.15rem;
-    margin-bottom: 1.15rem; overflow-x: auto; box-shadow: 0 1px 2px rgba(26,26,46,.04);
-  }
-  .pipe-step { display: flex; flex-direction: column; align-items: center; min-width: 88px; text-align: center; }
-  .pipe-node {
-    width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
-    font-size: .78rem; font-weight: 700; border: 1.5px solid var(--c-line); background: #fff; color: var(--c-muted);
-  }
-  .pipe-step.is-done .pipe-node { background: #1a1a2e; border-color: #1a1a2e; color: #fff; }
-  .pipe-step.is-current .pipe-node {
-    background: #fff; border-color: #1a1a2e; color: #1a1a2e;
-    box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.08);
-  }
-  .pipe-label { margin-top: .4rem; }
-  .pipe-label strong { display: block; font-size: .76rem; font-weight: 600; color: var(--c-ink); }
-  .pipe-label small { color: var(--c-muted); font-size: .68rem; }
-  .pipe-line { flex: 1; height: 2px; background: var(--c-line); margin-top: 15px; min-width: 28px; }
-  .pipe-line.is-lit { background: #9ca3af; }
-
-  .caso-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .9fr); gap: 1.15rem; }
-  @media (max-width: 992px) { .caso-grid { grid-template-columns: 1fr; } .caso-hero { flex-direction: column; } }
-
-  .caso-card, .aside-card {
-    background: var(--c-card); border: 1px solid var(--c-line); border-radius: 12px;
-    margin-bottom: 1rem; box-shadow: 0 1px 2px rgba(26,26,46,.04);
-  }
-  .caso-card__head {
-    display: flex; align-items: center; gap: .85rem; padding: 1rem 1.15rem;
-    border-bottom: 1px solid var(--c-line);
-  }
-  .caso-card__head h2 { font-size: 1rem; margin: 0; font-weight: 700; }
-  .caso-card__head p { margin: 0; font-size: .78rem; color: var(--c-muted); }
-  .caso-card__icon {
-    width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; font-size: 1.05rem; flex-shrink: 0;
-    background: #f1f2f5; color: #4b5563;
-  }
-  .caso-card__icon--docs,
-  .caso-card__icon--data,
-  .caso-card__icon--hist,
-  .caso-card__icon--api { background: #f1f2f5; color: #4b5563; }
-  .caso-card__body { padding: 1rem 1.15rem; }
-  .caso-chip {
-    margin-left: auto; font-size: .7rem; font-weight: 700; padding: .25rem .55rem; border-radius: 6px;
-  }
-  .caso-chip--warn { background: var(--c-warn-soft); color: var(--c-warn); }
-
-  .caso-empty { text-align: center; padding: 1.75rem 1rem; color: var(--c-muted); }
-  .caso-empty i { font-size: 1.75rem; opacity: .4; display: block; margin-bottom: .4rem; }
-  .caso-empty p { margin: 0; font-size: .9rem; }
-
-  .datos-cta { display: flex; flex-direction: column; gap: .85rem; padding: .35rem 0 .15rem; }
-  .datos-cta__progress { width: 100%; }
-  .datos-cta__bar { height: 6px; background: var(--c-line); border-radius: 999px; overflow: hidden; }
-  .datos-cta__bar span { display: block; height: 100%; background: #1a1a2e; border-radius: 999px; }
-  .datos-cta__meta { font-size: .78rem; color: var(--c-muted); margin-top: .4rem; }
-  .datos-cta__btn { justify-content: center; text-align: center; width: 100%; }
-  .datos-cta__btn--done {
-    border: 1px solid var(--c-line) !important;
-    background: #f8fafc !important;
-    color: var(--c-ink) !important;
-  }
-  .datos-cta__badge {
-    display: inline-flex; align-items: center; justify-content: center;
-    min-width: 1.35rem; height: 1.35rem; padding: 0 .35rem; margin-left: .35rem;
-    border-radius: 999px; background: rgba(26,26,46,.1); font-size: .75rem; font-weight: 700;
-  }
-  .data-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
-
-  .doc-section-label {
-    font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-    color: var(--c-muted); margin-bottom: .75rem; display: flex; align-items: center; gap: .45rem;
-  }
-  .doc-section-label--spaced { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--c-line); }
-  .caso-empty--compact { padding: 1rem .5rem; }
-  .doc-row__meta { font-size: .72rem; color: var(--c-muted); margin-top: .2rem; }
-  .doc-row--readonly { opacity: .95; }
-
-  .doc-form-grid { display: flex; flex-direction: column; gap: .85rem; }
-  .doc-field {
-    border: 1px solid var(--c-line); border-radius: 10px; padding: .85rem 1rem;
-    background: #fafbfc;
-  }
-  .doc-field.is-error { border-color: #fca5a5; background: #fef2f2; }
-  .doc-field__head { display: flex; align-items: center; gap: .5rem; margin-bottom: .35rem; flex-wrap: wrap; }
-  .doc-field__name { font-weight: 650; font-size: .9rem; margin: 0; color: var(--c-ink); }
-  .doc-field__hint { margin: 0 0 .65rem; font-size: .78rem; color: var(--c-muted); }
-  .doc-field__controls {
-    display: grid; grid-template-columns: minmax(140px, 180px) 1fr; gap: .65rem;
-  }
-  @media (max-width: 640px) { .doc-field__controls { grid-template-columns: 1fr; } }
-  .doc-field__legacy {
-    margin-top: .55rem; font-size: .78rem; color: var(--c-muted);
-  }
-  .doc-field__legacy a { color: var(--c-ink); font-weight: 600; }
-
-  .doc-row {
-    display: flex; justify-content: space-between; gap: 1rem; align-items: center;
-    padding: .75rem 0; border-bottom: 1px solid var(--c-line);
-  }
-  .doc-row:last-child { border-bottom: 0; }
-  .doc-row.is-error { background: #fef2f2; margin: 0 -.5rem; padding-left: .5rem; padding-right: .5rem; border-radius: 8px; }
-  .doc-row__name { font-weight: 600; font-size: .9rem; }
-  .doc-row__status { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center; margin-top: .25rem; }
-  .doc-file { font-size: .78rem; color: #4b5563; text-decoration: none; }
-  .st { font-size: .68rem; font-weight: 700; padding: .15rem .45rem; border-radius: 5px; }
-  .st-ok { background: var(--c-ok-soft); color: var(--c-ok); }
-  .st-bad { background: #fee2e2; color: var(--c-danger); }
-  .st-muted { background: #f1f5f9; color: var(--c-muted); }
-  .btn-upload {
-    display: inline-flex; align-items: center; gap: .35rem; cursor: pointer;
-    border: 1px dashed var(--c-line); border-radius: 8px; padding: .45rem .7rem;
-    font-size: .8rem; font-weight: 600; color: var(--c-muted); background: #fff;
-  }
-  .btn-upload:hover { border-color: #9ca3af; color: var(--c-ink); }
-  .btn-upload input { display: none; }
-
-  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.1rem; }
-  @media (max-width: 700px) { .data-grid { grid-template-columns: 1fr; } }
-  .data-field .df-label-row { margin-bottom: .35rem; }
-  .data-field .df-label { font-size: .78rem; font-weight: 600; color: #374151; }
-  .data-field .df-req { color: var(--c-danger); }
-  .data-field.is-error .df-label { color: var(--c-danger); }
-  .caso-input {
-    width: 100%; border: 1px solid var(--c-line); border-radius: 9px; padding: .55rem .75rem;
-    font-size: .9rem; background: #fff; transition: border-color .15s, box-shadow .15s; min-height: 40px;
-    color: var(--c-ink);
-  }
-  .caso-input:focus { outline: 0; border-color: #9ca3af; box-shadow: 0 0 0 3px rgba(26,26,46,.08); }
-  .data-field.is-error .caso-input { border-color: #fca5a5; box-shadow: 0 0 0 3px rgba(239,68,68,.1); }
-  .data-field.is-cond-disabled { opacity: .6; }
-  .data-field.is-cond-disabled .caso-input { background: #f8fafc; }
-  .field-error {
-    display: flex; align-items: flex-start; gap: .35rem;
-    margin-top: .35rem; font-size: .78rem; color: var(--c-danger); line-height: 1.35;
-  }
-  .field-error.d-none { display: none !important; }
-
-  .caso-timeline { list-style: none; margin: 0; padding: 0 0 0 .35rem; }
-  .tl-item { display: flex; gap: .85rem; position: relative; padding-bottom: 1.1rem; }
-  .tl-item:not(:last-child)::before {
-    content: ""; position: absolute; left: 7px; top: 18px; bottom: 0; width: 2px; background: var(--c-line);
-  }
-  .tl-dot {
-    width: 16px; height: 16px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0; margin-top: 3px;
-    box-shadow: 0 0 0 3px #fff;
-  }
-  .tl-item.tl-api .tl-dot { background: #64748b; }
-  .tl-item.tl-manual .tl-dot { background: #1a1a2e; }
-  .tl-item.tl-sistema .tl-dot { background: #94a3b8; }
-  .tl-top { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; font-size: .9rem; }
-  .tl-state { color: var(--c-muted); font-size: .82rem; }
-  .tl-origen { font-size: .65rem; font-weight: 700; padding: .12rem .4rem; border-radius: 4px; }
-  .origen-api { background: #f1f5f9; color: #475569; }
-  .origen-manual { background: #f1f5f9; color: #1a1a2e; }
-  .origen-sistema { background: #f1f5f9; color: #64748b; }
-  .tl-meta { font-size: .75rem; color: var(--c-muted); margin-top: .15rem; }
-  .tl-comment { margin-top: .35rem; font-size: .84rem; background: var(--c-bg); border-radius: 8px; padding: .4rem .6rem; }
-  .btn-ver-mas {
-    border: 0; background: transparent; color: var(--c-ink); font-weight: 600; font-size: .85rem; padding: .25rem 0;
-  }
-
-  .caso-chip--neutral { background: #eef0f5; color: #6b7280; }
-  .api-cards { display: flex; flex-direction: column; gap: .85rem; }
-  .api-result-card {
-    border: 1px solid var(--c-line); border-radius: 12px; overflow: hidden; background: #fff;
-  }
-  .api-result-card__head {
-    display: flex; flex-wrap: wrap; align-items: center; gap: .65rem;
-    padding: .85rem 1rem; background: #F7F8FC; border-bottom: 1px solid var(--c-line);
-  }
-  .api-result-card__title { font-size: .92rem; color: var(--c-ink); flex: 1; min-width: 140px; }
-  .api-result-card__meta { font-size: .75rem; color: var(--c-muted); }
-  .api-status {
-    display: inline-flex; align-items: center; gap: .3rem;
-    font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-    padding: .28rem .55rem; border-radius: 999px;
-  }
-  .api-status--ok { background: #f0fdf4; color: #15803d; }
-  .api-status--bad { background: #fef2f2; color: #b91c1c; }
-  .api-status--warn { background: #fefce8; color: #a16207; }
-  .api-result-card__body {
-    display: grid; grid-template-columns: auto 1fr; gap: 1.25rem; padding: 1rem 1.1rem;
-  }
-  @media (max-width: 700px) { .api-result-card__body { grid-template-columns: 1fr; } }
-  .api-score__label {
-    font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--c-muted);
-  }
-  .api-score__row { display: flex; align-items: baseline; gap: .5rem; margin-top: .25rem; }
-  .api-score__num { font-size: 2rem; font-weight: 800; letter-spacing: -.02em; color: var(--c-ink); }
-  .api-result-card__dictamen { margin: 0 0 .35rem; font-size: .92rem; font-weight: 650; color: var(--c-ink); }
-  .api-result-card__razon { margin: 0 0 .75rem; font-size: .84rem; color: var(--c-muted); line-height: 1.45; }
-  .api-kpis {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .55rem; margin-bottom: .85rem;
-  }
-  .api-kpis--report { margin-bottom: 0; }
-  .api-kpi {
-    border: 1px solid #eef0f5; background: #FAFAFA; border-radius: 9px; padding: .65rem .75rem;
-  }
-  .api-kpi__label {
-    font-size: .65rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-    color: var(--c-muted); margin-bottom: .25rem;
-  }
-  .api-kpi__value { font-size: .95rem; font-weight: 700; color: var(--c-ink); word-break: break-word; }
-  .api-result-card__actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
-  .api-attempts { padding: 0 1.1rem 1rem; }
-  .api-attempts__label {
-    font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--c-muted); margin-bottom: .45rem;
-  }
-  .api-attempt {
-    display: flex; align-items: center; gap: .55rem; padding: .45rem .65rem;
-    border: 1px solid #eef0f5; border-radius: 8px; margin-bottom: .3rem; font-size: .82rem;
-  }
-  .api-attempt__dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: #9ca3af; }
-  .api-attempt__dot.is-ok { background: #15803d; }
-  .api-attempt__dot.is-bad { background: #b91c1c; }
-  .api-attempt__txt { flex: 1; font-weight: 600; color: var(--c-ink); }
-  .api-attempt__meta { color: var(--c-muted); font-size: .75rem; }
-  .btn-caso-primary.btn-sm, .btn-caso-secondary.btn-sm {
-    padding: .45rem .85rem; font-size: .8rem;
-  }
-
-  .modal-api-report .modal-content { border: 0; border-radius: 14px; overflow: hidden; }
-  .api-report__header {
-    background: #fff; border-bottom: 1px solid var(--c-line); padding: 1rem 1.35rem;
-  }
-  .api-report__sub { font-size: .8rem; color: var(--c-muted); margin-top: .2rem; }
-  .api-report__body { background: #f5f7fa; padding: 1.25rem 1.35rem; }
-  .api-report__id {
-    display: flex; gap: 1rem; align-items: center; background: #fff;
-    border: 1px solid var(--c-line); border-radius: 12px; padding: 1rem 1.15rem; margin-bottom: 1rem;
-  }
-  .api-report__avatar {
-    width: 48px; height: 48px; border-radius: 50%; background: #E8EEF9; color: #003CA6;
-    display: grid; place-items: center; font-weight: 700; flex: none;
-  }
-  .api-report__id-grid {
-    flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .75rem;
-  }
-  .api-report__id-grid .lbl {
-    display: block; font-size: .65rem; font-weight: 700; letter-spacing: .06em;
-    text-transform: uppercase; color: var(--c-muted); margin-bottom: .15rem;
-  }
-  .api-report__id-grid .mono { font-family: ui-monospace, Menlo, monospace; font-size: .9rem; }
-  .api-report__score { color: #003CA6; font-size: 1.25rem; }
-  .api-report__section {
-    background: #fff; border: 1px solid var(--c-line); border-radius: 12px;
-    padding: 1rem 1.15rem; margin-bottom: 1rem;
-  }
-  .api-report__section h3 {
-    font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-    color: #003CA6; margin: 0 0 .85rem;
-  }
-  .api-report__razon { margin: .85rem 0 0; font-size: .88rem; color: #374151; }
-  .api-tech {
-    background: #fff; border: 1px dashed #c6c9d4; border-radius: 10px; padding: .65rem .9rem;
-  }
-  .api-tech summary {
-    cursor: pointer; font-size: .82rem; font-weight: 600; color: var(--c-muted);
-    list-style: none;
-  }
-  .api-tech summary::-webkit-details-marker { display: none; }
-  .api-tech__grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: .75rem;
-  }
-  @media (max-width: 700px) { .api-tech__grid { grid-template-columns: 1fr; } }
-  .api-tech__lbl {
-    font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
-    color: var(--c-muted); margin-bottom: .35rem;
-  }
-  .api-tech pre {
-    background: #1a1a2e; color: #e2e8f0; border-radius: 8px; padding: .65rem;
-    font-size: .7rem; max-height: 220px; overflow: auto; white-space: pre-wrap; margin: 0;
-  }
-
-  .aside-sticky { position: sticky; top: 1rem; }
-  .aside-card { padding: 1.05rem 1.15rem; }
-  .aside-card__title {
-    display: flex; justify-content: space-between; align-items: center;
-    font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-    color: var(--c-muted); margin-bottom: .85rem;
-  }
-  .aside-card--danger { border-color: #fecaca; }
-  .aside-label { display: block; font-size: .75rem; font-weight: 600; color: var(--c-muted); margin-bottom: .4rem; }
-  .aside-kv { margin: 0; }
-  .aside-kv > div {
-    display: flex; justify-content: space-between; gap: .75rem; padding: .45rem 0;
-    border-bottom: 1px solid var(--c-line); font-size: .88rem;
-  }
-  .aside-kv dt { color: var(--c-muted); font-weight: 500; }
-  .aside-kv dd { margin: 0; font-weight: 600; text-align: right; }
-  .aside-kv__em { color: var(--c-ink); font-size: 1.05rem; }
-  .aside-links { display: flex; flex-direction: column; gap: .35rem; margin-top: .85rem; }
-  .aside-links a {
-    display: flex; align-items: center; gap: .4rem; text-decoration: none; color: var(--c-ink);
-    font-size: .85rem; font-weight: 600; padding: .35rem 0;
-  }
-  .aside-links a:hover { text-decoration: underline; }
-
-  .aside-disabled {
-    text-align: center; padding: 1rem .5rem; color: var(--c-muted); background: var(--c-bg); border-radius: 10px;
-  }
-  .aside-disabled i { font-size: 1.4rem; display: block; margin-bottom: .35rem; opacity: .5; }
-  .aside-disabled p { margin: 0; font-size: .85rem; }
-
-  .aside-alert { border-radius: 10px; padding: .75rem .85rem; font-size: .8rem; margin-bottom: .85rem; }
-  .aside-alert--danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-  .aside-alert--ok {
-    background: #f8fafc;
-    color: #1a1a2e;
-    border: 1px solid var(--c-line);
-  }
-  .aside-alert ul { margin: .4rem 0; padding-left: 1.1rem; }
-  .aside-alert a { color: inherit; font-weight: 700; }
-
-  .action-choices { display: flex; flex-direction: column; gap: .45rem; }
-  .action-choice {
-    display: flex; gap: .65rem; align-items: flex-start; border: 1px solid var(--c-line);
-    border-radius: 10px; padding: .65rem .75rem; cursor: pointer; transition: border-color .12s, background .12s;
-    margin: 0;
-  }
-  .action-choice:hover { border-color: #9ca3af; }
-  .action-choice.is-selected {
-    border-color: #1a1a2e; background: rgba(26,26,46,.04);
-    box-shadow: none;
-  }
-  .action-choice input { margin-top: .2rem; accent-color: #1a1a2e; }
-  .action-choice__body { display: flex; flex-direction: column; gap: .1rem; }
-  .action-choice__body strong { font-size: .9rem; }
-  .action-choice__body small { color: var(--c-muted); font-size: .75rem; }
-
-  /* Sticky save bar — siempre visible al pie del viewport */
-  .caso-sticky-bar {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-    background: rgba(255,255,255,.96);
-    border-top: 1px solid var(--c-line);
-    backdrop-filter: blur(8px);
-    box-shadow: 0 -4px 20px rgba(26,26,46,.06);
-  }
-  .caso-sticky-bar__inner {
-    max-width: 1280px; margin: 0 auto;
-    padding: .75rem 1.25rem;
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-  }
-  .caso-sticky-bar__hint { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; }
-  .caso-sticky-bar__muted { font-size: .8rem; color: var(--c-muted); }
-  .caso-sticky-bar__actions { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
-
-  /* En embed Helios (iframe) la barra queda relativa al iframe */
-  body.hx-embed .caso-sticky-bar,
-  html.hx-embed .caso-sticky-bar { position: sticky; }
-</style>
 
 <script>
 (function () {
@@ -1150,6 +718,20 @@
         btn.dataset._label = btn.innerHTML;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Ejecutando API…';
       }
+    });
+  });
+})();
+</script>
+<script>
+(function () {
+  const tabs = document.querySelectorAll('[data-api-tab]');
+  const panels = document.querySelectorAll('[data-api-panel]');
+  if (!tabs.length) return;
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const id = tab.getAttribute('data-api-tab');
+      tabs.forEach((t) => t.classList.toggle('is-on', t === tab));
+      panels.forEach((p) => { p.hidden = p.getAttribute('data-api-panel') !== id; });
     });
   });
 })();

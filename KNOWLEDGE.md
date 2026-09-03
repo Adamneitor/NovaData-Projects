@@ -1,6 +1,8 @@
 # Nova Projects — Knowledge Map
 
 ## Changelog
+- **2026-09-03**: Réplica 1:1 del Inframe Claude (`helios-inframe.css` en px del mock): bandeja 1a (Mi bandeja + tabla + paginación), caso 1b/1c (pipeline horizontal, docs en cards, API con score 36px), home 2a (tiles).
+- **2026-09-03**: Puerto visual Helios Inframe (Claude Design) a Casos/Detalle/Home: bandeja clara, header blanco, chips neutros; push pendiente/en curso.
 - **2026-09-03**: Diagnóstico: CSV se había importado a BD equivocada; ahora `instance/helios.db` tiene el export; auto-import CSV al boot (`import_csv_export.py`) + push `7846981`.
 - **2026-09-02**: Import CSV del .bak (`scripts/import_helios_csv.py`, copia en `blueprints/Helios/data/export`); detalle caso con API humana + modal reporte; badges neutros; `.env` con `HELIOS_SEED_DEMO=0`.
 - **2026-09-02**: Docs otra vez como adjuntos; script `migrate_helios_bak.py` (.bak SQL2025 → SQLite/Postgres). Un .bak no entra directo a Railway.
@@ -51,6 +53,7 @@ python app.py
 | Import Helios CSV | `scripts/import_helios_csv.py` → `instance/helios.db` |
 | Export dummy | `blueprints/Helios/data/export/*.csv` |
 | API UI caso | `blueprints/Helios/app/services/api_result_view.py` + `templates/casos/detalle.html` |
+| Inframe CSS | `blueprints/Helios/app/static/css/helios-inframe.css` (px 1:1 del mock Claude) |
 
 ## Local Helios (datos del .bak vía CSV)
 ```powershell
