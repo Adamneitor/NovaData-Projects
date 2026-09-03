@@ -93,16 +93,23 @@ def _ensure_helios_db() -> None:
         migrate()
     except Exception as exc:  # noqa: BLE001
         print(f"[helios_bridge] migrate (opcional): {exc}")
+
+    # CSV del .bak ANTES del seed: si BPM vacío, carga usuarios/flujos/casos del export
+    try:
+        from app.services.import_csv_export import should_import_csv, try_import_bundled_csv
+
+        if should_import_csv():
+            try_import_bundled_csv(force=False)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[helios_bridge] CSV import (opcional): {exc}")
+
     with SessionLocal() as db:
         seed(db)
-        # Presentación: APIs + flujo + casos dummy (idempotente). Opt-out: HELIOS_SEED_DEMO=0
-        # Tras import CSV/bak, dejar HELIOS_SEED_DEMO=0 para no pisar datos reales/dummy exportados.
         if os.getenv("HELIOS_SEED_DEMO", "1") != "0":
             try:
                 from app.models import Flujo  # type: ignore
                 from app.services.seed_demo_presentacion import run_seed_demo  # type: ignore
 
-                # Si ya hay flujos importados (p.ej. CSV del .bak), no sembrar demo encima
                 if db.query(Flujo).count() > 0:
                     print("[helios_bridge] Seed demo omitido: ya hay flujos en BD")
                 else:

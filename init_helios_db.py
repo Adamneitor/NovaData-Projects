@@ -1,6 +1,7 @@
 """Inicializa BD Helios (Postgres en Railway / SQLite / SQL Server)."""
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -22,9 +23,18 @@ def main() -> None:
         migrate()
     except Exception as exc:  # noqa: BLE001
         print(f"migrate (opcional): {exc}")
+
+    try:
+        from app.services.import_csv_export import should_import_csv, try_import_bundled_csv
+
+        if should_import_csv():
+            try_import_bundled_csv(force=False)
+    except Exception as exc:  # noqa: BLE001
+        print(f"CSV import (opcional): {exc}")
+
     with SessionLocal() as db:
         seed(db)
-        if __import__("os").getenv("HELIOS_SEED_DEMO", "1") != "0":
+        if os.getenv("HELIOS_SEED_DEMO", "1") != "0":
             try:
                 from app.models import Flujo
                 from app.services.seed_demo_presentacion import run_seed_demo
