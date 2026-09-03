@@ -1,0 +1,142 @@
+{% set r = card.reporte or {} %}
+<div class="if-drawer modal fade" id="modalApiReporte{{ card.id }}" tabindex="-1" aria-labelledby="tituloApiReporte{{ card.id }}" aria-hidden="true">
+  <div class="modal-dialog if-drawer__dialog">
+    <div class="modal-content if-drawer__panel">
+      <div class="if-drawer__head">
+        <div class="if-drawer__head-text">
+          <div class="if-drawer__title-row">
+            <h2 class="if-drawer__title" id="tituloApiReporte{{ card.id }}">
+              {% if card.es_buro %}Reporte de Crédito{% elif card.es_motor %}Resultado del motor{% else %}Resultado de integración{% endif %}
+            </h2>
+            {% if card.es_buro %}
+            <span class="if-drawer__chip">Expediente consolidado · Confidencial</span>
+            {% endif %}
+          </div>
+          <div class="if-drawer__sub">
+            {% if card.fecha %}Evaluado {{ card.fecha.strftime('%d/%m/%Y') }} · {% endif %}
+            Caso <strong>#{{ caso.id }}</strong>
+            {% if caso.cliente %} · {{ caso.cliente.nombre_completo }}{% endif %}
+          </div>
+        </div>
+        <button type="button" class="if-drawer__x" data-bs-dismiss="modal" aria-label="Cerrar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="if-drawer__body">
+        {% if not card.exito %}
+        <div class="if-drawer__fail">
+          <strong>La integración no respondió correctamente</strong>
+          <p>{{ card.error or card.titulo }}.{% if card.http_status %} HTTP {{ card.http_status }}.{% endif %} Complete Salario, Es asalariado y Tiempo laborando, guarde y reintente.</p>
+        </div>
+        {% endif %}
+
+        <section class="if-rep-id">
+          <span class="if-rep-av">{{ (caso.cliente.nombre_completo[:2] if caso.cliente else 'CL')|upper }}</span>
+          <div class="if-rep-id__grid">
+            <div>
+              <div class="if-rep-l">Nombre</div>
+              <div class="if-rep-v">{{ r.Nombre or (caso.cliente.nombre_completo if caso.cliente else '—') }}</div>
+            </div>
+            <div>
+              <div class="if-rep-l">Cédula</div>
+              <div class="if-rep-v if-rep-v--mono">{{ r.Cedula or (caso.cliente.identificacion if caso.cliente else '—') }}</div>
+            </div>
+            <div>
+              <div class="if-rep-l">{% if card.es_motor %}Dictamen{% else %}Nacionalidad{% endif %}</div>
+              <div class="if-rep-v">{{ card.dictamen or r.DictamenBuro or 'Dominicana' }}</div>
+            </div>
+          </div>
+          {% if card.score is not none %}
+          <div class="if-rep-xcore">
+            <div class="if-rep-l">XCORE</div>
+            <div class="if-rep-xcore__n">{{ card.score }} <span>de 999</span></div>
+            {% if card.banda %}<div class="if-rep-xcore__b">{{ card.banda|upper }}</div>{% endif %}
+          </div>
+          {% endif %}
+        </section>
+
+        {% if card.es_buro and r %}
+        <div class="if-rep-2">
+          <section class="if-rep-card">
+            <div class="if-rep-h">Endeudamiento actual</div>
+            <div class="if-rep-row"><span>Asalariado</span><strong>{{ r.Asalariado or '—' }}</strong></div>
+            <div class="if-rep-row"><span>Ingresos</span><strong>RD$ {{ r.Ingresos or '—' }}</strong></div>
+            <div class="if-rep-row"><span>Comprometido</span><strong>RD$ {{ r.Comprometido or '—' }}</strong></div>
+            <div class="if-rep-row"><span>Endeudamiento actual</span><strong>{{ r.EndeudamientoPct or '—' }}%</strong></div>
+            <div class="if-rep-disp">
+              <span>Disponible / mes</span>
+              <strong>RD$ {{ r.DisponibleMes or '—' }}</strong>
+            </div>
+          </section>
+          <section class="if-rep-card">
+            <div class="if-rep-h">Histórico de score</div>
+            <div class="if-rep-bars">
+              {% for h in r.HistorialScore or [] %}
+              {% set mx = 999 %}
+              <div class="if-rep-bar">
+                <span>{{ h.score }}</span>
+                <i style="height: {{ [18, ((h.score|int) * 58 / mx)|int]|max }}px"></i>
+                <small>{{ h.mes }}</small>
+              </div>
+              {% endfor %}
+            </div>
+          </section>
+        </div>
+        <div class="if-rep-kpis">
+          <div class="if-rep-kpi"><div class="if-rep-l">Historia crediticia</div><div class="if-rep-kpi__v">{{ r.HistoriaAnios or '—' }} años</div></div>
+          <div class="if-rep-kpi"><div class="if-rep-l">% uso límite TC</div><div class="if-rep-kpi__v">{{ r.UsoLimitePct or '—' }}%</div></div>
+          <div class="if-rep-kpi"><div class="if-rep-l">Cuentas activas</div><div class="if-rep-kpi__v">{{ r.CuentasActivas or '—' }}</div></div>
+          <div class="if-rep-kpi"><div class="if-rep-l">Atraso total</div><div class="if-rep-kpi__v {% if (r.AtrasoTotal or 0)|float == 0 %}is-ok{% endif %}">{{ r.AtrasoTotal or 0 }}</div></div>
+        </div>
+        {% if r.Cuentas %}
+        <section class="if-rep-card if-rep-card--list">
+          <div class="if-rep-h">Detalle de cuentas · {{ r.Cuentas|length }}</div>
+          {% for cta in r.Cuentas %}
+          <div class="if-rep-cta">
+            <div class="if-rep-cta__top">
+              <span>{{ cta.entidad }} · {{ cta.producto }}</span>
+              <em>{{ 'Crédito abierto' if cta.estado == 'abierta' else 'Cerrado' }}</em>
+            </div>
+            <div class="if-rep-cta__grid">
+              <span>Apertura <strong>{{ cta.apertura }}</strong></span>
+              <span>Aprobado <strong>DO {{ cta.aprobado }}</strong></span>
+              <span>Adeudado <strong>DO {{ cta.adeudado }}</strong></span>
+              <span>Cuota <strong>DO {{ cta.cuota }}</strong></span>
+              <span>Vencido <strong class="is-ok">DO {{ cta.vencido }}</strong></span>
+            </div>
+          </div>
+          {% endfor %}
+        </section>
+        {% endif %}
+        {% elif card.kpis %}
+        <section class="if-rep-card">
+          <div class="if-rep-h">Resumen consolidado</div>
+          <div class="if-rep-kpis if-rep-kpis--in">
+            {% for k in card.kpis %}
+            <div class="if-rep-kpi"><div class="if-rep-l">{{ k.label }}</div><div class="if-rep-kpi__v">{{ k.value }}</div></div>
+            {% endfor %}
+          </div>
+          {% if card.razon %}<p class="if-rep-razon">{{ card.razon }}</p>{% endif %}
+        </section>
+        {% endif %}
+
+        <details class="if-tech">
+          <summary>Payload técnico · solo soporte</summary>
+          <div class="api-tech__grid">
+            <div><div class="api-tech__lbl">Request</div><pre>{{ card.request_raw }}</pre></div>
+            <div><div class="api-tech__lbl">Response</div><pre>{{ card.response_raw }}</pre></div>
+          </div>
+        </details>
+      </div>
+
+      <div class="if-drawer__foot">
+        <span>Fuente: {% if card.es_buro %}buró de crédito{% else %}{{ card.api_nombre }}{% endif %} · identidad Vimenca #003CA6</span>
+        <div class="if-drawer__acts">
+          <button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cerrar</button>
+          <button type="button" class="if-btn" data-bs-dismiss="modal">Usar este resultado en el caso</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -144,6 +144,7 @@ def _parse_decimal(raw: str) -> Decimal | None:
     s = (raw or "").strip()
     if not s:
         return None
+    s = re.sub(r"(?i)\brd\$?", "", s)
     s = s.replace("$", "").replace(" ", "").replace("+", "")
     # Quitar paréntesis de teléfono residuales
     s = s.replace("(", "").replace(")", "").replace("-", "")

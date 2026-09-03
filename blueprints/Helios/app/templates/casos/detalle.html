@@ -369,70 +369,7 @@
               {% endif %}
             </div>
 
-            {# Drawer / modal estilo expediente #}
-            <div class="modal fade" id="modalApiReporte{{ card.id }}" tabindex="-1" aria-labelledby="tituloApiReporte{{ card.id }}" aria-hidden="true">
-              <div class="modal-dialog modal-dialog-scrollable modal-xl modal-api-report">
-                <div class="modal-content">
-                  <div class="modal-header api-report__header">
-                    <div>
-                      <h2 class="modal-title fs-5" id="tituloApiReporte{{ card.id }}">
-                        {% if card.es_buro %}Reporte de crédito{% else %}Resultado de integración{% endif %}
-                      </h2>
-                      <div class="api-report__sub">
-                        {{ card.api_nombre }} · Caso #{{ caso.id }}
-                        {% if caso.cliente %} · {{ caso.cliente.nombre_completo }}{% endif %}
-                      </div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                  </div>
-                  <div class="modal-body api-report__body">
-                    {% if caso.cliente %}
-                    <section class="api-report__id">
-                      <div class="api-report__avatar">{{ caso.cliente.nombre_completo[:1] }}</div>
-                      <div class="api-report__id-grid">
-                        <div><span class="lbl">Nombre</span><strong>{{ caso.cliente.nombre_completo }}</strong></div>
-                        <div><span class="lbl">Identificación</span><strong class="mono">{{ caso.cliente.identificacion }}</strong></div>
-                        <div><span class="lbl">Dictamen</span><strong>{{ card.dictamen or ('OK' if card.exito else 'Error') }}</strong></div>
-                        {% if card.score is not none %}
-                        <div><span class="lbl">Score</span><strong class="api-report__score">{{ card.score }}</strong></div>
-                        {% endif %}
-                      </div>
-                    </section>
-                    {% endif %}
-                    {% if card.kpis %}
-                    <section class="api-report__section">
-                      <h3>Resumen consolidado</h3>
-                      <div class="api-kpis api-kpis--report">
-                        {% for k in card.kpis %}
-                        <div class="api-kpi">
-                          <div class="api-kpi__label">{{ k.label }}</div>
-                          <div class="api-kpi__value">{{ k.value }}</div>
-                        </div>
-                        {% endfor %}
-                      </div>
-                      {% if card.razon %}<p class="api-report__razon">{{ card.razon }}</p>{% endif %}
-                    </section>
-                    {% endif %}
-                    <details class="if-tech api-tech">
-                      <summary>Payload técnico (request / response) · solo soporte</summary>
-                      <div class="api-tech__grid">
-                        <div>
-                          <div class="api-tech__lbl">Request</div>
-                          <pre>{{ card.request_raw }}</pre>
-                        </div>
-                        <div>
-                          <div class="api-tech__lbl">Response</div>
-                          <pre>{{ card.response_raw }}</pre>
-                        </div>
-                      </div>
-                    </details>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn-caso-secondary" data-bs-dismiss="modal">Cerrar</button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {% include "partials/reporte_api.html" %}
             {% endfor %}
           </div>
           {% else %}
@@ -736,7 +673,7 @@
   });
 })();
 </script>
-<script src="/static/js/dato_formato.js"></script>
-<script src="/static/js/dato_condicion.js"></script>
-<script src="/static/js/datos_form.js"></script>
+<script src="/static/js/dato_formato.js?v=20260903n"></script>
+<script src="/static/js/dato_condicion.js?v=20260903n"></script>
+<script src="/static/js/datos_form.js?v=20260903n"></script>
 {% endblock %}

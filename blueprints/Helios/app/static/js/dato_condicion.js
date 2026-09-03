@@ -18,6 +18,9 @@
     const dependsOn = field.dataset.dependsOn;
     if (!dependsOn) {
       field.classList.remove("is-cond-disabled");
+      if (!field.dataset.effectiveRequired) {
+        field.dataset.effectiveRequired = field.dataset.baseRequired === "1" ? "1" : "0";
+      }
       return;
     }
     const requiredWhen = field.dataset.requiredWhen === "1";

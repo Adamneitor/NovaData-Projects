@@ -166,20 +166,72 @@ def reporte_buro(cedula: str) -> dict[str, Any]:
             "DictamenBuro": dictamen,
             "Resumen": "Reporte sintético generado para demo Helios.",
         }
-    venc = (datetime.utcnow() + timedelta(days=30)).strftime("%Y-%m-%d")
+    venc = (datetime.utcnow() + timedelta(days=45)).strftime("%Y-%m-%d")
+    ingresos = float(perfil.get("EicMax") or 0) * 0.12 or 92400.0
+    comprometido = round(ingresos * 0.34, 2)
+    disponible = round(ingresos - comprometido, 2)
+    score = int(perfil.get("Score") or 0)
+    hist = [
+        {"mes": "Ene·26", "score": max(380, score - 57)},
+        {"mes": "May·26", "score": max(380, score - 28)},
+        {"mes": "Sep·26", "score": score},
+    ]
+    cuentas = [
+        {
+            "entidad": "Banco Vimenca, C. por A.",
+            "producto": "TCR Tarjeta",
+            "estado": "abierta",
+            "apertura": "06/2023",
+            "aprobado": 220000,
+            "adeudado": 45429,
+            "cuota": 1202,
+            "vencido": 0,
+        },
+        {
+            "entidad": "Asociación Cibao de Ahorros y Préstamos",
+            "producto": "TCR Tarjeta",
+            "estado": "abierta",
+            "apertura": "09/2020",
+            "aprobado": 150000,
+            "adeudado": 140,
+            "cuota": 0,
+            "vencido": 0,
+        },
+    ]
     return {
         **perfil,
+        "XCORE": score,
         "Cedula": key,
         "FechaConsulta": datetime.utcnow().strftime("%Y-%m-%d"),
         "FechaVencimiento": venc,
         "Proveedor": "Demo Buró NOVA",
+        "Asalariado": "Sí",
+        "Ingresos": ingresos,
+        "Comprometido": comprometido,
+        "EndeudamientoPct": 34,
+        "DisponibleMes": disponible,
+        "HistoriaAnios": 6,
+        "UsoLimitePct": 12,
+        "CuentasActivas": perfil.get("CuentasAbiertas") or 2,
+        "CuentasTotales": (perfil.get("CuentasAbiertas") or 2) + (perfil.get("CuentasCerradas") or 5),
+        "AtrasoTotal": float(perfil.get("MoraMaxDias") or 0),
+        "HistorialScore": hist,
+        "Cuentas": cuentas,
     }
 
 
+def _es_path_motor(p: str) -> bool:
+    return p.endswith("/demo-api/evaluacion") or p.endswith("/api/evaluacion")
+
+
+def _es_path_buro(p: str) -> bool:
+    return p.endswith("/demo-api/buro/reporte") or p.endswith("/api/buro/reporte")
+
+
 def ejecutar_demo_por_path(path: str, body: dict, headers: dict) -> tuple[int, dict] | None:
-    """Si path es /demo-api/*, ejecuta y devuelve (status, json)."""
+    """Ejecuta el mock local (puerto 3000 o /demo-api/*) sin HTTP."""
     p = (path or "").rstrip("/")
-    if "/demo-api/" not in p:
+    if not (_es_path_motor(p) or _es_path_buro(p)):
         return None
 
     auth = ""
@@ -187,21 +239,25 @@ def ejecutar_demo_por_path(path: str, body: dict, headers: dict) -> tuple[int, d
         if str(k).lower() == "authorization":
             auth = str(v or "")
             break
-    if not auth.lower().startswith("bearer ") or auth.split(" ", 1)[1].strip() != "test-token-123":
+    token_ok = auth.lower().startswith("bearer ") and auth.split(" ", 1)[1].strip() == "test-token-123"
+    if auth and not token_ok:
         return 401, {"error": "No autorizado. Use Authorization: Bearer test-token-123"}
 
-    if p.endswith("/demo-api/evaluacion"):
+    if _es_path_motor(p):
         try:
             salario = float(body.get("salario") or 0)
-            tiempo = float(body.get("tiempo_laborando") or 0)
+            tiempo = float(body.get("tiempo_laborando") or body.get("tiempo") or 0)
         except (TypeError, ValueError):
             return 400, {"error": "salario y tiempo_laborando deben ser numéricos"}
         cedula = cedula_limpia(str(body.get("cedula") or ""))
         if salario <= 0 or not cedula:
-            return 400, {"error": "Requiere salario > 0 y cedula"}
-        return 200, evaluar_motor(salario, as_bool(body.get("es_asalariado", False)), tiempo, cedula)
+            return 400, {
+                "error": "Complete Salario, cédula del cliente y Tiempo laborando, luego reintente el Motor."
+            }
+        asal = body.get("es_asalariado", body.get("asalariado", False))
+        return 200, evaluar_motor(salario, as_bool(asal), tiempo, cedula)
 
-    if p.endswith("/demo-api/buro/reporte"):
+    if _es_path_buro(p):
         cedula = cedula_limpia(str(body.get("cedula") or body.get("identificacion") or ""))
         if len(cedula) < 5:
             return 400, {"error": "Requiere cedula válida"}

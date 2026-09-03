@@ -119,11 +119,13 @@ def summarize_api_log(log) -> dict[str, Any]:
                 if "token" not in k.lower() and "password" not in k.lower() and "auth" not in k.lower()
             }
 
+    resp_dict = resp if isinstance(resp, dict) else {}
     return {
         "id": getattr(log, "id", None),
         "api_nombre": api_nombre,
         "exito": exito,
         "http_status": getattr(log, "http_status", None),
+        "error": getattr(log, "error", None) or (resp_dict.get("error") if isinstance(resp_dict, dict) else None),
         "fecha": getattr(log, "fecha", None),
         "titulo": titulo,
         "dictamen": dictamen,
@@ -134,10 +136,15 @@ def summarize_api_log(log) -> dict[str, Any]:
         "request_preview": body_preview,
         "response_raw": getattr(log, "response_json", None) or "",
         "request_raw": getattr(log, "request_json", None) or "",
-        "es_buro": bool(score_num is not None or (api_nombre and "bur" in api_nombre.lower())),
+        "es_buro": bool(
+            score_num is not None
+            or resp_dict.get("XCORE") is not None
+            or (api_nombre and "bur" in api_nombre.lower())
+        ),
         "es_motor": bool(
             dictamen or (api_nombre and ("motor" in api_nombre.lower() or "evalu" in api_nombre.lower()))
         ),
+        "reporte": resp_dict,
     }
 
 

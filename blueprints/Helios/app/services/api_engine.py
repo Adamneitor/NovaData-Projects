@@ -291,6 +291,10 @@ def ejecutar_api(
             resultado.exito = True
     except Exception as exc:  # noqa: BLE001 - se reporta el error al usuario
         resultado.error = str(exc)
+        if resultado.http_status is None:
+            resultado.http_status = 503
+        if not resultado.response_json:
+            resultado.response_json = json.dumps({"error": str(exc)}, ensure_ascii=False)
 
     from app.services.sqlite_ids import apply_bigint_id
 

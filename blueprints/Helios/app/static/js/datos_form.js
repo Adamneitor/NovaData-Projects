@@ -64,12 +64,13 @@
       const formato = el.dataset.datoFormato || "";
       const codigo = el.dataset.datoCodigo || "";
       const val = (el.value || "").trim();
-      const effectiveRequired = field?.dataset.effectiveRequired === "1";
-      if (!val && effectiveRequired) {
-        errors.push({ field: el.name, message: "Este campo es obligatorio." });
+      const required =
+        field?.dataset.effectiveRequired === "1" || field?.dataset.baseRequired === "1";
+      const digitsOnly = val.replace(/RD\$/gi, "").replace(/[\s,$]/g, "").replace(/,/g, "");
+      if (!val || digitsOnly === "") {
+        if (required) errors.push({ field: el.name, message: "Este campo es obligatorio." });
         return;
       }
-      if (!val) return;
       if (formato === "telefono" || codigo === "telefono") {
         const digits = val.replace(/\D/g, "");
         if (digits.length < 10) {
@@ -82,7 +83,7 @@
         }
       }
       if (codigo === "numero" || codigo === "moneda" || formato === "numero" || formato === "moneda") {
-        const normalized = val.replace(/[\s,$]/g, "").replace(/,/g, "");
+        const normalized = digitsOnly.replace(/\.0+$/, "");
         if (!/^-?\d+$/.test(normalized)) {
           errors.push({ field: el.name, message: "Solo se permiten números enteros (sin decimales)." });
         }
@@ -93,8 +94,7 @@
         formato === "numero_decimal" ||
         formato === "moneda_decimal"
       ) {
-        const normalized = val.replace(/[\s,$]/g, "").replace(/,/g, "");
-        if (!/^-?\d+(\.\d+)?$/.test(normalized)) {
+        if (!/^-?\d+(\.\d+)?$/.test(digitsOnly)) {
           errors.push({ field: el.name, message: "Valor numérico inválido." });
         }
       }
