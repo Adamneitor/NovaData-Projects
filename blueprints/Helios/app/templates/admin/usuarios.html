@@ -1,70 +1,35 @@
 {% extends "base.html" %}
 {% block titulo %}Usuarios{% endblock %}
 {% block contenido %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title"><i class="bi bi-person-badge"></i>Usuarios</h1>
-    <p class="page-subtitle">Cuentas APP y Active Directory · perfiles y grupos</p>
+<div class="if-head">
+  <div class="if-head__text">
+    <h1 class="if-head__title">Seguridad</h1>
+    <p class="if-head__sub">Usuarios, perfiles y grupos de trabajo por etapa</p>
   </div>
-  <div class="page-actions">
-    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo usuario</button>
-  </div>
+  <button type="button" class="if-btn" data-bs-toggle="modal" data-bs-target="#modalNuevo">Nuevo usuario</button>
 </div>
 
-<div class="card">
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead><tr>
-        <th>Login</th><th>Nombre</th><th>Autenticación</th><th>Vigencia</th><th>Perfil</th><th>Grupos</th><th>Activo</th><th></th>
-      </tr></thead>
-      <tbody>
-      {% for u in usuarios %}
-        <tr>
-          <td class="fw-semibold">{{ u.usuario_ad }}</td>
-          <td>
-            {{ u.nombre }}
-            {% if u.debe_cambiar_password and (u.tipo_autenticacion or 'APP') == 'APP' %}
-              <span class="badge text-bg-warning ms-1">Reset pendiente</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if (u.tipo_autenticacion or 'APP') == 'AD' %}
-              <span class="badge text-bg-primary"><i class="bi bi-building me-1"></i>Active Directory</span>
-            {% else %}
-              <span class="badge text-bg-secondary"><i class="bi bi-key me-1"></i>Aplicación</span>
-            {% endif %}
-          </td>
-          <td class="small">
-            {% if (u.tipo_autenticacion or 'APP') == 'APP' %}
-              {% if u.dias_vigencia_password %}
-                {{ u.dias_vigencia_password }} días
-                {% set d = vencimientos.get(u.id) %}
-                {% if d is not none %}
-                  {% if d < 0 %}<span class="badge text-bg-danger">Expirada</span>
-                  {% elif d <= 7 %}<span class="badge text-bg-warning">{{ d }}d</span>
-                  {% else %}<span class="text-muted">({{ d }}d)</span>{% endif %}
-                {% endif %}
-              {% else %}<span class="text-muted">Sin vencimiento</span>{% endif %}
-            {% else %}—{% endif %}
-          </td>
-          <td><span class="badge badge-etapa">{{ u.perfil.nombre }}</span></td>
-          <td>
-            {% for g in u.grupos %}<span class="badge text-bg-secondary me-1">{{ g.nombre }}</span>{% else %}<span class="text-muted small">Sin grupos</span>{% endfor %}
-          </td>
-          <td>{% if u.activo %}<span class="badge text-bg-success">Sí</span>{% else %}<span class="badge text-bg-danger">No</span>{% endif %}</td>
-          <td class="text-end">
-            <button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#modalEditar{{ u.id }}" title="Editar"><i class="bi bi-pencil"></i></button>
-            <button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#modalGrupos{{ u.id }}" title="Grupos"><i class="bi bi-people"></i></button>
-          </td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
+<div class="if-table">
+  <div class="if-tr if-tr--head if-tr--user">
+    <span>Usuario</span><span>Nombre</span><span>Perfil</span><span>Grupos</span><span>Estado</span><span></span>
   </div>
+  {% for u in usuarios %}
+  <div class="if-tr if-tr--user {% if loop.index is even %}if-tr--alt{% endif %}">
+    <span class="if-login {% if not u.activo %}is-off{% endif %}">{{ u.usuario_ad }}</span>
+    <span style="font:600 12.5px Montserrat,sans-serif;color:{% if u.activo %}#1a1a2e{% else %}#6b7280{% endif %}">{{ u.nombre }}</span>
+    <span class="if-flujo">{{ u.perfil.nombre }}</span>
+    <span class="if-flujo">{% for g in u.grupos %}{{ g.nombre }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</span>
+    {% if u.activo %}<span class="if-sit">Activo</span>{% else %}<span class="if-sit if-sit--bad">Inactivo</span>{% endif %}
+    <span style="display:flex;gap:8px;justify-content:flex-end">
+      <button type="button" class="if-btn if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalEditar{{ u.id }}">Editar</button>
+      <button type="button" class="if-btn if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalGrupos{{ u.id }}">Grupos</button>
+    </span>
+  </div>
+  {% endfor %}
 </div>
 
 <div class="modal fade" id="modalNuevo" tabindex="-1">
-  <div class="modal-dialog modal-lg"><div class="modal-content">
+  <div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content hx-modal">
     <form method="post" action="/admin/usuarios/crear" id="formNuevoUsuario">
       <div class="modal-header"><h5 class="modal-title">Nuevo usuario</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
@@ -100,7 +65,7 @@
           <select class="form-select" name="perfil_id">{% for p in perfiles %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}</select>
         </div>
       </div>
-      <div class="modal-footer"><button class="btn btn-warning" id="btnCrearUsuario">Crear</button></div>
+      <div class="modal-footer"><button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button><button class="if-btn" id="btnCrearUsuario">Crear</button></div>
     </form>
   </div></div>
 </div>
@@ -137,7 +102,7 @@
         </div>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="activo" value="1" id="act{{ u.id }}" {% if u.activo %}checked{% endif %}><label class="form-check-label" for="act{{ u.id }}">Activo</label></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-warning">Guardar</button></div>
+      <div class="modal-footer"><button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button><button class="if-btn">Guardar</button></div>
     </form>
   </div></div>
 </div>
@@ -154,7 +119,7 @@
         </div>
         {% else %}<p class="text-muted">No hay grupos creados.</p>{% endfor %}
       </div>
-      <div class="modal-footer"><button class="btn btn-warning">Guardar</button></div>
+      <div class="modal-footer"><button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button><button class="if-btn">Guardar</button></div>
     </form>
   </div></div>
 </div>

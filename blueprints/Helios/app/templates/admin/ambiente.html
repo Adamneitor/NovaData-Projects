@@ -1,35 +1,49 @@
 {% extends "base.html" %}
-{% block titulo %}Ambiente de prueba{% endblock %}
+{% block titulo %}Reiniciar ambiente{% endblock %}
 {% block contenido %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title"><i class="bi bi-arrow-counterclockwise"></i>Reiniciar ambiente</h1>
-    <p class="page-subtitle">Operación destructiva · solo Super Usuario · ambiente de prueba</p>
+<div class="if-head">
+  <div class="if-head__text">
+    <h1 class="if-head__title">Reiniciar ambiente</h1>
+    <p class="if-head__sub">Zona de peligro controlado · visible solo para perfil Super</p>
   </div>
 </div>
 
-<div class="card border-danger" style="max-width: 640px;">
-  <div class="card-body">
-    <p class="mb-2">Esta acción borra la configuración BPM y deja la base lista para volver a armar flujos desde cero.</p>
-    <p class="fw-semibold mb-1">Se elimina:</p>
-    <ul class="small">
-      <li>Flujos, etapas, estados, transiciones y reglas de API</li>
-      <li>APIs configuradas</li>
-      <li>Catálogo de documentos y datos complementarios</li>
-      <li>Casos, historial, archivos cargados y bitácora de APIs</li>
-    </ul>
-    <p class="fw-semibold mb-1 text-success">Se conserva:</p>
-    <ul class="small mb-3">
-      <li>Usuarios y perfiles</li>
-      <li>Grupos de usuarios y sus asignaciones</li>
-      <li>Clientes</li>
-    </ul>
-    <form method="post" action="/admin/ambiente/reiniciar"
-          onsubmit="return confirm('¿Reiniciar el ambiente de prueba?\n\nSe borrarán flujos, APIs, documentos, datos y casos.\nSe conservarán usuarios, grupos y clientes.');">
-      <button type="submit" class="btn btn-danger">
-        <i class="bi bi-exclamation-triangle me-1"></i>Reiniciar ambiente de prueba
-      </button>
-    </form>
+<div class="if-panel" style="max-width:640px">
+  <div class="if-danger-grid">
+    <div class="if-danger-box">
+      <div class="if-danger-box__k">Se borra</div>
+      <div class="if-danger-box__v">Flujos y sus etapas<br>Casos e historial<br>Documentos cargados<br>Logs de API</div>
+    </div>
+    <div class="if-danger-box">
+      <div class="if-danger-box__k">Se conserva</div>
+      <div class="if-danger-box__v">Usuarios y grupos<br>Catálogos (docs, datos, tipos)<br>APIs configuradas<br>Políticas</div>
+    </div>
   </div>
+  <form method="post" action="/admin/ambiente/reiniciar" id="formReiniciar">
+    <label class="form-label">Escribe <strong style="font:700 11.5px ui-monospace,Menlo,monospace">REINICIAR</strong> para habilitar</label>
+    <input class="form-control" id="confirmReiniciar" placeholder="REINICIAR" autocomplete="off">
+    <button type="submit" class="if-btn if-btn--off" id="btnReiniciar" disabled style="margin-top:12px;width:100%">Reiniciar datos del BPM</button>
+  </form>
+  <div style="font:400 11px/1.5 Montserrat,sans-serif;color:#9ca3af">Habilitado se vuelve rojo — el único rojo de la pantalla.</div>
 </div>
+<script>
+(function () {
+  const input = document.getElementById('confirmReiniciar');
+  const btn = document.getElementById('btnReiniciar');
+  const form = document.getElementById('formReiniciar');
+  function sync() {
+    const ok = (input.value || '').trim() === 'REINICIAR';
+    btn.disabled = !ok;
+    btn.classList.toggle('if-btn--off', !ok);
+    btn.classList.toggle('if-btn--danger', ok);
+  }
+  input.addEventListener('input', sync);
+  form.addEventListener('submit', function (e) {
+    if ((input.value || '').trim() !== 'REINICIAR') { e.preventDefault(); return; }
+    if (!confirm('¿Reiniciar el ambiente de prueba?\n\nSe borrarán flujos, APIs, documentos, datos y casos.\nSe conservarán usuarios, grupos y clientes.')) {
+      e.preventDefault();
+    }
+  });
+})();
+</script>
 {% endblock %}

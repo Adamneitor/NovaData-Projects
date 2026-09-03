@@ -1,41 +1,40 @@
 {% extends "base.html" %}
 {% block titulo %}APIs{% endblock %}
 {% block contenido %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title"><i class="bi bi-plugin"></i>Integraciones API</h1>
-    <p class="page-subtitle">Llamadas reutilizables · asociables a estados o conclusión de flujo</p>
+<div class="if-head">
+  <div class="if-head__text">
+    <h1 class="if-head__title">APIs</h1>
+    <p class="if-head__sub">Integraciones que los estados ejecutan dentro del flujo</p>
   </div>
-  <div class="page-actions">
-    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo API</button>
-  </div>
+  <button type="button" class="if-btn" data-bs-toggle="modal" data-bs-target="#modalNuevo">Nueva API</button>
 </div>
 
-<div class="card">
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead><tr><th>Nombre</th><th>Método</th><th>URL</th><th>Parámetros</th><th>Outputs</th><th>Activo</th><th></th></tr></thead>
-      <tbody>
-      {% for a in apis %}
-        <tr>
-          <td class="fw-semibold">{{ a.nombre }}</td>
-          <td><span class="badge text-bg-primary">{{ a.metodo }}</span></td>
-          <td class="col-url" title="{{ a.url }}">{{ a.url }}</td>
-          <td>{{ a.parametros | length }}</td>
-          <td>{{ a.outputs | length }}</td>
-          <td>{% if a.activo %}<span class="badge text-bg-success">Sí</span>{% else %}<span class="badge text-bg-danger">No</span>{% endif %}</td>
-          <td class="text-end"><a class="btn btn-sm btn-outline-dark" href="/apis/{{ a.id }}"><i class="bi bi-gear"></i> Configurar</a></td>
-        </tr>
-      {% else %}<tr><td colspan="7"><div class="empty-state"><i class="bi bi-plugin"></i><p>No hay APIs configurados.</p></div></td></tr>{% endfor %}
-      </tbody>
-    </table>
+<div class="if-api-list">
+  <div style="padding:12px 16px;border-bottom:1px solid #eef0f5;font:700 10px/1 Montserrat,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#9ca3af">
+    {{ apis|length }} integración{{ 'es' if apis|length != 1 }}
   </div>
+  {% for a in apis %}
+  <a class="if-api-row" href="/apis/{{ a.id }}">
+    <div class="if-api-row__top">
+      <span class="if-api-row__name">{{ a.nombre }}</span>
+      {% if a.activo %}<span class="if-sit">En uso</span>{% else %}<span class="if-sit">Inactivo</span>{% endif %}
+    </div>
+    <div class="if-api-row__url"><b>{{ a.metodo }}</b> {{ a.url }} · {{ a.outputs|length }} outputs</div>
+  </a>
+  {% else %}
+  <div class="if-empty" style="border:0">
+    <div class="if-empty__box">
+      <div class="if-empty__title">No hay APIs</div>
+      <p>Cree la primera integración para asociarla a un estado.</p>
+    </div>
+  </div>
+  {% endfor %}
 </div>
 
 <div class="modal fade" id="modalNuevo" tabindex="-1">
-  <div class="modal-dialog"><div class="modal-content">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content hx-modal">
     <form method="post" action="/apis/crear">
-      <div class="modal-header"><h5 class="modal-title">Nuevo API</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header"><h5 class="modal-title">Nueva API</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
         <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" required placeholder="Ej: Consulta buró de crédito"></div>
         <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2"></textarea></div>
@@ -46,7 +45,10 @@
           <div class="col-8 mb-2"><label class="form-label">URL</label><input class="form-control" name="url" required placeholder="https://api.ejemplo.com/consulta/{id}"></div>
         </div>
       </div>
-      <div class="modal-footer"><button class="btn btn-warning">Crear y configurar</button></div>
+      <div class="modal-footer">
+        <button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button>
+        <button class="if-btn">Crear y configurar</button>
+      </div>
     </form>
   </div></div>
 </div>

@@ -232,12 +232,14 @@ def cliente_detalle(request: Request, cliente_id: int, db: Session = Depends(get
         .limit(100)
         .all()
     )
+    recientes = listar_clientes_recientes(db, page=1, page_size=12)
     return render(
         request,
         "catalogos/cliente_detalle.html",
         {
             "cliente": cliente,
             "casos": casos,
+            "clientes": recientes.get("items") or [],
             "flujos": db.query(Flujo).filter(Flujo.activo).order_by(Flujo.nombre).all(),
         },
     )

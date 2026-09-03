@@ -87,7 +87,7 @@
     </div>
     {% endfor %}
     <div class="if-foot">
-      <span class="if-foot__txt">Mostrando {{ filas|length }} de {{ total }} · el resaltado morado solo marca links y foco</span>
+      <span class="if-foot__txt">Mostrando {{ filas|length }} de {{ total }}</span>
       <div class="if-pager">
         {% set base = '/casos?scope=' ~ scope ~ ( ('&estado_general=' ~ filtro) if filtro else '' ) ~ qs_q ~ qs_fl ~ qs_et %}
         <a class="if-pg {% if page <= 1 %}is-off{% endif %}" href="{{ base }}&page={{ page - 1 }}" aria-label="Anterior">

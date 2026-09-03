@@ -1,47 +1,40 @@
 {% extends "base.html" %}
 {% block titulo %}Flujos{% endblock %}
 {% block contenido %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title"><i class="bi bi-diagram-3"></i>Flujos</h1>
-    <p class="page-subtitle">Diseño de procesos BPM y etapas</p>
+<div class="if-head">
+  <div class="if-head__text">
+    <h1 class="if-head__title">Flujos</h1>
+    <p class="if-head__sub">Diseño BPM · etapas, estados, reglas y transiciones</p>
   </div>
-  <div class="page-actions">
-    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo flujo</button>
-  </div>
+  <button type="button" class="if-btn" data-bs-toggle="modal" data-bs-target="#modalNuevo">Nuevo flujo</button>
 </div>
 
-<div class="row g-3">
+<div class="if-table">
+  <div class="if-tr if-tr--head if-tr--flow">
+    <span>Flujo</span><span>Tipo</span><span>Etapas</span><span>Estados</span><span>Situación</span><span></span>
+  </div>
   {% for f in flujos %}
-  <div class="col-md-4">
-    <div class="card h-100 hx-flow-card">
-      <div class="card-body d-flex flex-column">
-        <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-          <h5 class="card-title mb-0">{{ f.nombre }}</h5>
-          {% if f.activo %}<span class="badge text-bg-success">Activo</span>{% else %}<span class="badge text-bg-danger">Inactivo</span>{% endif %}
-        </div>
-        <div class="mb-2"><span class="badge badge-etapa">{{ f.tipo_flujo.nombre }}</span></div>
-        <p class="card-text text-muted small flex-grow-1">{{ f.descripcion or 'Sin descripción' }}</p>
-        <p class="small text-muted mb-3">
-          <i class="bi bi-signpost-2 me-1"></i>{{ f.etapas | length }} etapa(s)
-          {% if f.api_conclusion %}<br><i class="bi bi-plugin me-1"></i>API conclusión: {{ f.api_conclusion.nombre }}{% endif %}
-        </p>
-        <a href="/flujos/{{ f.id }}/editar" class="btn btn-sm btn-outline-dark align-self-start"><i class="bi bi-pencil-square me-1"></i>Diseñar</a>
-      </div>
-    </div>
+  <div class="if-tr if-tr--flow {% if loop.index is even %}if-tr--alt{% endif %}">
+    <span style="font:600 13px Montserrat,sans-serif;color:#1a1a2e">{{ f.nombre }}</span>
+    <span class="if-flujo">{{ f.tipo_flujo.nombre }}</span>
+    <span style="font:600 12.5px Montserrat,sans-serif;color:#1a1a2e">{{ f.etapas|length }}</span>
+    <span style="font:600 12.5px Montserrat,sans-serif;color:#1a1a2e">{% set ns = namespace(n=0) %}{% for e in f.etapas %}{% set ns.n = ns.n + (e.estados|length) %}{% endfor %}{{ ns.n }}</span>
+    {% if f.activo %}<span class="if-sit">Activo</span>{% else %}<span class="if-sit">Borrador</span>{% endif %}
+    <a class="if-btn if-btn--sm" href="/flujos/{{ f.id }}/editar">Diseñar</a>
   </div>
   {% else %}
-  <div class="col-12">
-    <div class="card"><div class="empty-state py-5">
-      <i class="bi bi-diagram-3"></i>
-      <p>No hay flujos. Cree el primero para comenzar a diseñar su proceso.</p>
-    </div></div>
+  <div class="if-empty" style="border:0">
+    <div class="if-empty__box">
+      <div class="if-empty__title">No hay flujos</div>
+      <p>Cree el primero para comenzar a diseñar el proceso.</p>
+      <button type="button" class="if-btn" data-bs-toggle="modal" data-bs-target="#modalNuevo">Nuevo flujo</button>
+    </div>
   </div>
   {% endfor %}
 </div>
 
 <div class="modal fade" id="modalNuevo" tabindex="-1">
-  <div class="modal-dialog"><div class="modal-content">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content hx-modal">
     <form method="post" action="/flujos/crear">
       <div class="modal-header"><h5 class="modal-title">Nuevo flujo</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
@@ -51,7 +44,10 @@
         </div>
         <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2"></textarea></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-warning">Crear</button></div>
+      <div class="modal-footer">
+        <button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button>
+        <button class="if-btn">Crear</button>
+      </div>
     </form>
   </div></div>
 </div>

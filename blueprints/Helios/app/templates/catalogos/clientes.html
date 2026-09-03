@@ -1,74 +1,43 @@
 {% extends "base.html" %}
-{% block titulo %}Clientes{% endblock %}
+{% block titulo %}Clientes 360{% endblock %}
 {% block contenido %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title"><i class="bi bi-people"></i>Clientes</h1>
-    <p class="page-subtitle">Clientes recientes · use el buscador para filtrar en volúmenes grandes</p>
+<div class="if-head">
+  <div class="if-head__text">
+    <h1 class="if-head__title">Clientes 360</h1>
+    <p class="if-head__sub">Un cliente, todos sus casos y documentos</p>
   </div>
-  <div class="page-actions">
-    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo cliente</button>
-  </div>
+  <button type="button" class="if-btn" data-bs-toggle="modal" data-bs-target="#modalNuevo">Nuevo cliente</button>
 </div>
 
-<div class="card mb-3">
-  <div class="card-body">
-    <form method="get" action="/catalogos/clientes" class="row g-2 align-items-end" id="formBuscarCli">
-      <div class="col-md-9">
-        <label class="form-label">Buscar cliente</label>
-        <div class="input-group input-group-lg">
-          <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input type="search" class="form-control" name="q" id="qClientes" value="{{ q }}"
-                 placeholder="Nombre, identificación, teléfono o correo…" autofocus autocomplete="off">
-        </div>
-      </div>
-      <div class="col-md-3 d-grid">
-        <button class="btn btn-dark btn-lg">Buscar</button>
-      </div>
-    </form>
-    <div class="form-text mt-2">Escriba y espere: resultados en vivo vía API (debounce). Prefijo de cédula/nombre usa índices.</div>
-  </div>
-</div>
+<form method="get" action="/catalogos/clientes" class="if-search" style="width:100%;max-width:480px" role="search">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+  <input type="search" name="q" id="qClientes" value="{{ q or '' }}" placeholder="Nombre, identificación, teléfono o correo…" autocomplete="off">
+</form>
 
-<div class="card">
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead><tr>
-        <th>Código</th><th>Nombre</th><th>Identificación</th><th>Teléfono</th><th>Correo</th><th></th>
-      </tr></thead>
-      <tbody id="tbodyClientes">
-      {% if clientes %}
-        {% for c in clientes %}
-        <tr>
-          <td>{{ c.id }}</td>
-          <td class="fw-semibold"><a href="/catalogos/clientes/{{ c.id }}" class="text-decoration-none">{{ c.nombre_completo }}</a></td>
-          <td>{{ c.tipo_identificacion }}: {{ c.identificacion }}</td>
-          <td>{{ c.telefono or '' }}</td>
-          <td>{{ c.correo or '' }}</td>
-          <td class="text-end">
-            <a class="btn btn-sm btn-outline-dark" href="/catalogos/clientes/{{ c.id }}">Ficha</a>
-            <a class="btn btn-sm btn-warning" href="/casos?cliente_id={{ c.id }}">Crear caso</a>
-          </td>
-        </tr>
-        {% endfor %}
-        {% if clientes_total %}
-        <tr class="table-light"><td colspan="6" class="small text-muted">
-          Mostrando {{ clientes|length }} de {{ clientes_total }}
-          {% if clientes_mode == 'recientes' %}clientes recientes{% else %}coincidencias{% endif %}.
-        </td></tr>
-        {% endif %}
-      {% elif q %}
-        <tr><td colspan="6"><div class="empty-state"><i class="bi bi-search"></i><p>Sin resultados para “{{ q }}”.</p></div></td></tr>
-      {% else %}
-        <tr><td colspan="6"><div class="empty-state"><i class="bi bi-people"></i><p>No hay clientes registrados aún.<br>Cree uno con «Nuevo cliente» o ejecute el seed demo.</p></div></td></tr>
-      {% endif %}
-      </tbody>
-    </table>
-  </div>
+<div class="if-people" id="listaClientes">
+  {% if clientes %}
+    {% for c in clientes %}
+    <a class="if-people__row" href="/catalogos/clientes/{{ c.id }}">
+      <span class="if-av">{{ c.nombre_completo[:2]|upper }}</span>
+      <span style="flex:1;min-width:0">
+        <span class="if-people__name">{{ c.nombre_completo }}</span>
+        <span class="if-people__meta">{{ c.tipo_identificacion }} {{ c.identificacion }}{% if c.telefono %} · {{ c.telefono }}{% endif %}</span>
+      </span>
+      <span class="if-sit">Ver ficha</span>
+    </a>
+    {% endfor %}
+    {% if clientes_total %}
+    <div class="if-foot"><span class="if-foot__txt">Mostrando {{ clientes|length }} de {{ clientes_total }}{% if clientes_mode == 'recientes' %} · recientes{% endif %}</span></div>
+    {% endif %}
+  {% elif q %}
+    <div class="if-empty" style="border:0"><div class="if-empty__box"><div class="if-empty__title">Sin resultados</div><p>Nada para «{{ q }}».</p></div></div>
+  {% else %}
+    <div class="if-empty" style="border:0"><div class="if-empty__box"><div class="if-empty__title">No hay clientes</div><p>Cree uno con «Nuevo cliente».</p></div></div>
+  {% endif %}
 </div>
 
 <div class="modal fade" id="modalNuevo" tabindex="-1">
-  <div class="modal-dialog"><div class="modal-content">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content hx-modal">
     <form method="post" action="/catalogos/clientes/crear">
       <div class="modal-header"><h5 class="modal-title">Nuevo cliente</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
@@ -84,7 +53,10 @@
         <div class="mb-2"><label class="form-label">Teléfono</label><input class="form-control" name="telefono"></div>
         <div class="mb-2"><label class="form-label">Correo</label><input type="email" class="form-control" name="correo"></div>
       </div>
-      <div class="modal-footer"><button class="btn btn-warning">Crear</button></div>
+      <div class="modal-footer">
+        <button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button>
+        <button class="if-btn">Crear</button>
+      </div>
     </form>
   </div></div>
 </div>
@@ -92,36 +64,32 @@
 <script>
 (function () {
   const input = document.getElementById('qClientes');
-  const tbody = document.getElementById('tbodyClientes');
+  const box = document.getElementById('listaClientes');
   let t = null, seq = 0;
-  if (!input || !tbody) return;
-
+  if (!input || !box) return;
+  function esc(s) { return String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
   async function live(q) {
     const my = ++seq;
     if (q.trim().length < 2) return;
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="hx-skeleton d-inline-block" style="width:120px;height:14px"></span><p class="mt-2 mb-0">Buscando…</p></div></td></tr>`;
+    box.innerHTML = '<div class="if-empty" style="border:0"><div class="if-empty__box"><p>Buscando…</p></div></div>';
     const res = await fetch(`/catalogos/api/clientes/buscar?q=${encodeURIComponent(q)}&page_size=25`);
     const data = await res.json();
     if (my !== seq) return;
     if (!data.items.length) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Sin resultados.</td></tr>`;
+      box.innerHTML = '<div class="if-empty" style="border:0"><div class="if-empty__box"><div class="if-empty__title">Sin resultados</div></div></div>';
       return;
     }
-    tbody.innerHTML = data.items.map(c => `
-      <tr>
-        <td>${c.id}</td>
-        <td class="fw-semibold"><a class="text-decoration-none" href="/catalogos/clientes/${c.id}">${c.nombre_completo}</a></td>
-        <td>${c.tipo_identificacion}: ${c.identificacion}</td>
-        <td>${c.telefono || ''}</td>
-        <td>${c.correo || ''}</td>
-        <td class="text-end">
-          <a class="btn btn-sm btn-outline-dark" href="/catalogos/clientes/${c.id}">Ficha</a>
-          <a class="btn btn-sm btn-warning" href="/casos?cliente_id=${c.id}">Crear caso</a>
-        </td>
-      </tr>`).join('') +
-      `<tr class="table-light"><td colspan="6" class="small text-muted">Mostrando ${data.items.length} de ${data.total}.</td></tr>`;
+    box.innerHTML = data.items.map(c => `
+      <a class="if-people__row" href="/catalogos/clientes/${c.id}">
+        <span class="if-av">${esc((c.nombre_completo || '??').slice(0,2).toUpperCase())}</span>
+        <span style="flex:1;min-width:0">
+          <span class="if-people__name">${esc(c.nombre_completo)}</span>
+          <span class="if-people__meta">${esc(c.tipo_identificacion)} ${esc(c.identificacion)}${c.telefono ? ' · ' + esc(c.telefono) : ''}</span>
+        </span>
+        <span class="if-sit">Ver ficha</span>
+      </a>`).join('') +
+      `<div class="if-foot"><span class="if-foot__txt">Mostrando ${data.items.length} de ${data.total}</span></div>`;
   }
-
   input.addEventListener('input', () => {
     clearTimeout(t);
     t = setTimeout(() => live(input.value), 300);

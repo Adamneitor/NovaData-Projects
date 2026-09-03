@@ -1,26 +1,16 @@
 {% extends "base.html" %}
 {% block titulo %}Diseñar · {{ flujo.nombre }}{% endblock %}
 {% block contenido %}
-<nav aria-label="breadcrumb"><ol class="breadcrumb">
-  <li class="breadcrumb-item"><a href="/flujos">Flujos</a></li>
-  <li class="breadcrumb-item active">{{ flujo.nombre }}</li>
-</ol></nav>
-
 <div class="fb-shell" id="flowBuilder">
-  <div class="fb-top">
-    <div>
-      <h1 class="page-title mb-1"><i class="bi bi-diagram-3"></i><span id="fbTitle">{{ flujo.nombre }}</span></h1>
-      <p class="page-subtitle mb-0">Diseño unificado · un solo guardado para flujo, etapas, estados, transiciones y reglas</p>
+  <div class="if-head">
+    <div class="if-head__text">
+      <h1 class="if-head__title" id="fbTitle">{{ flujo.nombre }}</h1>
+      <p class="if-head__sub">Diseño BPM · etapas, estados, reglas y transiciones · <a href="/flujos">Volver a Flujos</a></p>
     </div>
-  </div>
-
-  <div class="fb-savebar" id="fbSavebar" data-status="clean">
-    <div class="fb-savebar__status" id="fbStatus"><i class="bi bi-check-circle"></i> Guardado</div>
-    <div class="fb-savebar__actions">
-      <button type="button" class="btn btn-outline-dark btn-sm" id="fbReload" title="Descartar cambios y recargar">Descartar</button>
-      <button type="button" class="btn btn-warning" id="fbSave" disabled>
-        <i class="bi bi-cloud-upload me-1"></i><span id="fbSaveLabel">Guardar Cambios</span>
-      </button>
+    <div class="if-head__actions" id="fbSavebar" data-status="clean">
+      <span class="if-sit" id="fbStatus">Guardado</span>
+      <button type="button" class="if-btn if-btn--ghost" id="fbReload">Descartar</button>
+      <button type="button" class="if-btn" id="fbSave" disabled><span id="fbSaveLabel">Guardar cambios</span></button>
     </div>
   </div>
 
@@ -29,7 +19,7 @@
       <div class="card fb-card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong>Etapas</strong>
-          <button type="button" class="btn btn-sm btn-warning" id="fbAddEtapa"><i class="bi bi-plus-lg"></i></button>
+          <button type="button" class="if-btn if-btn--sm" id="fbAddEtapa">Añadir</button>
         </div>
         <div class="list-group list-group-flush" id="fbEtapaList"></div>
       </div>

@@ -1,15 +1,10 @@
 {% extends "base.html" %}
 {% block titulo %}API {{ api.nombre }}{% endblock %}
 {% block contenido %}
-<nav aria-label="breadcrumb"><ol class="breadcrumb">
-  <li class="breadcrumb-item"><a href="/apis">APIs</a></li>
-  <li class="breadcrumb-item active">{{ api.nombre }}</li>
-</ol></nav>
-
-<div class="page-header">
-  <div>
-    <h1 class="page-title"><i class="bi bi-plugin"></i>{{ api.nombre }}</h1>
-    <p class="page-subtitle">Definición, parámetros y outputs</p>
+<div class="if-head">
+  <div class="if-head__text">
+    <h1 class="if-head__title">{{ api.nombre }}</h1>
+    <p class="if-head__sub">Definición, parámetros y outputs · <a href="/apis">Volver a APIs</a></p>
   </div>
 </div>
 

@@ -1,87 +1,70 @@
 {% extends "base.html" %}
 {% block titulo %}{{ cliente.nombre_completo }}{% endblock %}
 {% block contenido %}
-<nav aria-label="breadcrumb"><ol class="breadcrumb">
-  <li class="breadcrumb-item"><a href="/catalogos/clientes">Clientes</a></li>
-  <li class="breadcrumb-item active">{{ cliente.nombre_completo }}</li>
-</ol></nav>
-
-<div class="page-header">
-  <div>
-    <h1 class="page-title">{{ cliente.nombre_completo }}</h1>
-    <p class="page-subtitle">
-      {{ cliente.tipo_identificacion }}: <strong>{{ cliente.identificacion }}</strong>
-      · Código {{ cliente.id }}
-    </p>
+<div class="if-head">
+  <div class="if-head__text">
+    <h1 class="if-head__title">Clientes 360</h1>
+    <p class="if-head__sub">Un cliente, todos sus casos y documentos</p>
   </div>
-  <div class="page-actions">
-    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalCaso">
-      <i class="bi bi-briefcase me-1"></i>Crear caso
-    </button>
-  </div>
+  <button type="button" class="if-btn" data-bs-toggle="modal" data-bs-target="#modalCaso">Nuevo caso</button>
 </div>
 
-<div class="row g-3 mb-3">
-  <div class="col-md-4">
-    <div class="card h-100 stat-card"><div class="card-body">
-      <div class="stat-label">Teléfono</div>
-      <div class="stat-value">{{ cliente.telefono or '—' }}</div>
-    </div></div>
+<div class="if-split">
+  <div class="if-people">
+    {% for c in clientes %}
+    <a class="if-people__row {% if c.id == cliente.id %}is-on{% endif %}" href="/catalogos/clientes/{{ c.id }}" {% if c.id == cliente.id %}style="background:#F7F8FC;border-left:3px solid #1a1a2e"{% endif %}>
+      <span class="if-av">{{ c.nombre_completo[:2]|upper }}</span>
+      <span style="flex:1;min-width:0">
+        <span class="if-people__name">{{ c.nombre_completo }}</span>
+        <span class="if-people__meta">{{ c.tipo_identificacion }} {{ c.identificacion }}</span>
+      </span>
+    </a>
+    {% endfor %}
+    <a class="if-people__row" href="/catalogos/clientes" style="justify-content:center;color:#6b7280;font:600 12px Montserrat,sans-serif">Ver todos</a>
   </div>
-  <div class="col-md-4">
-    <div class="card h-100 stat-card"><div class="card-body">
-      <div class="stat-label">Correo</div>
-      <div class="stat-value text-break fs-6">{{ cliente.correo or '—' }}</div>
-    </div></div>
-  </div>
-  <div class="col-md-4">
-    <div class="card h-100 stat-card"><div class="card-body">
-      <div class="stat-label">Casos registrados</div>
-      <div class="stat-value">{{ casos|length }}{% if casos|length >= 100 %}+{% endif %}</div>
-    </div></div>
-  </div>
-</div>
 
-<div class="card">
-  <div class="card-header fw-semibold"><i class="bi bi-clock-history me-1"></i>Historial de casos</div>
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead><tr>
-        <th>#</th><th>Flujo</th><th>Etapa</th><th>Estado</th><th>Situación</th><th>Creado</th><th></th>
-      </tr></thead>
-      <tbody>
+  <div class="if-ficha">
+    <div class="if-ficha__hero">
+      <span class="if-av if-av--lg">{{ cliente.nombre_completo[:2]|upper }}</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <h2 class="if-ficha__name">{{ cliente.nombre_completo }}</h2>
+          <span class="if-sit">Cliente</span>
+        </div>
+        <div class="if-ficha__meta">{{ cliente.tipo_identificacion }} {{ cliente.identificacion }}{% if cliente.telefono %} · {{ cliente.telefono }}{% endif %}{% if cliente.correo %} · {{ cliente.correo }}{% endif %}</div>
+      </div>
+      <button type="button" class="if-btn if-btn--ghost" data-bs-toggle="modal" data-bs-target="#modalCaso">Nuevo caso</button>
+    </div>
+    <div class="if-kpis4">
+      <div class="if-kpi"><div class="if-kpi__l">Identificación</div><div class="if-kpi__v" style="font-size:13px">{{ cliente.identificacion }}</div></div>
+      <div class="if-kpi"><div class="if-kpi__l">Casos totales</div><div class="if-kpi__v">{{ casos|length }}{% if casos|length >= 100 %}+{% endif %}</div></div>
+      <div class="if-kpi"><div class="if-kpi__l">Activos</div><div class="if-kpi__v">{% set ns = namespace(n=0) %}{% for c in casos %}{% if c.estado_general == 'ACTIVO' %}{% set ns.n = ns.n + 1 %}{% endif %}{% endfor %}{{ ns.n }}</div></div>
+      <div class="if-kpi"><div class="if-kpi__l">Último caso</div><div class="if-kpi__v">{% if casos %}#{{ casos[0].id }}{% else %}—{% endif %}</div></div>
+    </div>
+    <div class="if-hist">
+      <div class="if-hist__k">Historial de casos</div>
       {% for c in casos %}
-        <tr>
-          <td class="fw-semibold">{{ c.id }}</td>
-          <td>{{ c.flujo.nombre }}</td>
-          <td><span class="badge badge-etapa">{{ c.etapa_actual.nombre }}</span></td>
-          <td>{{ c.estado_actual.nombre }}</td>
-          <td>
-            {% if c.estado_general == 'ACTIVO' %}<span class="badge text-bg-primary">Activo</span>
-            {% elif c.estado_general == 'CERRADO' %}<span class="badge text-bg-success">Cerrado</span>
-            {% else %}<span class="badge text-bg-danger">Cancelado</span>{% endif %}
-          </td>
-          <td class="small text-muted">{{ c.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
-          <td class="text-end"><a class="btn btn-sm btn-outline-dark" href="/casos/{{ c.id }}">Abrir</a></td>
-        </tr>
+      <a class="if-case {% if c.estado_general != 'ACTIVO' %}is-muted{% endif %}" href="/casos/{{ c.id }}">
+        <span class="if-case__id">#{{ c.id }}</span>
+        <span class="if-case__txt">{{ c.flujo.nombre }}</span>
+        <span class="if-etapa">{{ c.etapa_actual.nombre }}</span>
+        {% if c.estado_general == 'ACTIVO' %}<span class="if-sit">Activo</span>
+        {% elif c.estado_general == 'CERRADO' %}<span class="if-sit">Cerrado</span>
+        {% else %}<span class="if-sit if-sit--bad">Cancelado</span>{% endif %}
+      </a>
       {% else %}
-        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-briefcase"></i><p>Este cliente aún no tiene casos. Cree el primero.</p></div></td></tr>
+      <div class="if-empty" style="border:0"><div class="if-empty__box"><div class="if-empty__title">Sin casos</div><p>Cree el primero con «Nuevo caso».</p></div></div>
       {% endfor %}
-      </tbody>
-    </table>
+    </div>
   </div>
 </div>
 
 <div class="modal fade" id="modalCaso" tabindex="-1">
-  <div class="modal-dialog"><div class="modal-content">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content hx-modal">
     <form method="post" action="/casos/crear">
       <div class="modal-header"><h5 class="modal-title">Nuevo caso · {{ cliente.nombre_completo }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
         <input type="hidden" name="cliente_id" value="{{ cliente.id }}">
-        <div class="alert alert-info small mb-3">
-          Cliente asociado automáticamente: <strong>{{ cliente.nombre_completo }}</strong>
-          ({{ cliente.identificacion }})
-        </div>
         <div class="mb-2"><label class="form-label">Flujo</label>
           <select class="form-select" name="flujo_id" required>
             {% for f in flujos %}<option value="{{ f.id }}">{{ f.nombre }} ({{ f.tipo_flujo.nombre }})</option>{% else %}
@@ -90,7 +73,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-warning" {% if not flujos %}disabled{% endif %}>Crear caso</button>
+        <button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button>
+        <button class="if-btn" {% if not flujos %}disabled{% endif %}>Crear caso</button>
       </div>
     </form>
   </div></div>

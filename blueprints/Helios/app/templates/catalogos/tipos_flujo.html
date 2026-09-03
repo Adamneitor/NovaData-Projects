@@ -1,38 +1,35 @@
 {% extends "base.html" %}
 {% block titulo %}Tipos de flujo{% endblock %}
 {% block contenido %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title"><i class="bi bi-tags"></i>Tipos de flujo</h1>
-    <p class="page-subtitle">Clasificación de procesos (crédito, cobranza, etc.)</p>
+<div class="if-head">
+  <div class="if-head__text">
+    <h1 class="if-head__title">Tipos de flujo</h1>
+    <p class="if-head__sub">Categorías que agrupan los flujos BPM</p>
   </div>
 </div>
 
-<div class="row g-3">
-  <div class="col-lg-7">
-    <div class="card">
-      <ul class="list-group list-group-flush">
-        {% for t in tipos %}
-        <li class="list-group-item d-flex align-items-center gap-2">
-          <span class="badge badge-etapa">{{ loop.index }}</span>
-          <span class="fw-semibold">{{ t.nombre }}</span>
-        </li>
-        {% else %}
-        <li class="list-group-item"><div class="empty-state py-4"><i class="bi bi-tags"></i><p>No hay tipos definidos.</p></div></li>
-        {% endfor %}
-      </ul>
+<div class="if-split--2 if-split">
+  <div class="if-table">
+    <div class="if-tr if-tr--head if-tr--tipo">
+      <span>Tipo</span><span>Código</span><span></span>
     </div>
+    {% for t in tipos %}
+    <div class="if-tr if-tr--tipo {% if loop.index is even %}if-tr--alt{% endif %}">
+      <span style="font:600 13px Montserrat,sans-serif;color:#1a1a2e">{{ t.nombre }}</span>
+      <span class="if-flujo">{{ t.id }}</span>
+      <span></span>
+    </div>
+    {% else %}
+    <div class="if-empty" style="border:0"><div class="if-empty__box"><div class="if-empty__title">No hay tipos</div></div></div>
+    {% endfor %}
   </div>
-  <div class="col-lg-5">
-    <div class="card">
-      <div class="card-header">Agregar tipo</div>
-      <div class="card-body">
-        <form method="post" action="/catalogos/tipos-flujo/crear" class="d-flex gap-2">
-          <input class="form-control" name="nombre" placeholder="Ej: Cobranza" required>
-          <button class="btn btn-warning flex-shrink-0">Crear</button>
-        </form>
-      </div>
-    </div>
+  <div class="if-panel">
+    <div style="font:700 13px Montserrat,sans-serif;color:#1a1a2e">Nuevo tipo</div>
+    <form method="post" action="/catalogos/tipos-flujo/crear">
+      <label class="form-label">Nombre</label>
+      <input class="form-control" name="nombre" placeholder="Ej: Cobranza" required>
+      <button class="if-btn" style="margin-top:12px">Crear</button>
+    </form>
   </div>
 </div>
 {% endblock %}

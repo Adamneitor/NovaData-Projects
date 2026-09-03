@@ -1,35 +1,29 @@
 {% extends "base.html" %}
 {% block titulo %}Datos complementarios{% endblock %}
 {% block contenido %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title"><i class="bi bi-input-cursor-text"></i>Datos complementarios</h1>
-    <p class="page-subtitle">Campos de captura por etapa · almacenamiento raw + formato visual configurable</p>
+<div class="if-head">
+  <div class="if-head__text">
+    <h1 class="if-head__title">Datos complementarios</h1>
+    <p class="if-head__sub">Campos del expediente que las etapas pueden solicitar</p>
   </div>
-  <div class="page-actions">
-    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo dato</button>
-  </div>
+  <button type="button" class="if-btn" data-bs-toggle="modal" data-bs-target="#modalNuevo">Nuevo dato</button>
 </div>
 
-<div class="card">
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead><tr><th>Dato</th><th>Descripción</th><th>Tipo</th><th>Formato visual</th><th>Decimales</th><th>Activo</th><th></th></tr></thead>
-      <tbody>
-      {% for d in datos %}
-        <tr>
-          <td class="fw-semibold">{{ d.nombre }}</td>
-          <td>{{ d.descripcion or '' }}</td>
-          <td><span class="badge badge-etapa">{{ d.tipo_dato.nombre }}</span></td>
-          <td class="small"><code>{{ resolve_formato(d) }}</code></td>
-          <td class="small text-muted">{% if resolve_decimales(d) and tipo_codigo(d.tipo_dato) in ['numero_decimal','moneda_decimal'] %}{{ resolve_decimales(d) }}{% else %}—{% endif %}</td>
-          <td>{% if d.activo %}<span class="badge text-bg-success">Sí</span>{% else %}<span class="badge text-bg-danger">No</span>{% endif %}</td>
-          <td class="text-end"><button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#modalEditar{{ d.id }}" title="Editar"><i class="bi bi-pencil"></i> Editar</button></td>
-        </tr>
-      {% else %}<tr><td colspan="7"><div class="empty-state"><i class="bi bi-input-cursor-text"></i><p>No hay datos complementarios definidos.</p></div></td></tr>{% endfor %}
-      </tbody>
-    </table>
+<div class="if-table">
+  <div class="if-tr if-tr--head if-tr--dato">
+    <span>Dato</span><span>Tipo</span><span>Formato</span><span>Origen</span><span></span>
   </div>
+  {% for d in datos %}
+  <div class="if-tr if-tr--dato {% if loop.index is even %}if-tr--alt{% endif %}">
+    <span style="font:600 13px Montserrat,sans-serif;color:#1a1a2e">{{ d.nombre }}</span>
+    <span class="if-flujo">{{ d.tipo_dato.nombre }}</span>
+    <span class="if-flujo">{{ resolve_formato(d) }}</span>
+    <span class="if-sit">Manual</span>
+    <button type="button" class="if-btn if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalEditar{{ d.id }}">Editar</button>
+  </div>
+  {% else %}
+  <div class="if-empty" style="border:0"><div class="if-empty__box"><div class="if-empty__title">No hay datos</div><p>Cree el primero para capturarlo en las etapas.</p></div></div>
+  {% endfor %}
 </div>
 
 {% macro campos_dato(prefijo, d=None) %}
@@ -74,22 +68,22 @@
 {% endmacro %}
 
 <div class="modal fade" id="modalNuevo" tabindex="-1">
-  <div class="modal-dialog"><div class="modal-content">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content hx-modal">
     <form method="post" action="/catalogos/datos/crear">
       <div class="modal-header"><h5 class="modal-title">Nuevo dato complementario</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">{{ campos_dato('nuevo') }}</div>
-      <div class="modal-footer"><button class="btn btn-warning">Crear</button></div>
+      <div class="modal-footer"><button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button><button class="if-btn">Crear</button></div>
     </form>
   </div></div>
 </div>
 
 {% for d in datos %}
 <div class="modal fade" id="modalEditar{{ d.id }}" tabindex="-1">
-  <div class="modal-dialog"><div class="modal-content">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content hx-modal">
     <form method="post" action="/catalogos/datos/{{ d.id }}/actualizar">
       <div class="modal-header"><h5 class="modal-title">Editar dato</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">{{ campos_dato('edit' ~ d.id, d) }}</div>
-      <div class="modal-footer"><button class="btn btn-warning">Guardar</button></div>
+      <div class="modal-footer"><button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button><button class="if-btn">Guardar</button></div>
     </form>
   </div></div>
 </div>
