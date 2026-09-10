@@ -15,13 +15,13 @@
   </div>
   {% for d in documentos %}
   <div class="if-tr if-tr--docs {% if loop.index is even %}if-tr--alt{% endif %}">
-    <span style="font:600 13px Montserrat,sans-serif;color:#1a1a2e">{{ d.nombre }}</span>
+    <span class="if-cell">{{ d.nombre }}</span>
     <span class="if-flujo">{{ d.descripcion or '—' }}</span>
     {% if d.activo %}<span class="if-sit">Sí</span>{% else %}<span class="if-sit if-sit--bad">No</span>{% endif %}
-    <button type="button" class="if-btn if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalEditar{{ d.id }}">Editar</button>
+    <button type="button" class="if-btn if-btn--ghost if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalEditar{{ d.id }}">Editar</button>
   </div>
   {% else %}
-  <div class="if-empty" style="border:0">
+  <div class="if-empty if-empty--bare">
     <div class="if-empty__box">
       <div class="if-empty__title">¿Falta un tipo de documento?</div>
       <p>Créalo aquí y quedará disponible para asignar en cualquier etapa.</p>
@@ -36,8 +36,8 @@
     <form method="post" action="/catalogos/documentos/crear">
       <div class="modal-header"><h5 class="modal-title">Nuevo documento</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" required placeholder="Ej: Cédula de identidad"></div>
-        <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2"></textarea></div>
+        <div class="if-field"><label class="if-lbl" for="docNombre">Nombre</label><input class="caso-input" id="docNombre" name="nombre" required placeholder="Ej: Cédula de identidad"></div>
+        <div class="if-field"><label class="if-lbl" for="docDesc">Descripción</label><textarea class="caso-input" id="docDesc" name="descripcion" rows="2"></textarea></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button>
@@ -53,9 +53,9 @@
     <form method="post" action="/catalogos/documentos/{{ d.id }}/actualizar">
       <div class="modal-header"><h5 class="modal-title">Editar · {{ d.nombre }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" value="{{ d.nombre }}" required></div>
-        <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2">{{ d.descripcion or '' }}</textarea></div>
-        <div class="form-check"><input class="form-check-input" type="checkbox" name="activo" value="1" id="dact{{ d.id }}" {% if d.activo %}checked{% endif %}><label class="form-check-label" for="dact{{ d.id }}">Activo</label></div>
+        <div class="if-field"><label class="if-lbl" for="docNom{{ d.id }}">Nombre</label><input class="caso-input" id="docNom{{ d.id }}" name="nombre" value="{{ d.nombre }}" required></div>
+        <div class="if-field"><label class="if-lbl" for="docDes{{ d.id }}">Descripción</label><textarea class="caso-input" id="docDes{{ d.id }}" name="descripcion" rows="2">{{ d.descripcion or '' }}</textarea></div>
+        <label class="if-check"><input type="checkbox" name="activo" value="1" {% if d.activo %}checked{% endif %}> Activo</label>
       </div>
       <div class="modal-footer">
         <button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button>

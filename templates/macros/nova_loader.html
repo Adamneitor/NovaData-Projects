@@ -1,0 +1,47 @@
+{# Animación de carga NOVA: solo el spinner, sin texto visible.
+   `inline=true` la confina al contenedor padre (position:relative), como el
+   lienzo del iframe de Helios, en vez de cubrir toda la pantalla. #}
+{% macro nova_loader(id='novaLoad', inline=false) %}
+<div class="nv-load{% if inline %} nv-load--inline{% endif %}" id="{{ id }}" role="status" aria-label="Cargando" aria-hidden="true">
+  <span class="nv-load__orbit" aria-hidden="true">
+    <i class="nv-load__ring nv-load__ring--a"></i>
+    <i class="nv-load__ring nv-load__ring--b"></i>
+    <img class="nv-load__core" src="{{ url_for('static', filename='img/icon-n.png') }}" alt="" width="24" height="24">
+  </span>
+</div>
+{% endmacro %}
+
+{% macro nova_loader_js() %}
+<script>
+window.NovaLoad = (function () {
+  function box(id) { return document.getElementById(id || 'novaLoad'); }
+  function show(id) {
+    var el = box(id);
+    if (!el) return;
+    el.classList.add('is-on');
+    el.setAttribute('aria-hidden', 'false');
+  }
+  function hide(id) {
+    var el = box(id);
+    if (!el) return;
+    el.classList.remove('is-on');
+    el.setAttribute('aria-hidden', 'true');
+  }
+  // Al volver con el botón atrás la página sale del caché con el overlay puesto.
+  window.addEventListener('pageshow', function (ev) { if (ev.persisted) hide(); });
+  function conectarEnlaces(selector, espera, id) {
+    document.querySelectorAll(selector).forEach(function (enlace) {
+      enlace.addEventListener('click', function (ev) {
+        if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+        if (enlace.target === '_blank') return;
+        ev.preventDefault();
+        show(id);
+        var destino = enlace.getAttribute('href');
+        setTimeout(function () { window.location.href = destino; }, espera || 0);
+      });
+    });
+  }
+  return { show: show, hide: hide, conectarEnlaces: conectarEnlaces };
+})();
+</script>
+{% endmacro %}

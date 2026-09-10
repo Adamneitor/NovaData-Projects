@@ -1,49 +1,192 @@
 {% extends "shell_claude.html" %}
-{% from "macros/nova_mark.html" import icon_helios %}
+
 {% block page_title %}Helios · NOVA{% endblock %}
+
 {% block breadcrumb %}
-<a href="{{ url_for('launcher') }}">NOVA</a><span class="sep">/</span>
-<span class="cur">Helios</span>
+<a class="nv-crumb__a" href="{{ url_for('launcher') }}">NOVA</a>
+<span class="nv-crumb__sep" aria-hidden="true">›</span>
+<a class="nv-crumb__a" href="{{ url_for('helios_home') }}">Helios Producto</a>
+<span class="nv-crumb__sep" aria-hidden="true">›</span>
+<span class="nv-crumb__cur">Inicio Helios</span>
 {% endblock %}
+
 {% block content %}
-<div class="hh-head">
-  <div class="hh-title-row">
-    <span class="hh-icon">{{ icon_helios(28) }}</span>
-    <div>
-      <h1>Helios</h1>
-      <p>{{ solution.tagline if solution else 'Núcleo que energiza y orquesta la originación' }}</p>
+{#
+  Dashboard minimalista de Helios. Los estilos van embebidos y con prefijo
+  propio `hd-` para no chocar con las clases `hh-*` heredadas del shell
+  (por ejemplo `.hh-stats`, que es un flex row de otra pantalla).
+#}
+<style>
+.hd-hero { margin-bottom: 20px; }
+.hd-hero h1 {
+  margin: 0 0 4px;
+  font: 600 24px/1.25 Montserrat, sans-serif;
+  letter-spacing: -.02em; color: #1a1a2e;
+}
+.hd-hero p { margin: 0; font: 400 13px/1.5 Montserrat, sans-serif; color: #888CA0; }
+
+.hd-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  background: #fff; border: 1px solid #e1e3e8; border-radius: 12px;
+  margin-bottom: 16px;
+}
+.hd-stat { padding: 16px 20px; border-left: 1px solid #e1e3e8; min-width: 0; }
+.hd-stat:first-child { border-left: 0; }
+.hd-stat__label {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 5px;
+  font: 500 11px/1.3 Montserrat, sans-serif; color: #888CA0;
+}
+.hd-stat__label i { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.hd-stat__value {
+  display: block;
+  font: 600 25px/1 Montserrat, sans-serif; color: #1a1a2e;
+  font-variant-numeric: tabular-nums;
+}
+
+.hd-grid { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 16px; margin-bottom: 30px; }
+.hd-card {
+  background: #fff; border: 1px solid #e1e3e8; border-radius: 12px;
+  padding: 16px 20px 18px; min-width: 0;
+}
+.hd-card--wide { grid-column: 1 / -1; }
+.hd-split {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.hd-card__title {
+  margin: 0 0 14px;
+  font: 500 11px/1.3 Montserrat, sans-serif; letter-spacing: .04em;
+  text-transform: uppercase; color: #888CA0;
+}
+/* Alto fijo + maintainAspectRatio:false — sin esto Chart.js estira el
+   lienzo al reducir el zoom, porque el ancho disponible crece. */
+.hd-plot { position: relative; height: 190px; }
+.hd-donut { display: flex; align-items: center; gap: 20px; }
+.hd-donut .hd-plot { height: 150px; width: 150px; flex: none; }
+.hd-legend { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0; }
+.hd-legend__row {
+  display: flex; align-items: center; gap: 8px;
+  font: 400 12px/1 Montserrat, sans-serif; color: #888CA0;
+}
+.hd-legend__row i { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.hd-legend__row b {
+  margin-left: auto; color: #1a1a2e; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.hd-empty {
+  margin: 0; display: grid; place-items: center; height: 100%;
+  font: 400 12px Montserrat, sans-serif; color: #888CA0;
+}
+
+@media (max-width: 1000px) {
+  .hd-grid { grid-template-columns: minmax(0, 1fr); }
+  .hd-split { grid-template-columns: minmax(0, 1fr); }
+  .hd-stats { grid-template-columns: repeat(2, 1fr); }
+  .hd-stat:nth-child(3) { border-left: 0; }
+  .hd-stat:nth-child(n+3) { border-top: 1px solid #e1e3e8; }
+}
+@media (max-width: 560px) {
+  .hd-stats { grid-template-columns: 1fr; }
+  .hd-stat { border-left: 0; }
+  .hd-stat + .hd-stat { border-top: 1px solid #e1e3e8; }
+  .hd-donut { flex-direction: column; align-items: stretch; }
+  .hd-donut .hd-plot { align-self: center; }
+}
+</style>
+
+<section class="hd-hero">
+  <h1>Hola, {{ nombre_usuario }}</h1>
+  <p>Núcleo que energiza y orquesta la originación</p>
+</section>
+
+{# ── Indicadores ── #}
+<section class="hd-stats">
+  <div class="hd-stat">
+    <span class="hd-stat__label">Total casos</span>
+    <span class="hd-stat__value">{{ stats.total }}</span>
+  </div>
+  <div class="hd-stat">
+    <span class="hd-stat__label"><i style="background:#5B52E8"></i> Activos</span>
+    <span class="hd-stat__value">{{ stats.activos }}</span>
+  </div>
+  <div class="hd-stat">
+    <span class="hd-stat__label"><i style="background:#4A9FF5"></i> Cerrados</span>
+    <span class="hd-stat__value">{{ stats.cerrados }}</span>
+  </div>
+  <div class="hd-stat">
+    <span class="hd-stat__label"><i style="background:#888CA0"></i> Cancelados</span>
+    <span class="hd-stat__value">{{ stats.cancelados }}</span>
+  </div>
+</section>
+
+{# ── Gráficos ── #}
+<div class="hd-grid">
+  <div class="hd-card">
+    <h2 class="hd-card__title">Distribución por estado</h2>
+    {% if stats.total %}
+    <div class="hd-donut">
+      <div class="hd-plot"><canvas id="chartEstado"></canvas></div>
+      <div class="hd-legend">
+        <span class="hd-legend__row"><i style="background:#5B52E8"></i> Activos <b>{{ stats.activos }}</b></span>
+        <span class="hd-legend__row"><i style="background:#4A9FF5"></i> Cerrados <b>{{ stats.cerrados }}</b></span>
+        <span class="hd-legend__row"><i style="background:#888CA0"></i> Cancelados <b>{{ stats.cancelados }}</b></span>
+      </div>
+    </div>
+    {% else %}
+    <div class="hd-plot"><p class="hd-empty">Sin casos registrados</p></div>
+    {% endif %}
+  </div>
+
+  <div class="hd-card">
+    <h2 class="hd-card__title">Casos activos por etapa</h2>
+    <div class="hd-plot">
+      {% if stats.por_etapa %}
+      <canvas id="chartEtapa"></canvas>
+      {% else %}
+      <p class="hd-empty">Sin casos activos</p>
+      {% endif %}
     </div>
   </div>
-  <div class="hh-actions">
-    <a class="nv-btn-sec" href="{{ url_for('helios_workspace', to='/flujos') }}">Diseñar flujos</a>
-    <a class="nv-btn-brand" href="{{ url_for('helios_workspace', to='/casos') }}">
-      Ir a Casos
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
-    </a>
+
+  <div class="hd-split">
+    <div class="hd-card">
+      <h2 class="hd-card__title">Casos creados · últimos 6 meses</h2>
+      <div class="hd-plot"><canvas id="chartMes"></canvas></div>
+    </div>
+    <div class="hd-card">
+      <h2 class="hd-card__title">Casos por flujo</h2>
+      <div class="hd-plot">
+        {% if stats.por_flujo %}
+        <canvas id="chartFlujo"></canvas>
+        {% else %}
+        <p class="hd-empty">Sin flujos con casos</p>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="hh-stats">
-  <span class="lbl">Helios BPM</span>
-  <span class="sep"></span>
-  <span>Motor operativo conectado</span>
-  <span class="dot">·</span>
-  <a href="{{ url_for('helios_workspace', to='/casos') }}" style="font-weight:600">Abrir bandeja de casos</a>
-  <span class="dot">·</span>
-  <a href="{{ url_for('helios_workspace', to='/flujos') }}" style="font-weight:600">Flujos</a>
-</div>
+{# Accesos rápidos retirados del Home; la navegación queda en el rail NOVA. #}
+{% if false %}
+<h2 class="hh-section-title">Accesos rápidos</h2>
 
 <div class="hh-tiles">
   <a class="hh-tile hh-tile--active" href="{{ url_for('helios_workspace', to='/casos') }}">
     <div class="hh-tile__top">
       <span class="hh-tile__ico">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="6" rx="1.5"></rect><rect x="3.5" y="14" width="17" height="6" rx="1.5"></rect></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+          <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+          <path d="M9 14l2 2 4-4"></path>
+        </svg>
       </span>
       <span class="hh-badge hh-badge--activo">Activo</span>
     </div>
     <div>
-      <h3>BPM operativo</h3>
-      <p>Flujos, casos, documentos y datos. Es la app en producción hoy.</p>
+      <h3>BPM Operativo</h3>
+      <p>Flujos, casos y documentos. Tu bandeja de trabajo.</p>
     </div>
     <span class="hh-tile__link">Abrir casos <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
   </a>
@@ -51,13 +194,17 @@
   <a class="hh-tile" href="{{ url_for('helios_workspace', to='/catalogos/clientes') }}">
     <div class="hh-tile__top">
       <span class="hh-tile__ico">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"></path><path d="M16 6.5a3 3 0 0 1 0 6"></path><path d="M17.5 20c0-2.4-.9-4.2-2.3-5.2"></path></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <circle cx="9" cy="8" r="3.5"></circle>
+          <path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"></path>
+          <path d="M16 6.5a3 3 0 0 1 0 6"></path>
+          <path d="M17.5 20c0-2.4-.9-4.2-2.3-5.2"></path>
+        </svg>
       </span>
-      <span class="hh-badge hh-badge--ok">Disponible</span>
     </div>
     <div>
-      <h3>Captación &amp; Clientes</h3>
-      <p>Directorio de clientes y originación conectada al flujo de solicitud.</p>
+      <h3>Clientes 360</h3>
+      <p>Ficha integral, buró y casos por cliente.</p>
     </div>
     <span class="hh-tile__link">Ver clientes <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
   </a>
@@ -65,13 +212,17 @@
   <a class="hh-tile" href="{{ url_for('helios_workspace', to='/apis') }}">
     <div class="hh-tile__top">
       <span class="hh-tile__ico">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v5"></path><path d="M15 3v5"></path><rect x="6.5" y="8" width="11" height="7" rx="2"></rect><path d="M12 15v6"></path></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v4"></path><path d="M12 18v4"></path>
+          <rect x="7" y="6" width="10" height="12" rx="2"></rect>
+          <circle cx="12" cy="12" r="2"></circle>
+          <path d="M7 10H3"></path><path d="M21 10h-4"></path><path d="M7 14H3"></path><path d="M21 14h-4"></path>
+        </svg>
       </span>
-      <span class="hh-badge hh-badge--api">Vía APIs</span>
     </div>
     <div>
       <h3>Preaprobaciones &amp; Buró</h3>
-      <p>Consultas y dictámenes que se ejecutan dentro de las etapas del flujo.</p>
+      <p>APIs de motor crediticio y consultas al buró.</p>
     </div>
     <span class="hh-tile__link">Ver APIs <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
   </a>
@@ -79,13 +230,15 @@
   <a class="hh-tile" href="{{ url_for('helios_workspace', to='/flujos') }}">
     <div class="hh-tile__top">
       <span class="hh-tile__ico">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4"></path><circle cx="12" cy="11" r="4"></circle><path d="M5 21c0-3 3.1-5.5 7-5.5s7 2.5 7 5.5"></path></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="6" cy="6" r="2.5"></circle><circle cx="6" cy="18" r="2.5"></circle><circle cx="18" cy="12" r="2.5"></circle>
+          <path d="M6 8.5v7"></path><path d="M8.5 6.8c4 .6 5.6 2.4 7 4.4"></path>
+        </svg>
       </span>
-      <span class="hh-badge hh-badge--ok">Disponible</span>
     </div>
     <div>
-      <h3>Diseño de flujos</h3>
-      <p>Etapas, transiciones, datos y documentos del BPM.</p>
+      <h3>Diseño de Flujos</h3>
+      <p>Etapas, transiciones y reglas del BPM.</p>
     </div>
     <span class="hh-tile__link">Abrir flujos <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
   </a>
@@ -93,13 +246,17 @@
   <a class="hh-tile" href="{{ url_for('helios_workspace', to='/catalogos/datos') }}">
     <div class="hh-tile__top">
       <span class="hh-tile__ico">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="20"></line><rect x="6" y="11" width="3.5" height="9"></rect><rect x="14.5" y="6" width="3.5" height="14"></rect></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
+          <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
+          <line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>
+        </svg>
       </span>
-      <span class="hh-badge hh-badge--ok">Disponible</span>
     </div>
     <div>
-      <h3>Datos &amp; catálogos</h3>
-      <p>Datos complementarios, documentos y tipos de flujo.</p>
+      <h3>Datos &amp; Catálogos</h3>
+      <p>Documentos, datos complementarios y tipos.</p>
     </div>
     <span class="hh-tile__link">Abrir catálogo <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
   </a>
@@ -107,15 +264,167 @@
   <a class="hh-tile" href="{{ url_for('helios_workspace', to='/admin/usuarios') }}">
     <div class="hh-tile__top">
       <span class="hh-tile__ico">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7.5a4 4 0 0 1 8 0V10"></path></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path>
+          <path d="M9 12l2 2 4-4"></path>
+        </svg>
       </span>
-      <span class="hh-badge hh-badge--ok">Disponible</span>
     </div>
     <div>
       <h3>Seguridad</h3>
-      <p>Usuarios, grupos y políticas de contraseña de Helios.</p>
+      <p>Usuarios, grupos y políticas.</p>
     </div>
     <span class="hh-tile__link">Administrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="18" y2="12"></line><polyline points="13,7 18,12 13,17"></polyline></svg></span>
   </a>
 </div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  if (typeof Chart === 'undefined') return;
+
+  var PRIMARY = '#5B52E8', SECONDARY = '#4A9FF5', MIST = '#888CA0';
+  var INK = '#1a1a2e', GRID = '#eef0f5';
+
+  Chart.defaults.font.family = 'Montserrat, sans-serif';
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = MIST;
+  Chart.defaults.responsive = true;
+  Chart.defaults.maintainAspectRatio = false;
+  Chart.defaults.resizeDelay = 80;
+  Chart.defaults.plugins.legend.display = false;
+  Chart.defaults.plugins.tooltip.backgroundColor = INK;
+  Chart.defaults.plugins.tooltip.cornerRadius = 6;
+  Chart.defaults.plugins.tooltip.padding = 9;
+  Chart.defaults.plugins.tooltip.displayColors = false;
+
+  function ctx(id) {
+    var el = document.getElementById(id);
+    return el ? el.getContext('2d') : null;
+  }
+
+  var cEstado = ctx('chartEstado');
+  if (cEstado) {
+    new Chart(cEstado, {
+      type: 'doughnut',
+      data: {
+        labels: ['Activos', 'Cerrados', 'Cancelados'],
+        datasets: [{
+          data: [{{ stats.activos }}, {{ stats.cerrados }}, {{ stats.cancelados }}],
+          backgroundColor: [PRIMARY, SECONDARY, MIST],
+          borderWidth: 0,
+          hoverOffset: 4
+        }]
+      },
+      options: { cutout: '72%' }
+    });
+  }
+
+  var cEtapa = ctx('chartEtapa');
+  if (cEtapa) {
+    var etapas = {{ stats.por_etapa | tojson }};
+    new Chart(cEtapa, {
+      type: 'bar',
+      data: {
+        labels: etapas.map(function (e) { return e.etapa; }),
+        datasets: [{
+          data: etapas.map(function (e) { return e.count; }),
+          backgroundColor: PRIMARY,
+          borderRadius: 4,
+          maxBarThickness: 16
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        layout: { padding: { right: 4 } },
+        scales: {
+          x: {
+            beginAtZero: true,
+            border: { display: false },
+            grid: { color: GRID, drawTicks: false },
+            ticks: { precision: 0, maxTicksLimit: 5, padding: 6 }
+          },
+          y: {
+            border: { display: false },
+            grid: { display: false },
+            ticks: { padding: 4 }
+          }
+        }
+      }
+    });
+  }
+
+  var cMes = ctx('chartMes');
+  if (cMes) {
+    var meses = {{ stats.por_mes | tojson }};
+    new Chart(cMes, {
+      type: 'line',
+      data: {
+        labels: meses.map(function (m) { return m.mes; }),
+        datasets: [{
+          data: meses.map(function (m) { return m.count; }),
+          borderColor: PRIMARY,
+          backgroundColor: 'rgba(91,82,232,.07)',
+          borderWidth: 2,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: PRIMARY,
+          pointBorderWidth: 2,
+          pointRadius: 3.5,
+          pointHoverRadius: 5,
+          tension: .32,
+          fill: true
+        }]
+      },
+      options: {
+        scales: {
+          x: {
+            border: { display: false },
+            grid: { display: false },
+            ticks: { padding: 4 }
+          },
+          y: {
+            beginAtZero: true,
+            border: { display: false },
+            grid: { color: GRID, drawTicks: false },
+            ticks: { precision: 0, maxTicksLimit: 4, padding: 6 }
+          }
+        }
+      }
+    });
+  }
+
+  var cFlujo = ctx('chartFlujo');
+  if (cFlujo) {
+    var flujos = {{ stats.por_flujo | tojson }};
+    new Chart(cFlujo, {
+      type: 'bar',
+      data: {
+        labels: flujos.map(function (f) { return f.flujo; }),
+        datasets: [{
+          data: flujos.map(function (f) { return f.count; }),
+          backgroundColor: SECONDARY,
+          borderRadius: 4,
+          maxBarThickness: 28
+        }]
+      },
+      options: {
+        scales: {
+          x: {
+            border: { display: false },
+            grid: { display: false },
+            ticks: { padding: 4, maxRotation: 0, autoSkip: true }
+          },
+          y: {
+            beginAtZero: true,
+            border: { display: false },
+            grid: { color: GRID, drawTicks: false },
+            ticks: { precision: 0, maxTicksLimit: 4, padding: 6 }
+          }
+        }
+      }
+    });
+  }
+})();
+</script>
 {% endblock %}

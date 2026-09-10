@@ -1,0 +1,52 @@
+{# Resultado Motor TC · card de Integraciones y drawer.
+   NOTA: r puede ser un dict incompleto; usar r.get() para todos los accesos. #}
+{% set r = r or {} %}
+{% set dm = (dictamen|default(r.get('Dictamen','')) or '')|string %}
+{% set dmu = dm|upper %}
+{% set tono = 'ok' if dmu == 'APROBADA' else ('warn' if dmu == 'REFERIDA' else ('bad' if dmu == 'DECLINADA' else '')) %}
+{% set compact = compact|default(false) %}
+{% set razon_txt = razon|default(r.get('Razon','')) or '' %}
+
+{% set monto_dop = r.get('Monto_DOP') %}
+{% set monto_usd = r.get('Monto_USD') %}
+{% set disponible = r.get('DisponibleMes') %}
+{% set end_pct = r.get('EndeudamientoPct') %}
+{% set ingresos = r.get('Ingresos') %}
+{% set comprometido = r.get('Comprometido') %}
+
+<article class="if-mot">
+  <header class="if-mot__head is-{{ tono or 'off' }}">
+    <div>
+      <div class="if-mot__lbl">Dictamen del motor</div>
+      <div class="if-mot__dm">{{ dm or 'Sin dictamen' }}</div>
+    </div>
+    {% if score is not none %}
+    <div class="if-mot__x">
+      <div class="if-rep-l">XCORE</div>
+      <div class="if-mot__xn">{{ score }}</div>
+    </div>
+    {% endif %}
+  </header>
+  {% if razon_txt %}
+  <p class="if-mot__razon">{{ razon_txt }}</p>
+  {% endif %}
+  <div class="if-mot__grid">
+    <div class="if-rep-kpi"><div class="if-rep-l">Monto DOP</div><div class="if-rep-kpi__v">{{ '{:,.0f}'.format((monto_dop or 0)|float) if monto_dop else '—' }}</div></div>
+    <div class="if-rep-kpi"><div class="if-rep-l">Monto USD</div><div class="if-rep-kpi__v">{{ '{:,.2f}'.format((monto_usd or 0)|float) if monto_usd else '—' }}</div></div>
+    <div class="if-rep-kpi" title="Ingreso neto menos compromisos fijos mensuales"><div class="if-rep-l">Disponible / mes</div><div class="if-rep-kpi__v">{{ '{:,.0f}'.format((disponible or 0)|float) if disponible else '—' }}</div></div>
+    <div class="if-rep-kpi" title="Umbral: ≤40% aceptable · 41–60% referido · >60% decline">
+      <div class="if-rep-l">Endeudamiento</div>
+      <div class="if-rep-kpi__v {% if end_pct is not none %}{% if (end_pct|float) > 60 %}is-bad{% elif (end_pct|float) > 40 %}is-warn{% endif %}{% endif %}">
+        {{ end_pct or '—' }}{% if end_pct is not none %}%{% endif %}
+      </div>
+    </div>
+  </div>
+  {% if not compact %}
+  <div class="if-mot__more">
+    <div class="if-rep-row"><span>Ingresos</span><strong>RD$ {{ '{:,.0f}'.format((ingresos or 0)|float) if ingresos else '—' }}</strong></div>
+    <div class="if-rep-row"><span>Comprometido</span><strong>RD$ {{ '{:,.0f}'.format((comprometido or 0)|float) if comprometido else '—' }}</strong></div>
+    <div class="if-rep-row"><span>Cuentas activas</span><strong>{{ r.get('CuentasActivas', '—') }}</strong></div>
+    <div class="if-rep-row"><span>Uso límite TC</span><strong>{{ r.get('UsoLimitePct', '—') }}%</strong></div>
+  </div>
+  {% endif %}
+</article>

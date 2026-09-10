@@ -80,28 +80,18 @@
 {% endmacro %}
 
 {% macro boton_datos_adicionales(caso, datos_pend_count, datos_total, datos_completados, puede_actuar) %}
-  {% set pct = ((datos_completados / datos_total * 100)|round|int) if datos_total else 100 %}
-  <div class="datos-cta">
-    <div class="datos-cta__progress">
-      <div class="datos-cta__bar"><span style="width: {{ pct }}%"></span></div>
-      <div class="datos-cta__meta">{{ datos_completados }} de {{ datos_total }} completados · {{ pct }}%</div>
-    </div>
+  <div class="if-dact">
     {% if datos_pend_count %}
-    <a class="btn-caso-primary datos-cta__btn" href="/casos/{{ caso.id }}/datos">
-      <i class="bi bi-pencil-square"></i>
-      Completar Datos Adicionales
-      <span class="datos-cta__badge">{{ datos_pend_count }}</span>
-    </a>
+    <a class="if-btn" href="/casos/{{ caso.id }}/datos">Completar datos adicionales</a>
+    <span class="if-dact__hint">{{ datos_completados }} de {{ datos_total }} · {{ datos_pend_count }} pendiente{{ 's' if datos_pend_count != 1 }}</span>
     {% else %}
-    <a class="btn-caso-secondary datos-cta__btn datos-cta__btn--done" href="/casos/{{ caso.id }}/datos">
-      <i class="bi bi-check2-circle"></i>
-      Ver / Editar Datos Adicionales
-    </a>
-    {% endif %}
-    {% if not puede_actuar %}
-    <p class="form-text mb-0 mt-2">Solo lectura en esta etapa o sin permiso de actuación.</p>
+    <a class="if-btn if-btn--ghost" href="/casos/{{ caso.id }}/datos">Ver / editar datos adicionales</a>
+    <span class="if-dact__hint">{{ datos_completados }} de {{ datos_total }} completados</span>
     {% endif %}
   </div>
+  {% if not puede_actuar %}
+  <p class="if-dact__hint" style="margin-top:8px">Solo lectura en esta etapa.</p>
+  {% endif %}
 {% endmacro %}
 
 {% macro expediente_datos(datos_expediente, etapas_por_id, caso) %}

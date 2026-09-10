@@ -130,6 +130,7 @@ def evaluar_motor(
         monto_dop = round(rng2.uniform(10_000, 60_000), 2)
         razon = rng2.choice(RAZONES_DECLINADA)
 
+    buro = reporte_buro(cedula)
     return {
         "Monto_DOP": monto_dop,
         "Monto_USD": round(monto_dop / TASA_USD, 2),
@@ -137,6 +138,24 @@ def evaluar_motor(
         "Razon": razon,
         "Cedula": cedula,
         "Timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "XCORE": buro.get("XCORE"),
+        "Score": buro.get("Score") or buro.get("XCORE"),
+        "Nombre": buro.get("Nombre"),
+        "Asalariado": buro.get("Asalariado"),
+        "Ingresos": buro.get("Ingresos"),
+        "Comprometido": buro.get("Comprometido"),
+        "EndeudamientoPct": buro.get("EndeudamientoPct"),
+        "DisponibleMes": buro.get("DisponibleMes"),
+        "HistoriaAnios": buro.get("HistoriaAnios"),
+        "UsoLimitePct": buro.get("UsoLimitePct"),
+        "CuentasActivas": buro.get("CuentasActivas"),
+        "CuentasCerradas": buro.get("CuentasCerradas"),
+        "CuentasTotales": buro.get("CuentasTotales"),
+        "AtrasoTotal": buro.get("AtrasoTotal"),
+        "HistorialScore": buro.get("HistorialScore"),
+        "Cuentas": buro.get("Cuentas"),
+        "ResumenCuentas": buro.get("ResumenCuentas"),
+        "DictamenBuro": buro.get("DictamenBuro"),
     }
 
 
@@ -176,6 +195,17 @@ def reporte_buro(cedula: str) -> dict[str, Any]:
         {"mes": "May·26", "score": max(380, score - 28)},
         {"mes": "Sep·26", "score": score},
     ]
+    def _hist24(ok: int, late_at: int | None = None, late_val: str = "1") -> list[str]:
+        out = []
+        for i in range(24):
+            if i >= ok:
+                out.append("-")
+            elif late_at is not None and i == late_at:
+                out.append(late_val)
+            else:
+                out.append("0")
+        return out
+
     cuentas = [
         {
             "entidad": "Banco Vimenca, C. por A.",
@@ -186,6 +216,7 @@ def reporte_buro(cedula: str) -> dict[str, Any]:
             "adeudado": 45429,
             "cuota": 1202,
             "vencido": 0,
+            "Historial_Pago": _hist24(21),
         },
         {
             "entidad": "Asociación Cibao de Ahorros y Préstamos",
@@ -196,8 +227,47 @@ def reporte_buro(cedula: str) -> dict[str, Any]:
             "adeudado": 140,
             "cuota": 0,
             "vencido": 0,
+            "Historial_Pago": _hist24(24),
+        },
+        {
+            "entidad": "Banreservas",
+            "producto": "PRE Consumo",
+            "estado": "cerrada",
+            "apertura": "03/2019",
+            "aprobado": 180000,
+            "adeudado": 0,
+            "cuota": 0,
+            "vencido": 0,
+            "Historial_Pago": _hist24(18),
+        },
+        {
+            "entidad": "BHD León",
+            "producto": "PRE Consumo",
+            "estado": "cerrada",
+            "apertura": "11/2018",
+            "aprobado": 95000,
+            "adeudado": 0,
+            "cuota": 0,
+            "vencido": 0,
+            "Historial_Pago": _hist24(16, 11, "2"),
+        },
+        {
+            "entidad": "Popular",
+            "producto": "TCR Tarjeta",
+            "estado": "cerrada",
+            "apertura": "01/2017",
+            "aprobado": 50000,
+            "adeudado": 0,
+            "cuota": 0,
+            "vencido": 0,
+            "Historial_Pago": _hist24(12, 4, "1"),
         },
     ]
+    abiertas = [c for c in cuentas if c["estado"] == "abierta"]
+    cerradas = [c for c in cuentas if c["estado"] != "abierta"]
+    adeudado_abiertas = sum(float(c["adeudado"] or 0) for c in abiertas)
+    cuotas_abiertas = sum(float(c["cuota"] or 0) for c in abiertas)
+    aprobado_abiertas = sum(float(c["aprobado"] or 0) for c in abiertas) or 1
     return {
         **perfil,
         "XCORE": score,
@@ -211,12 +281,29 @@ def reporte_buro(cedula: str) -> dict[str, Any]:
         "EndeudamientoPct": 34,
         "DisponibleMes": disponible,
         "HistoriaAnios": 6,
-        "UsoLimitePct": 12,
-        "CuentasActivas": perfil.get("CuentasAbiertas") or 2,
-        "CuentasTotales": (perfil.get("CuentasAbiertas") or 2) + (perfil.get("CuentasCerradas") or 5),
+        "UsoLimitePct": round(100 * adeudado_abiertas / aprobado_abiertas, 1),
+        "CuentasActivas": len(abiertas),
+        "CuentasCerradas": len(cerradas),
+        "CuentasTotales": len(cuentas),
         "AtrasoTotal": float(perfil.get("MoraMaxDias") or 0),
         "HistorialScore": hist,
         "Cuentas": cuentas,
+        "ResumenCuentas": [
+            {
+                "tipo": "Tarjetas DO",
+                "estado": "Normal",
+                "cant": len(abiertas),
+                "adeudado": adeudado_abiertas,
+                "cuotas": cuotas_abiertas,
+            },
+            {
+                "tipo": "Préstamos / TC cerradas",
+                "estado": "Cerradas",
+                "cant": len(cerradas),
+                "adeudado": 0,
+                "cuotas": 0,
+            },
+        ],
     }
 
 

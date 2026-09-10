@@ -1,5 +1,6 @@
 {% extends "base_claude.html" %}
 {% from "macros/nova_mark.html" import nova_mark, icon_helios, icon_hermes, icon_venus, icon_zeus, icon_ares %}
+{% from "macros/nova_loader.html" import nova_loader, nova_loader_js %}
 {% block title %}NOVA Projects{% endblock %}
 {% block body_class %}page-present page-present-v2{% endblock %}
 {% block body %}
@@ -9,7 +10,7 @@
     <div class="nv-mk__grid"></div>
   </div>
 
-  <header class="nv-mk__nav">
+  <header class="nv-mk__nav nv-mk__band">
     <a href="{{ url_for('launcher') }}" class="nv-mk__brand" aria-label="NOVA Projects">
       {{ nova_mark(28, with_wordmark=true, variant='chrome') }}
       <span class="nv-mk__badge">Projects</span>
@@ -72,7 +73,7 @@
     </div>
   </section>
 
-  <section class="nv-mk__pillars" id="pilares">
+  <section class="nv-mk__pillars nv-mk__band" id="pilares">
     <div class="nv-mk__pillars-head">
       <span class="nv-mk__eyebrow">Una sola plataforma</span>
       <h2>De los datos a la decisión</h2>
@@ -246,7 +247,7 @@
     </div>
   </section>
 
-  <section class="nv-mk__cta-band">
+  <section class="nv-mk__cta-band nv-mk__band">
     <h2>La meta no es hacer más.<br><span class="nv-mk__grad">Es hacerlo mejor.</span></h2>
     <p>Empieza con la constelación que tu operación necesita hoy y amplía el plan cuando el dato lo pida.</p>
     <div class="nv-mk__cta">
@@ -267,8 +268,31 @@
     </div>
   </footer>
 </div>
+{{ nova_loader() }}
 {% endblock %}
 {% block extra_scripts %}
+{{ nova_loader_js() }}
+<script>
+(function () {
+  // Las franjas encienden su fondo al entrar en pantalla.
+  var franjas = Array.prototype.slice.call(document.querySelectorAll('.nv-mk__band'));
+  if (!('IntersectionObserver' in window)) {
+    franjas.forEach(function (el) { el.classList.add('is-lit'); });
+  } else {
+    var observador = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (entrada) {
+        if (!entrada.isIntersecting) return;
+        entrada.target.classList.add('is-lit');
+        observador.unobserve(entrada.target);
+      });
+    }, { threshold: 0.08 });
+    franjas.forEach(function (el) { observador.observe(el); });
+  }
+
+  // Antes del login la animación se mantiene 3 s y luego navega.
+  window.NovaLoad.conectarEnlaces('a[href^="/login"]', 3000);
+})();
+</script>
 <script>
 (function () {
   var track = document.getElementById('coverTrack');

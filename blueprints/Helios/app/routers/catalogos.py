@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import PERFIL_SOPORTE, get_current_user, require_perfil
 from app.database import get_db
-from app.models import Caso, Cliente, DatoComplementario, Documento, Flujo, TipoDato, TipoFlujo
+from app.models import Caso, CasoApiLog, Cliente, DatoComplementario, Documento, Flujo, TipoDato, TipoFlujo
 from app.services.clientes import buscar_clientes, listar_clientes_recientes
 from app.services.dato_formato import (
     TIPOS_CON_DECIMALES,
@@ -233,6 +233,50 @@ def cliente_detalle(request: Request, cliente_id: int, db: Session = Depends(get
         .all()
     )
     recientes = listar_clientes_recientes(db, page=1, page_size=12)
+    buro = None
+    ids = [c.id for c in casos]
+    if ids:
+        from app.services.api_result_view import summarize_api_log
+
+        log = (
+            db.query(CasoApiLog)
+            .filter(CasoApiLog.caso_id.in_(ids), CasoApiLog.exito.is_(True))
+            .order_by(CasoApiLog.id.desc())
+            .first()
+        )
+        if log:
+            buro = summarize_api_log(log)
+    if not buro or not (buro.get("reporte") or {}).get("Cuentas"):
+        from app.services.buro_demo import generar_reporte_buro_demo
+
+        ident = getattr(cliente, "identificacion", None) or ""
+        if ident:
+            from app.services.buro_view import normalizar_reporte_buro
+
+            snap = normalizar_reporte_buro(generar_reporte_buro_demo(ident))
+            score_val = int(snap.get("XCORE") or snap.get("Xcore") or 0)
+            if score_val >= 720:
+                banda = "Bueno"
+            elif score_val >= 600:
+                banda = "Regular"
+            else:
+                banda = "Alto Riesgo"
+            buro = {
+                "reporte": snap,
+                "score": score_val,
+                "banda": banda,
+                "es_buro": True,
+                "fecha": None,
+                "api_nombre": "Buró (última consulta / demo)",
+            }
+    # La identidad maestra de Vista 360 es siempre la del cliente. El buró
+    # aporta atributos y riesgo, pero nunca debe presentar otra persona.
+    if buro and isinstance(buro.get("reporte"), dict):
+        reporte = dict(buro["reporte"])
+        reporte["Nombre"] = cliente.nombre_completo
+        reporte["Nombre_Completo"] = cliente.nombre_completo
+        reporte["Cedula"] = cliente.identificacion
+        buro = {**buro, "reporte": reporte}
     return render(
         request,
         "catalogos/cliente_detalle.html",
@@ -241,8 +285,30 @@ def cliente_detalle(request: Request, cliente_id: int, db: Session = Depends(get
             "casos": casos,
             "clientes": recientes.get("items") or [],
             "flujos": db.query(Flujo).filter(Flujo.activo).order_by(Flujo.nombre).all(),
+            "buro": buro,
         },
     )
+
+
+# ----------------------------- Buró Demo API ------------------------------
+
+
+@router.get("/api/buro-demo/{cedula}")
+def api_buro_demo(cedula: str):
+    """Devuelve un reporte de buró crediticio demo en JSON.
+
+    Datos 100 % ficticios, determinísticos por cédula.
+    Uso: GET /catalogos/api/buro-demo/00112345678
+    """
+    from app.services.buro_demo import generar_reporte_buro_demo
+
+    digitos = "".join(ch for ch in (cedula or "") if ch.isdigit())
+    if len(digitos) < 5:
+        return JSONResponse(
+            {"error": "Cédula inválida. Proporcione al menos 5 dígitos."},
+            status_code=400,
+        )
+    return JSONResponse(generar_reporte_buro_demo(digitos))
 
 
 @router.post("/clientes/crear")

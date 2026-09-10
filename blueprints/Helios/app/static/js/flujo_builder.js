@@ -12,6 +12,14 @@
     return JSON.parse(JSON.stringify(o));
   }
 
+  function notify(message, level = "warning") {
+    if (global.HeliosToast) {
+      global.HeliosToast.show(message, level);
+      return;
+    }
+    console.warn(message);
+  }
+
   function normalizeSnapshot(raw) {
     const data = deepClone(raw || { flujo: {}, etapas: [] });
     data.flujo = data.flujo || {};
@@ -356,7 +364,7 @@
 
     function removeEtapa(key) {
       if (state.etapas.length <= 1) {
-        alert("El flujo debe tener al menos una etapa.");
+        notify("El flujo debe tener al menos una etapa.");
         return;
       }
       if (!confirm("¿Eliminar esta etapa del diseño? Se aplicará al guardar.")) return;
@@ -433,7 +441,7 @@
     function removeEstado(etapaKey, estadoKey) {
       const e = state.etapas.find((x) => x.key === etapaKey);
       if (!e || e.estados.length <= 1) {
-        alert("Cada etapa necesita al menos un estado.");
+        notify("Cada etapa necesita al menos un estado.");
         return;
       }
       e.estados = e.estados.filter((s) => s.key !== estadoKey);

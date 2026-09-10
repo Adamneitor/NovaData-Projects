@@ -14,15 +14,15 @@
   <div class="if-gcard">
     <div class="if-gcard__t">{{ g.nombre }}</div>
     <div class="if-gcard__d">{{ g.usuarios|length }} miembro{{ 's' if g.usuarios|length != 1 }}{% if g.descripcion %} · {{ g.descripcion }}{% endif %}</div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button type="button" class="if-btn if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalEditar{{ g.id }}">Editar</button>
+    <div class="if-gcard__acts">
+      <button type="button" class="if-btn if-btn--ghost if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalEditar{{ g.id }}">Editar</button>
       <form method="post" action="/admin/grupos/{{ g.id }}/eliminar" onsubmit="return confirm('¿Eliminar el grupo {{ g.nombre }}?');">
-        <button class="if-btn if-btn--sm" type="submit">Eliminar</button>
+        <button class="if-btn if-btn--line-danger if-btn--sm" type="submit">Eliminar</button>
       </form>
     </div>
   </div>
   {% else %}
-  <div class="if-empty" style="grid-column:1/-1;border:0"><div class="if-empty__box"><div class="if-empty__title">No hay grupos</div><p>Cree el primero.</p></div></div>
+  <div class="if-empty if-empty--bare if-empty--span"><div class="if-empty__box"><div class="if-empty__title">No hay grupos</div><p>Cree el primero.</p></div></div>
   {% endfor %}
 </div>
 
@@ -31,8 +31,8 @@
     <form method="post" action="/admin/grupos/crear">
       <div class="modal-header"><h5 class="modal-title">Nuevo grupo</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" required></div>
-        <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2"></textarea></div>
+        <div class="if-field"><label class="if-lbl" for="grpNombre">Nombre</label><input class="caso-input" id="grpNombre" name="nombre" required></div>
+        <div class="if-field"><label class="if-lbl" for="grpDesc">Descripción</label><textarea class="caso-input" id="grpDesc" name="descripcion" rows="2"></textarea></div>
       </div>
       <div class="modal-footer"><button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button><button class="if-btn">Crear</button></div>
     </form>
@@ -45,8 +45,8 @@
     <form method="post" action="/admin/grupos/{{ g.id }}/actualizar">
       <div class="modal-header"><h5 class="modal-title">Editar grupo</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" value="{{ g.nombre }}" required></div>
-        <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2">{{ g.descripcion or '' }}</textarea></div>
+        <div class="if-field"><label class="if-lbl" for="grpNom{{ g.id }}">Nombre</label><input class="caso-input" id="grpNom{{ g.id }}" name="nombre" value="{{ g.nombre }}" required></div>
+        <div class="if-field"><label class="if-lbl" for="grpDes{{ g.id }}">Descripción</label><textarea class="caso-input" id="grpDes{{ g.id }}" name="descripcion" rows="2">{{ g.descripcion or '' }}</textarea></div>
       </div>
       <div class="modal-footer"><button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button><button class="if-btn">Guardar</button></div>
     </form>

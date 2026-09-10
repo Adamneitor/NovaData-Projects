@@ -58,11 +58,23 @@ SQL_DRIVER = os.getenv("HELIOS_SQL_DRIVER", "ODBC Driver 17 for SQL Server")
 
 DEFAULT_SECRET = "dev-secret-key-change-in-production"
 
+_IS_PROD = bool(
+    os.getenv("RAILWAY_ENVIRONMENT")
+    or os.getenv("RAILWAY_PROJECT_ID")
+    or os.getenv("NOVA_ENV", "").lower() == "production"
+)
+
 SECRET_KEY = (
     os.getenv("SECRET_KEY")
     or os.getenv("HELIOS_SECRET_KEY")
     or DEFAULT_SECRET
 )
+
+if _IS_PROD and SECRET_KEY == DEFAULT_SECRET:
+    raise RuntimeError(
+        "SECRET_KEY no configurada en producción (Helios config). "
+        "Define SECRET_KEY en las variables de entorno."
+    )
 AD_DOMAIN = os.getenv("HELIOS_AD_DOMAIN", "BVIMENCA")
 
 AUTH_APP = "APP"

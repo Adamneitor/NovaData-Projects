@@ -25,11 +25,22 @@ _helios_asgi_cache = None
 
 
 def _shared_secret() -> str:
-    return (
+    _IS_PROD = bool(
+        os.environ.get("RAILWAY_ENVIRONMENT")
+        or os.environ.get("RAILWAY_PROJECT_ID")
+        or os.environ.get("NOVA_ENV", "").lower() == "production"
+    )
+    secret = (
         os.environ.get("SECRET_KEY")
         or os.environ.get("HELIOS_SECRET_KEY")
         or _DEFAULT_SECRET
     )
+    if _IS_PROD and secret == _DEFAULT_SECRET:
+        raise RuntimeError(
+            "SECRET_KEY no configurada en producción (helios_bridge). "
+            "Define SECRET_KEY en las variables de entorno."
+        )
+    return secret
 
 
 def is_helios_path(path: str) -> bool:
@@ -141,7 +152,10 @@ def get_helios_asgi():
         from app.models import Usuario  # type: ignore
         import app.auth as helios_auth  # type: ignore
     except Exception as exc:  # noqa: BLE001
+        import traceback
+
         print(f"[helios_bridge] No se pudo cargar Helios: {exc}")
+        traceback.print_exc()
         return None
 
     if getattr(helios_app.state, "_nova_sso_ready", False):

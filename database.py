@@ -75,9 +75,11 @@ def create_and_seed(app) -> None:
     with app.app_context():
         db.create_all()
         created = 0
+        existentes = {
+            u for (u,) in db.session.query(User.username).all()
+        }
         for username, password, name, email, role in demo_users:
-            row = User.query.filter_by(username=username).first()
-            if row:
+            if username in existentes:
                 continue
             db.session.add(
                 User(
@@ -89,10 +91,15 @@ def create_and_seed(app) -> None:
                     active=True,
                 )
             )
+            existentes.add(username)
             created += 1
         if created:
-            db.session.commit()
-            print(f"Seed: {created} usuario(s) demo creados (admin + roles Helios).")
+            try:
+                db.session.commit()
+                print(f"Seed: {created} usuario(s) demo creados (admin + roles Helios).")
+            except Exception:
+                db.session.rollback()
+                print("Seed: usuarios demo ya existían (carrera de arranque).")
         else:
             print("Seed: usuarios demo ya existen.")
         # Diagnóstico

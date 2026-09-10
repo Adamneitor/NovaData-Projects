@@ -4,7 +4,6 @@
 {% set qs_q = ('&q=' ~ q|urlencode) if q else '' %}
 {% set qs_fl = ('&flujo_id=' ~ flujo_id) if flujo_id else '' %}
 {% set qs_et = ('&etapa_id=' ~ etapa_id) if etapa_id else '' %}
-<div class="if-canvas">
   <div class="if-head">
     <div class="if-head__text">
       <h1 class="if-head__title">Casos</h1>
@@ -72,7 +71,12 @@
       <span class="if-cli">
         {% if c.cliente %}
           <strong>{{ c.cliente.nombre_completo }}</strong>
-          <small>{{ c.cliente.identificacion }}</small>
+          {% set ident = c.cliente.identificacion or '' %}
+          {% if ident|length > 4 %}
+          <small class="if-pii-mask" data-full="{{ ident }}" title="Clic para revelar">•••{{ ident[-4:] }}</small>
+          {% else %}
+          <small>{{ ident }}</small>
+          {% endif %}
         {% else %}
           <strong>Sin cliente</strong>
         {% endif %}
@@ -119,24 +123,24 @@
     </div>
   </div>
   {% endif %}
-</div>
 
 <div class="modal fade" id="modalNuevo" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content hx-modal">
-      <form method="post" action="/casos/crear" id="formNuevoCaso">
+        <form method="post" action="/casos/crear" id="formNuevoCaso">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
         <div class="modal-header">
           <h5 class="modal-title">Nuevo caso</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Flujo</label>
-            <select class="form-select" name="flujo_id" required>
+          <div class="if-field">
+            <label class="if-lbl" for="nuevoCasoFlujo">Flujo</label>
+            <select class="caso-input" id="nuevoCasoFlujo" name="flujo_id" required>
               {% for f in flujos %}<option value="{{ f.id }}">{{ f.nombre }} ({{ f.tipo_flujo.nombre }})</option>{% endfor %}
             </select>
           </div>
-          <div id="clienteSearchMount" class="mb-2"></div>
+          <div id="clienteSearchMount" class="if-field"></div>
         </div>
         <div class="modal-footer">
           <button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button>
@@ -147,6 +151,22 @@
   </div>
 </div>
 
+<script>
+/* PII mask toggle en bandeja */
+document.querySelectorAll('.if-pii-mask[data-full]').forEach(function (el) {
+  el.style.cursor = 'pointer';
+  el.addEventListener('click', function () {
+    var full = el.getAttribute('data-full');
+    if (el.classList.contains('is-revealed')) {
+      el.textContent = '•••' + full.slice(-4);
+      el.classList.remove('is-revealed');
+    } else {
+      el.textContent = full;
+      el.classList.add('is-revealed');
+    }
+  });
+});
+</script>
 <script src="/static/js/cliente_search.js"></script>
 <script>
 document.getElementById('modalNuevo')?.addEventListener('shown.bs.modal', () => {

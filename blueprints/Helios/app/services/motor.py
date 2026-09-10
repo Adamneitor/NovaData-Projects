@@ -292,7 +292,11 @@ def _procesar_apis_de_estado(db: Session, caso: Caso, usuario: Usuario | None) -
             )
             db.expire(caso, ["datos"])
 
-        outputs_txt = ", ".join(f"{k}={v}" for k, v in resultado.outputs.items()) or "sin outputs"
+        pares = []
+        for k in ("Dictamen", "Monto_DOP", "Monto_USD", "Razon", "Razón"):
+            if k in resultado.outputs and resultado.outputs[k] not in (None, ""):
+                pares.append(f"{k}={resultado.outputs[k]}")
+        outputs_txt = ", ".join(pares) or ", ".join(f"{k}={v}" for k, v in resultado.outputs.items())
         regla = evaluar_reglas(estado.reglas_api, resultado.outputs)
         if not regla:
             mensajes.append(
@@ -321,13 +325,12 @@ def _procesar_apis_de_estado(db: Session, caso: Caso, usuario: Usuario | None) -
             if modo == "MANUAL":
                 mensajes.append(
                     f"API '{api.nombre}' respondio ({outputs_txt}); regla pendiente (manual): "
-                    f"{preview} → {destino_txt}. Confirme la transición en el caso."
+                    f"{preview} ? {destino_txt}."
                 )
             else:
                 mensajes.append(
                     f"API '{api.nombre}' respondio ({outputs_txt}); regla pendiente (auto): "
-                    f"{preview} → {destino_txt}. Complete datos/documentos obligatorios "
-                    f"para avanzar automáticamente."
+                    f"{preview} ? {destino_txt}."
                 )
             _nuevo_historial(
                 db,
@@ -343,7 +346,7 @@ def _procesar_apis_de_estado(db: Session, caso: Caso, usuario: Usuario | None) -
 
         mensajes.append(
             f"API '{api.nombre}' respondio ({outputs_txt}); regla aplicada (auto): "
-            f"{preview} → {destino_txt}."
+            f"{preview} ? {destino_txt}."
         )
         _registrar(
             db,

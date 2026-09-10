@@ -1,5 +1,6 @@
 {% extends "base_claude.html" %}
 {% from "macros/nova_mark.html" import nova_mark %}
+{% from "macros/nova_loader.html" import nova_loader, nova_loader_js %}
 {% block title %}Acceso · NOVA{% endblock %}
 {% block body_class %}page-login{% endblock %}
 {% block body %}
@@ -64,13 +65,31 @@
     </p>
   </div>
 </div>
+{{ nova_loader() }}
 {% endblock %}
 {% block extra_scripts %}
+{{ nova_loader_js() }}
 <script>
 (function () {
   if (window.top !== window) {
     window.top.location.href = window.location.href;
     return;
+  }
+  var form = document.getElementById('login-form');
+  var enviando = false;
+  if (form) {
+    form.addEventListener('submit', function (ev) {
+      if (enviando) return;
+      var usuario = form.querySelector('#username');
+      var clave = form.querySelector('#password');
+      // Si faltan datos el servidor devuelve el formulario con error: sin overlay.
+      if (!usuario || !clave || !usuario.value.trim() || !clave.value) return;
+      // Luego del login la animación se mantiene 5 s antes de enviar.
+      ev.preventDefault();
+      enviando = true;
+      window.NovaLoad.show();
+      setTimeout(function () { form.submit(); }, 5000);
+    });
   }
   var toggle = document.getElementById('toggle-password');
   var pwd = document.getElementById('password');

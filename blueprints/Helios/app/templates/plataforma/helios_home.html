@@ -1,42 +1,100 @@
 {% extends "base.html" %}
 {% block titulo %}Helios{% endblock %}
+{% block canvas_class %}if-canvas--home{% endblock %}
 {% block contenido %}
 {% set nombre = (usuario.nombre or user.nombre or 'equipo').split()[0] %}
-<div class="if-canvas if-canvas--home">
-  <div class="if-head">
-    <div class="if-head__text">
-      <h1 class="if-head__title">Buenos días, {{ nombre }}</h1>
-      <p class="if-head__sub">Tienes <strong>{{ stats.bandeja }}</strong> casos en tu bandeja{% if stats.pendientes %}, {{ stats.pendientes }} con pendientes críticos{% endif %}.</p>
-    </div>
-    <a class="if-btn if-btn--home" href="/casos">
-      Ir a Casos
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13,6 19,12 13,18"></polyline></svg>
-    </a>
-  </div>
 
-  <div class="if-tiles">
+{# ====== HERO: Saludo + Resumen rápido ====== #}
+<div class="if-dash-hero">
+  <div class="if-dash-hero__text">
+    <h1 class="if-dash-hero__title">{{ saludo or 'Buenos días' }}, {{ nombre }}</h1>
+    <p class="if-dash-hero__sub">Resumen operativo de tu bandeja de trabajo</p>
+  </div>
+  <div class="if-dash-hero__date">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    {{ now.strftime('%A %d de %B, %Y') if now is defined else '' }}
+  </div>
+</div>
+
+{# ====== KPI CARDS ====== #}
+<div class="if-dash-kpis">
+  <div class="if-dash-kpi if-dash-kpi--primary">
+    <div class="if-dash-kpi__icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    </div>
+    <div class="if-dash-kpi__body">
+      <div class="if-dash-kpi__label">En tu bandeja</div>
+      <div class="if-dash-kpi__value">{{ stats.bandeja }}</div>
+      <div class="if-dash-kpi__sub">Casos asignados a tu grupo</div>
+    </div>
+  </div>
+  <div class="if-dash-kpi">
+    <div class="if-dash-kpi__icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+    </div>
+    <div class="if-dash-kpi__body">
+      <div class="if-dash-kpi__label">Casos activos</div>
+      <div class="if-dash-kpi__value">{{ stats.activos }}</div>
+      <div class="if-dash-kpi__sub">Total en el sistema</div>
+    </div>
+  </div>
+  <div class="if-dash-kpi {% if stats.pendientes %}if-dash-kpi--warn{% endif %}">
+    <div class="if-dash-kpi__icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div class="if-dash-kpi__body">
+      <div class="if-dash-kpi__label">Con pendientes</div>
+      <div class="if-dash-kpi__value">{{ stats.pendientes }}</div>
+      <div class="if-dash-kpi__sub">Documentos o datos faltantes</div>
+    </div>
+  </div>
+  <div class="if-dash-kpi">
+    <div class="if-dash-kpi__icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="if-dash-kpi__body">
+      <div class="if-dash-kpi__label">En comité</div>
+      <div class="if-dash-kpi__value">{{ stats.comite }}</div>
+      <div class="if-dash-kpi__sub">Esperando decisión grupal</div>
+    </div>
+  </div>
+</div>
+
+{# ====== ACCIONES RÁPIDAS ====== #}
+<div class="if-dash-section">
+  <div class="if-dash-section__h">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    Accesos rápidos
+  </div>
+  <div class="if-dash-tiles">
     {% for t in tiles %}
-    <a class="if-tile" href="{{ t.href }}">
-      <div class="if-tile__top">
-        <span class="if-tile__ico"><i class="bi {{ t.icon }}"></i></span>
-        {% if t.count is not none %}<span class="if-tile__n">{{ t.count }}</span>{% endif %}
+    <a class="if-dash-tile" href="{{ t.href }}">
+      <div class="if-dash-tile__top">
+        <span class="if-dash-tile__ico"><i class="bi {{ t.icon }}"></i></span>
+        {% if t.count is not none %}<span class="if-dash-tile__badge">{{ t.count }}</span>{% endif %}
       </div>
-      <div>
-        <div class="if-tile__t">{{ t.title }}</div>
-        <div class="if-tile__d">{{ t.desc }}</div>
+      <div class="if-dash-tile__text">
+        <div class="if-dash-tile__t">{{ t.title }}</div>
+        <div class="if-dash-tile__d">{{ t.desc }}</div>
       </div>
+      <svg class="if-dash-tile__arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
     </a>
     {% endfor %}
   </div>
-
-  <div class="if-today">
-    <span class="if-today__k">Hoy</span>
-    <span class="if-today__sep"></span>
-    <span><strong>{{ stats.activos }}</strong> casos activos</span>
-    <span class="if-today__dot">·</span>
-    <span class="if-today__warn"><strong>{{ stats.pendientes }}</strong> con pendientes</span>
-    <span class="if-today__dot">·</span>
-    <span><strong>{{ stats.comite }}</strong> en comité</span>
-  </div>
 </div>
+
+{# ====== BARRA INFERIOR: estadísticas hoy ====== #}
+<div class="if-dash-footer">
+  <span class="if-dash-footer__k">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Hoy
+  </span>
+  <span class="if-dash-footer__sep"></span>
+  <span><strong>{{ stats.activos }}</strong> activos</span>
+  <span class="if-dash-footer__dot">·</span>
+  <span class="{% if stats.pendientes %}if-dash-footer__warn{% endif %}"><strong>{{ stats.pendientes }}</strong> pendientes</span>
+  <span class="if-dash-footer__dot">·</span>
+  <span><strong>{{ stats.comite }}</strong> comité</span>
+</div>
+
 {% endblock %}

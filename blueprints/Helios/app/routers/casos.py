@@ -30,6 +30,7 @@ from app.services.api_mapeo import dato_ids_output_de_caso
 from app.services.dato_condicion import evaluar_campo
 from app.services.dato_formato import format_dato, parse_value, validate_value
 from app.services.dato_orden import ordenar_datos_expediente
+from app.services.historial_vista import vista_evento
 from app.services.sqlite_ids import apply_bigint_id
 from app.web import flash, render
 
@@ -525,6 +526,7 @@ def detalle(
             "monto": monto,
             "monto_fmt": monto_fmt,
             "historial_ordenado": historial_ordenado,
+            "historial_vista": [vista_evento(h) for h in historial_ordenado],
             "historial_visible": historial_ordenado[:6],
             "historial_total": len(historial_ordenado),
             "etapas_con_api": etapas_con_api,
@@ -1087,6 +1089,17 @@ async def guardar_datos(
         raw = parse_value(valor_ui, dato=dato_def)
         err = validate_value(valor_ui, dato=dato_def)
         if err:
+            from app.services.dato_formato import _parse_decimal, es_valor_si_no
+
+            if es_valor_si_no(valor_ui):
+                raw = parse_value(valor_ui, tipo_dato="booleano")
+                err = None
+            else:
+                num = _parse_decimal(valor_ui)
+                if num is not None:
+                    raw = str(int(num.to_integral_value()))
+                    err = None
+        if err:
             errors_list.append(
                 {
                     "field": clave,
@@ -1150,13 +1163,22 @@ async def guardar_datos(
         elif raw != "":
             db.add(
                 CasoDato(
-                    caso_id=caso_id,
-                    dato_id=dato_id,
-                    etapa_id=caso.etapa_actual_id,
-                    valor=raw,
-                    usuario_adicion_id=usuario.id,
+                    **apply_bigint_id(
+                        db,
+                        CasoDato,
+                        dict(
+                            caso_id=caso_id,
+                            dato_id=dato_id,
+                            etapa_id=caso.etapa_actual_id,
+                            valor=raw,
+                            usuario_adicion_id=usuario.id,
+                        ),
+                    ),
                 )
             )
+            # SQLite requiere materializar el BIGINT manual antes de calcular
+            # el siguiente identificador dentro de este mismo guardado.
+            db.flush()
     db.flush()
     auto_msgs = motor.intentar_aplicar_regla_api_auto(db, caso, usuario)
     db.commit()

@@ -16,14 +16,21 @@
   {% for u in usuarios %}
   <div class="if-tr if-tr--user {% if loop.index is even %}if-tr--alt{% endif %}">
     <span class="if-login {% if not u.activo %}is-off{% endif %}">{{ u.usuario_ad }}</span>
-    <span style="font:600 12.5px Montserrat,sans-serif;color:{% if u.activo %}#1a1a2e{% else %}#6b7280{% endif %}">{{ u.nombre }}</span>
+    <span class="if-cell {% if not u.activo %}if-cell--off{% endif %}">{{ u.nombre }}</span>
     <span class="if-flujo">{{ u.perfil.nombre }}</span>
     <span class="if-flujo">{% for g in u.grupos %}{{ g.nombre }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</span>
     {% if u.activo %}<span class="if-sit">Activo</span>{% else %}<span class="if-sit if-sit--bad">Inactivo</span>{% endif %}
-    <span style="display:flex;gap:8px;justify-content:flex-end">
-      <button type="button" class="if-btn if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalEditar{{ u.id }}">Editar</button>
-      <button type="button" class="if-btn if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalGrupos{{ u.id }}">Grupos</button>
+    <span class="if-acts">
+      <button type="button" class="if-btn if-btn--ghost if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalEditar{{ u.id }}">Editar</button>
+      <button type="button" class="if-btn if-btn--ghost if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalGrupos{{ u.id }}">Grupos</button>
     </span>
+  </div>
+  {% else %}
+  <div class="if-empty if-empty--bare">
+    <div class="if-empty__box">
+      <div class="if-empty__title">No hay usuarios</div>
+      <p>Cree el primero con «Nuevo usuario».</p>
+    </div>
   </div>
   {% endfor %}
 </div>
@@ -33,36 +40,36 @@
     <form method="post" action="/admin/usuarios/crear" id="formNuevoUsuario">
       <div class="modal-header"><h5 class="modal-title">Nuevo usuario</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <div class="mb-2"><label class="form-label">Tipo de autenticación</label>
-          <select class="form-select" name="tipo_autenticacion" id="nuevoTipoAuth" onchange="togglePasswordNuevo()">
+        <div class="if-field"><label class="if-lbl" for="nuevoTipoAuth">Tipo de autenticación</label>
+          <select class="caso-input" name="tipo_autenticacion" id="nuevoTipoAuth" onchange="togglePasswordNuevo()">
             <option value="APP">Usuario de aplicación (contraseña en Helios)</option>
             <option value="AD">Active Directory</option>
           </select>
         </div>
-        <div class="mb-2"><label class="form-label" id="lblLoginNuevo">Login</label><input class="form-control" name="usuario_ad" required placeholder="ej: jrosario"></div>
-        <div class="mb-2"><label class="form-label">Nombre completo</label><input class="form-control" name="nombre" required></div>
+        <div class="if-field"><label class="if-lbl" id="lblLoginNuevo" for="loginNuevo">Login</label><input class="caso-input" id="loginNuevo" name="usuario_ad" required placeholder="ej: jrosario"></div>
+        <div class="if-field"><label class="if-lbl" for="nomNuevo">Nombre completo</label><input class="caso-input" id="nomNuevo" name="nombre" required></div>
         <div id="bloquePassNuevo">
-          <div class="mb-2">
-            <label class="form-label">Contraseña temporal</label>
-            <div class="input-group">
-              <input type="password" class="form-control" name="password" id="passNuevo" autocomplete="new-password">
-              <button class="btn btn-outline-secondary" type="button" data-toggle-pwd="#passNuevo"><i class="bi bi-eye"></i></button>
+          <div class="if-field">
+            <label class="if-lbl" for="passNuevo">Contraseña temporal</label>
+            <div class="if-pwd">
+              <input type="password" class="caso-input" name="password" id="passNuevo" autocomplete="new-password">
+              <button class="if-btn if-btn--ghost if-btn--sm" type="button" data-toggle-pwd="#passNuevo">Ver</button>
             </div>
-            <div class="progress mt-2" style="height:7px;"><div id="barNuevo" class="progress-bar bg-danger" style="width:0%"></div></div>
-            <div class="small mt-1"><span id="nivelNuevo">—</span> <span id="crackNuevo" class="text-muted"></span></div>
-            <ul id="checkNuevo" class="list-unstyled small mt-1 mb-0"></ul>
+            <div class="progress"><div id="barNuevo" class="progress-bar bg-danger" style="width:0%"></div></div>
+            <p class="if-hint"><span id="nivelNuevo">—</span> <span id="crackNuevo"></span></p>
+            <ul id="checkNuevo" class="if-hint"></ul>
           </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" name="pedir_cambio_password" value="1" id="resetNuevo" checked>
-            <label class="form-check-label" for="resetNuevo">Pedir reinicio de contraseña en el próximo login</label>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Vigencia de contraseña (días, opcional)</label>
-            <input type="number" class="form-control" name="dias_vigencia_password" min="1" placeholder="Vacío = no expira" value="{{ politica.vigencia_default_dias or '' }}">
+          <label class="if-check">
+            <input type="checkbox" name="pedir_cambio_password" value="1" id="resetNuevo" checked>
+            Pedir reinicio de contraseña en el próximo login
+          </label>
+          <div class="if-field">
+            <label class="if-lbl" for="vigNuevo">Vigencia de contraseña (días, opcional)</label>
+            <input type="number" class="caso-input" id="vigNuevo" name="dias_vigencia_password" min="1" placeholder="Vacío = no expira" value="{{ politica.vigencia_default_dias or '' }}">
           </div>
         </div>
-        <div class="mb-2"><label class="form-label">Perfil</label>
-          <select class="form-select" name="perfil_id">{% for p in perfiles %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}</select>
+        <div class="if-field"><label class="if-lbl" for="perfilNuevo">Perfil</label>
+          <select class="caso-input" id="perfilNuevo" name="perfil_id">{% for p in perfiles %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}</select>
         </div>
       </div>
       <div class="modal-footer"><button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button><button class="if-btn" id="btnCrearUsuario">Crear</button></div>
@@ -72,52 +79,52 @@
 
 {% for u in usuarios %}
 <div class="modal fade" id="modalEditar{{ u.id }}" tabindex="-1">
-  <div class="modal-dialog"><div class="modal-content">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content hx-modal">
     <form method="post" action="/admin/usuarios/{{ u.id }}/actualizar">
       <div class="modal-header"><h5 class="modal-title">Editar: {{ u.usuario_ad }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <div class="mb-2"><label class="form-label">Tipo de autenticación</label>
-          <select class="form-select" name="tipo_autenticacion" id="tipoAuth{{ u.id }}" onchange="togglePasswordEdit({{ u.id }})">
+        <div class="if-field"><label class="if-lbl" for="tipoAuth{{ u.id }}">Tipo de autenticación</label>
+          <select class="caso-input" name="tipo_autenticacion" id="tipoAuth{{ u.id }}" onchange="togglePasswordEdit({{ u.id }})">
             <option value="APP" {% if (u.tipo_autenticacion or 'APP') == 'APP' %}selected{% endif %}>Usuario de aplicación</option>
             <option value="AD" {% if (u.tipo_autenticacion or 'APP') == 'AD' %}selected{% endif %}>Active Directory</option>
           </select>
         </div>
-        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" value="{{ u.nombre }}" required></div>
-        <div class="mb-2"><label class="form-label">Perfil</label>
-          <select class="form-select" name="perfil_id">{% for p in perfiles %}<option value="{{ p.id }}" {% if p.id == u.perfil_id %}selected{% endif %}>{{ p.nombre }}</option>{% endfor %}</select>
+        <div class="if-field"><label class="if-lbl" for="nom{{ u.id }}">Nombre</label><input class="caso-input" id="nom{{ u.id }}" name="nombre" value="{{ u.nombre }}" required></div>
+        <div class="if-field"><label class="if-lbl" for="per{{ u.id }}">Perfil</label>
+          <select class="caso-input" id="per{{ u.id }}" name="perfil_id">{% for p in perfiles %}<option value="{{ p.id }}" {% if p.id == u.perfil_id %}selected{% endif %}>{{ p.nombre }}</option>{% endfor %}</select>
         </div>
         <div id="bloquePass{{ u.id }}">
-          <div class="mb-2">
-            <label class="form-label">Nueva contraseña temporal (opcional)</label>
-            <input type="password" class="form-control" name="password" autocomplete="new-password">
+          <div class="if-field">
+            <label class="if-lbl">Nueva contraseña temporal (opcional)</label>
+            <input type="password" class="caso-input" name="password" autocomplete="new-password">
           </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" name="pedir_cambio_password" value="1" id="reset{{ u.id }}" {% if u.debe_cambiar_password %}checked{% endif %}>
-            <label class="form-check-label" for="reset{{ u.id }}">Pedir reinicio de contraseña en el próximo login</label>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Vigencia (días, vacío = no expira)</label>
-            <input type="number" class="form-control" name="dias_vigencia_password" min="1" value="{{ u.dias_vigencia_password or '' }}">
+          <label class="if-check">
+            <input type="checkbox" name="pedir_cambio_password" value="1" {% if u.debe_cambiar_password %}checked{% endif %}>
+            Pedir reinicio de contraseña en el próximo login
+          </label>
+          <div class="if-field">
+            <label class="if-lbl">Vigencia (días, vacío = no expira)</label>
+            <input type="number" class="caso-input" name="dias_vigencia_password" min="1" value="{{ u.dias_vigencia_password or '' }}">
           </div>
         </div>
-        <div class="form-check"><input class="form-check-input" type="checkbox" name="activo" value="1" id="act{{ u.id }}" {% if u.activo %}checked{% endif %}><label class="form-check-label" for="act{{ u.id }}">Activo</label></div>
+        <label class="if-check"><input type="checkbox" name="activo" value="1" {% if u.activo %}checked{% endif %}> Activo</label>
       </div>
       <div class="modal-footer"><button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button><button class="if-btn">Guardar</button></div>
     </form>
   </div></div>
 </div>
 <div class="modal fade" id="modalGrupos{{ u.id }}" tabindex="-1">
-  <div class="modal-dialog"><div class="modal-content">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content hx-modal">
     <form method="post" action="/admin/usuarios/{{ u.id }}/grupos">
       <div class="modal-header"><h5 class="modal-title">Grupos de {{ u.usuario_ad }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
         {% set grupos_u = u.grupos | map(attribute='id') | list %}
         {% for g in grupos %}
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" name="grupo_ids" value="{{ g.id }}" id="g{{ u.id }}_{{ g.id }}" {% if g.id in grupos_u %}checked{% endif %}>
-          <label class="form-check-label" for="g{{ u.id }}_{{ g.id }}">{{ g.nombre }}</label>
-        </div>
-        {% else %}<p class="text-muted">No hay grupos creados.</p>{% endfor %}
+        <label class="if-check">
+          <input type="checkbox" name="grupo_ids" value="{{ g.id }}" {% if g.id in grupos_u %}checked{% endif %}>
+          {{ g.nombre }}
+        </label>
+        {% else %}<p class="if-hint">No hay grupos creados.</p>{% endfor %}
       </div>
       <div class="modal-footer"><button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button><button class="if-btn">Guardar</button></div>
     </form>

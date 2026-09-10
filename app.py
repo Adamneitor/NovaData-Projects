@@ -5,6 +5,30 @@ Flask + Socket.IO · Postgres (Railway) / SQLite (local)
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
+
+
+def _lanzar_local_si_directo() -> None:
+    """Run File / F5 en app.py: venv fuera de OneDrive + wsgi (portal + Helios)."""
+    if __name__ != "__main__":
+        return
+    if os.environ.get("NOVA_SKIP_REEXEC") == "1":
+        return
+    root = Path(__file__).resolve().parent
+    venv_py = Path(os.environ.get("LOCALAPPDATA", "")) / "NovaProjects-venv" / "Scripts" / "python.exe"
+    wsgi = root / "wsgi.py"
+    if not venv_py.is_file():
+        sys.stderr.write(
+            "Falta el venv local. En PowerShell, desde esta carpeta:\n"
+            "  .\\run_local.ps1\n"
+        )
+        raise SystemExit(1)
+    os.execv(str(venv_py), [str(venv_py), str(wsgi)])
+
+
+_lanzar_local_si_directo()
+
 from datetime import datetime
 from functools import wraps
 from urllib.parse import quote
@@ -40,16 +64,55 @@ from solutions import (
 )
 
 app = Flask(__name__)
-# Misma clave por defecto que Helios / helios_bridge (evita bucle SSO en Railway)
+
+# --- SECRET_KEY: obligatoria en producción, default solo en dev ---
 _DEFAULT_SECRET = "dev-secret-key-change-in-production"
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or _DEFAULT_SECRET
+_IS_PRODUCTION = bool(
+    os.environ.get("RAILWAY_ENVIRONMENT")
+    or os.environ.get("RAILWAY_PROJECT_ID")
+    or os.environ.get("NOVA_ENV", "").lower() == "production"
+)
+_secret = os.environ.get("SECRET_KEY") or _DEFAULT_SECRET
+if _IS_PRODUCTION and _secret == _DEFAULT_SECRET:
+    raise RuntimeError(
+        "SECRET_KEY no está configurada o es el default de desarrollo. "
+        "Defínela en las variables de entorno antes de correr en producción."
+    )
+app.config["SECRET_KEY"] = _secret
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["PREFERRED_URL_SCHEME"] = "https" if os.environ.get("RAILWAY_ENVIRONMENT") else "http"
+app.config["PREFERRED_URL_SCHEME"] = "https" if _IS_PRODUCTION else "http"
 
 init_database(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+
+# SocketIO: CORS restringido (no wildcard)
+_ALLOWED_ORIGINS = os.environ.get("NOVA_CORS_ORIGINS", "").strip()
+_socketio_cors = _ALLOWED_ORIGINS.split(",") if _ALLOWED_ORIGINS else []
+socketio = SocketIO(app, cors_allowed_origins=_socketio_cors or None)
+
+# --- Rate limit login portal (paridad con Helios) ---
+from collections import defaultdict
+import time as _time
+
+_PORTAL_LOGIN_FAILS: dict[str, list[float]] = defaultdict(list)
+_PORTAL_LOGIN_MAX = 5
+_PORTAL_LOGIN_WINDOW = 300  # 5 minutos
+
+
+def _portal_login_rate_limited(key: str) -> bool:
+    ahora = _time.time()
+    eventos = [t for t in _PORTAL_LOGIN_FAILS[key] if ahora - t < _PORTAL_LOGIN_WINDOW]
+    _PORTAL_LOGIN_FAILS[key] = eventos
+    return len(eventos) >= _PORTAL_LOGIN_MAX
+
+
+def _portal_registrar_fallo(key: str) -> None:
+    _PORTAL_LOGIN_FAILS[key].append(_time.time())
+
+
+def _portal_limpiar_fallos(key: str) -> None:
+    _PORTAL_LOGIN_FAILS.pop(key, None)
 
 # Blueprints
 from blueprints.buro_credito import buro_bp  # noqa: E402
@@ -317,7 +380,11 @@ def _active_product() -> str | None:
 
 @app.context_processor
 def inject_navigation():
-    base = {"solutions": SOLUTIONS, "active_product": _active_product()}
+    base = {
+        "solutions": SOLUTIONS,
+        "active_product": _active_product(),
+        "nova_env": os.environ.get("NOVA_ENV", "development"),
+    }
     try:
         endpoint = request.endpoint
     except Exception:
@@ -338,97 +405,7 @@ def inject_navigation():
     }
 
 
-# ---------- Plataforma NOVA (launcher Claude P0) ----------
-MOCK_CASOS = [
-    {
-        "id": "#1842",
-        "flujo": "Consumo personal",
-        "cliente": "María López Peña",
-        "ident": "001-0000001-1",
-        "etapa": "Buró",
-        "monto": "RD$ 285,000",
-        "creado": "24 ago",
-        "pend": 2,
-        "situacion": "activo",
-    },
-    {
-        "id": "#1841",
-        "flujo": "TDC originación",
-        "cliente": "Carlos Méndez Ruiz",
-        "ident": "402-0000002-2",
-        "etapa": "Comité",
-        "monto": "RD$ 120,000",
-        "creado": "23 ago",
-        "pend": 0,
-        "situacion": "activo",
-    },
-    {
-        "id": "#1840",
-        "flujo": "Hipotecario",
-        "cliente": "Ana García Soto",
-        "ident": "001-0000003-3",
-        "etapa": "Documentos",
-        "monto": "RD$ 4,200,000",
-        "creado": "22 ago",
-        "pend": 4,
-        "situacion": "activo",
-    },
-    {
-        "id": "#1839",
-        "flujo": "Consumo personal",
-        "cliente": "Pedro Jiménez Valdez",
-        "ident": "031-0000004-4",
-        "etapa": "Evaluación",
-        "monto": "RD$ 95,000",
-        "creado": "21 ago",
-        "pend": 1,
-        "situacion": "activo",
-    },
-    {
-        "id": "#1838",
-        "flujo": "TDC originación",
-        "cliente": "Laura Fernández Díaz",
-        "ident": "402-0000005-5",
-        "etapa": "Desembolso",
-        "monto": "RD$ 75,000",
-        "creado": "20 ago",
-        "pend": 0,
-        "situacion": "cerrado",
-    },
-    {
-        "id": "#1837",
-        "flujo": "Consumo personal",
-        "cliente": "José Ramírez Cruz",
-        "ident": "001-0000006-6",
-        "etapa": "Política",
-        "monto": "RD$ 150,000",
-        "creado": "19 ago",
-        "pend": 0,
-        "situacion": "cancelado",
-    },
-    {
-        "id": "#1836",
-        "flujo": "Hipotecario",
-        "cliente": "Sofía Castillo Núñez",
-        "ident": "402-0000007-7",
-        "etapa": "Desembolso",
-        "monto": "RD$ 3,100,000",
-        "creado": "18 ago",
-        "pend": 0,
-        "situacion": "cerrado",
-    },
-    {
-        "id": "#1835",
-        "flujo": "TDC originación",
-        "cliente": "Miguel Torres Alba",
-        "ident": "001-0000008-8",
-        "etapa": "Captación",
-        "monto": "RD$ 50,000",
-        "creado": "17 ago",
-        "pend": 3,
-        "situacion": "activo",
-    },
-]
+# ---------- Plataforma NOVA ----------
 
 
 @app.route("/")
@@ -545,17 +522,81 @@ def entrar_solucion(solution_id):
 @nova_solution_required
 def helios_home():
     sol = get_solution("helios")
-    movimientos = [
-        {"id": "#1842", "txt": "Buró consultado", "time": "09:41"},
-        {"id": "#1840", "txt": "Movido a Comité", "time": "09:12"},
-        {"id": "#1841", "txt": "Desembolsado", "time": "Ayer"},
-        {"id": "#1837", "txt": "Rechazado por política", "time": "Ayer"},
-    ]
+    stats = {"total": 0, "activos": 0, "cerrados": 0, "cancelados": 0,
+             "por_etapa": [], "por_mes": [], "por_flujo": []}
+    try:
+        from app.database import SessionLocal  # type: ignore
+        from app.models import Caso, Etapa, Flujo  # type: ignore
+        from sqlalchemy import func
+        from datetime import date
+
+        with SessionLocal() as db:
+            stats["total"] = db.query(Caso).count()
+            stats["activos"] = db.query(Caso).filter(Caso.estado_general == "ACTIVO").count()
+            stats["cerrados"] = db.query(Caso).filter(Caso.estado_general == "CERRADO").count()
+            stats["cancelados"] = db.query(Caso).filter(Caso.estado_general == "CANCELADO").count()
+
+            por_etapa = (
+                db.query(Etapa.nombre, func.count(Caso.id))
+                .join(Caso, Caso.etapa_actual_id == Etapa.id)
+                .filter(Caso.estado_general == "ACTIVO")
+                .group_by(Etapa.nombre)
+                .order_by(func.count(Caso.id).desc())
+                .all()
+            )
+            stats["por_etapa"] = [{"etapa": e, "count": c} for e, c in por_etapa]
+
+            por_flujo = (
+                db.query(Flujo.nombre, func.count(Caso.id))
+                .join(Caso, Caso.flujo_id == Flujo.id)
+                .group_by(Flujo.nombre)
+                .order_by(func.count(Caso.id).desc())
+                .limit(6)
+                .all()
+            )
+            stats["por_flujo"] = [
+                {"flujo": nombre, "count": cantidad}
+                for nombre, cantidad in por_flujo
+            ]
+
+            # Serie de los últimos 6 meses, agrupada en Python para no depender
+            # de funciones de fecha propias del motor (strftime/date_trunc).
+            hoy = date.today()
+            meses = []
+            anio, mes = hoy.year, hoy.month
+            for _ in range(6):
+                meses.append((anio, mes))
+                mes -= 1
+                if mes == 0:
+                    anio, mes = anio - 1, 12
+            meses.reverse()
+            conteo = {clave: 0 for clave in meses}
+
+            desde = date(meses[0][0], meses[0][1], 1)
+            for (fecha,) in db.query(Caso.fecha_creacion).filter(
+                Caso.fecha_creacion >= desde
+            ):
+                if fecha is None:
+                    continue
+                clave = (fecha.year, fecha.month)
+                if clave in conteo:
+                    conteo[clave] += 1
+
+            nombres_mes = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
+                           "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+            stats["por_mes"] = [
+                {"mes": f"{nombres_mes[m - 1]} {str(a)[2:]}", "count": conteo[(a, m)]}
+                for a, m in meses
+            ]
+    except Exception as exc:  # noqa: BLE001
+        app.logger.warning("Helios home: no se pudieron calcular stats: %s", exc)
+    nombre_usuario = session.get("nombre", session.get("user_nombre", "Admin"))
     return render_template(
         "plataforma/helios_home.html",
         solution=sol,
-        movimientos=movimientos,
         nav_active="home",
+        stats=stats,
+        nombre_usuario=nombre_usuario.split()[0] if nombre_usuario else "Admin",
     )
 
 
@@ -567,7 +608,7 @@ def helios_casos():
 
 _HELIOS_NAV = (
     ("/casos", "casos", "Casos"),
-    ("/catalogos/clientes", "clientes", "Clientes"),
+    ("/catalogos/clientes", "clientes", "Clientes 360"),
     ("/flujos", "flujos", "Flujos"),
     ("/apis", "apis", "APIs"),
     ("/catalogos/documentos", "documentos", "Documentos"),
@@ -612,7 +653,7 @@ def helios_workspace():
         "nova_helios_embed",
         "1",
         max_age=60 * 60 * 12,
-        httponly=False,
+        httponly=True,
         samesite="Lax",
         secure=_cookie_secure(),
         path="/",
@@ -645,8 +686,18 @@ def login():
         if next_path == "/":
             next_path = default_next
 
+        # Rate limit (paridad con Helios)
+        rate_key = f"{request.remote_addr}|{username.lower()}"
+        if _portal_login_rate_limited(rate_key):
+            return render_template(
+                "auth/login.html",
+                error="Demasiados intentos fallidos. Espere 5 minutos e intente de nuevo.",
+                next_path=next_path,
+            )
+
         user = User.query.filter_by(username=username, active=True).first()
         if user and check_password_hash(user.password_hash, password):
+            _portal_limpiar_fallos(rate_key)
             session.pop("nova_solution", None)
             session["user_id"] = user.id
             session["username"] = user.username
@@ -658,6 +709,7 @@ def login():
 
             return _attach_sso_cookie(make_response(redirect(next_path)), user)
 
+        _portal_registrar_fallo(rate_key)
         return render_template(
             "auth/login.html",
             error="Credenciales inválidas",
@@ -873,6 +925,20 @@ def _ensure_db():
 
 
 @app.after_request
+def _security_headers(resp):
+    """Headers de seguridad para producto B2B."""
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    resp.headers["X-Frame-Options"] = "SAMEORIGIN"
+    # CSP: permitir iframe same-origin (Helios embebido)
+    resp.headers["Content-Security-Policy"] = "frame-ancestors 'self'"
+    # HSTS solo si el request llega por HTTPS/proxy
+    if request.headers.get("X-Forwarded-Proto", "").split(",")[0].strip() == "https":
+        resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return resp
+
+
+@app.after_request
 def _ensure_helios_sso(resp):
     """En cada respuesta Flask autenticada, refresca cookie SSO (rompe el bucle Railway)."""
     if session.get("user_id") and request.endpoint not in ("static", None):
@@ -884,6 +950,7 @@ def _ensure_helios_sso(resp):
 
 
 if __name__ == "__main__":
+    # El re-exec de arriba debería haber pasado a wsgi.py. Si llega aquí, arranque Flask solo.
     create_and_seed(app)
     port = int(os.environ.get("PORT", 5012))
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"

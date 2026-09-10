@@ -15,26 +15,26 @@
   </div>
   {% for d in datos %}
   <div class="if-tr if-tr--dato {% if loop.index is even %}if-tr--alt{% endif %}">
-    <span style="font:600 13px Montserrat,sans-serif;color:#1a1a2e">{{ d.nombre }}</span>
+    <span class="if-cell">{{ d.nombre }}</span>
     <span class="if-flujo">{{ d.tipo_dato.nombre }}</span>
     <span class="if-flujo">{{ resolve_formato(d) }}</span>
     <span class="if-sit">Manual</span>
-    <button type="button" class="if-btn if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalEditar{{ d.id }}">Editar</button>
+    <button type="button" class="if-btn if-btn--ghost if-btn--sm" data-bs-toggle="modal" data-bs-target="#modalEditar{{ d.id }}">Editar</button>
   </div>
   {% else %}
-  <div class="if-empty" style="border:0"><div class="if-empty__box"><div class="if-empty__title">No hay datos</div><p>Cree el primero para capturarlo en las etapas.</p></div></div>
+  <div class="if-empty if-empty--bare"><div class="if-empty__box"><div class="if-empty__title">No hay datos</div><p>Cree el primero para capturarlo en las etapas.</p></div></div>
   {% endfor %}
 </div>
 
 {% macro campos_dato(prefijo, d=None) %}
-  <div class="mb-2"><label class="form-label">Nombre</label>
-    <input class="form-control" name="nombre" required placeholder="Ej: Monto solicitado" value="{{ d.nombre if d else '' }}">
+  <div class="if-field"><label class="if-lbl">Nombre</label>
+    <input class="caso-input" name="nombre" required placeholder="Ej: Monto solicitado" value="{{ d.nombre if d else '' }}">
   </div>
-  <div class="mb-2"><label class="form-label">Descripción</label>
-    <textarea class="form-control" name="descripcion" rows="2">{{ d.descripcion if d and d.descripcion else '' }}</textarea>
+  <div class="if-field"><label class="if-lbl">Descripción</label>
+    <textarea class="caso-input" name="descripcion" rows="2">{{ d.descripcion if d and d.descripcion else '' }}</textarea>
   </div>
-  <div class="mb-2"><label class="form-label">Tipo de dato</label>
-    <select class="form-select js-tipo-dato" name="tipo_dato_id" data-prefix="{{ prefijo }}" required>
+  <div class="if-field"><label class="if-lbl">Tipo de dato</label>
+    <select class="caso-input js-tipo-dato" name="tipo_dato_id" data-prefix="{{ prefijo }}" required>
       {% for t in tipos %}
       <option value="{{ t.id }}"
               data-codigo="{{ tipo_codigo(t) }}"
@@ -44,26 +44,26 @@
       {% endfor %}
     </select>
   </div>
-  <div class="mb-2 js-formato-wrap" id="{{ prefijo }}-formato-wrap">
-    <label class="form-label">Formato de visualización</label>
-    <select class="form-select js-formato" name="formato_visualizacion" id="{{ prefijo }}-formato"
+  <div class="if-field js-formato-wrap" id="{{ prefijo }}-formato-wrap">
+    <label class="if-lbl">Formato de visualización</label>
+    <select class="caso-input js-formato" name="formato_visualizacion" id="{{ prefijo }}-formato"
             data-selected="{{ resolve_formato(d) if d else '' }}"></select>
-    <div class="form-text">El valor se guarda siempre en crudo (sin $ ni separadores). Este formato solo afecta cómo se muestra.</div>
+    <p class="if-hint">El valor se guarda en crudo. Este formato solo afecta cómo se muestra.</p>
   </div>
-  <div class="mb-2 js-decimales-wrap d-none" id="{{ prefijo }}-decimales-wrap">
-    <label class="form-label">Cantidad de decimales</label>
-    <select class="form-select" name="decimales" id="{{ prefijo }}-decimales">
+  <div class="if-field js-decimales-wrap d-none" id="{{ prefijo }}-decimales-wrap">
+    <label class="if-lbl">Cantidad de decimales</label>
+    <select class="caso-input" name="decimales" id="{{ prefijo }}-decimales">
       {% for n in range(0, 7) %}
       <option value="{{ n }}" {% if d and resolve_decimales(d) == n %}selected{% elif not d and n == 2 %}selected{% endif %}>{{ n }}</option>
       {% endfor %}
     </select>
   </div>
-  <div class="mb-2 js-opciones-wrap d-none" id="{{ prefijo }}-opciones-wrap">
-    <label class="form-label">Opciones (Lista, separadas por ";")</label>
-    <input class="form-control" name="opciones" value="{{ d.opciones if d and d.opciones else '' }}" placeholder="Opción A;Opción B;Opción C">
+  <div class="if-field js-opciones-wrap d-none" id="{{ prefijo }}-opciones-wrap">
+    <label class="if-lbl">Opciones (separadas por ";")</label>
+    <input class="caso-input" name="opciones" value="{{ d.opciones if d and d.opciones else '' }}" placeholder="Opción A;Opción B;Opción C">
   </div>
   {% if d %}
-  <div class="form-check"><input class="form-check-input" type="checkbox" name="activo" value="1" id="dtact{{ d.id }}" {% if d.activo %}checked{% endif %}><label class="form-check-label" for="dtact{{ d.id }}">Activo</label></div>
+  <label class="if-check"><input type="checkbox" name="activo" value="1" {% if d.activo %}checked{% endif %}> Activo</label>
   {% endif %}
 {% endmacro %}
 

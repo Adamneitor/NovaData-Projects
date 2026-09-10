@@ -20,17 +20,16 @@ window.HeliosClienteSearch = (function () {
     const minChars = opts.minChars || 2;
 
     root.innerHTML = `
-      <div class="helios-cli-search position-relative">
-        <label class="form-label">${opts.label || 'Cliente'}${required ? ' <span class="text-danger">*</span>' : ''}</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input type="text" class="form-control helios-cli-q" placeholder="Buscar por nombre, cédula/RNC, teléfono o correo..." autocomplete="off">
-          <button type="button" class="btn btn-outline-secondary helios-cli-clear" title="Limpiar">&times;</button>
+      <div class="helios-cli-search if-cli-search">
+        <label class="if-lbl">${opts.label || 'Cliente'}${required ? ' <span class="if-req">*</span>' : ''}</label>
+        <div class="if-cli-search__row">
+          <input type="text" class="caso-input helios-cli-q" placeholder="Nombre, identificación, teléfono o correo" autocomplete="off">
+          <button type="button" class="if-btn if-btn--ghost helios-cli-clear" title="Limpiar">Limpiar</button>
         </div>
         <input type="hidden" class="helios-cli-id" name="${inputName}" ${required ? 'required' : ''} value="">
-        <div class="helios-cli-panel list-group shadow-sm d-none" style="position:absolute; z-index:1050; left:0; right:0; max-height:280px; overflow:auto;"></div>
-        <div class="form-text helios-cli-hint">Escriba al menos ${minChars} caracteres. No use listas desplegables con todos los clientes.</div>
-        <div class="helios-cli-selected small mt-1 text-success d-none"></div>
+        <div class="helios-cli-panel if-cli-panel d-none"></div>
+        <p class="if-hint helios-cli-hint">Escriba al menos ${minChars} caracteres.</p>
+        <div class="helios-cli-selected if-cli-ok d-none"></div>
       </div>
     `;
 

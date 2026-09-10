@@ -1,13 +1,17 @@
 {% extends "shell_claude.html" %}
+{% from "macros/nova_loader.html" import nova_loader %}
 {% block page_title %}{{ crumb_label }} · Helios · NOVA{% endblock %}
 {% block body_class %}page-shell page-shell--workspace{% endblock %}
 {% block breadcrumb %}
-<a href="{{ url_for('launcher') }}">NOVA</a><span class="sep">/</span>
-<a href="{{ url_for('helios_home') }}">Helios</a><span class="sep">/</span>
-<span class="cur" id="wsCrumb">{{ crumb_label }}</span>
+<a class="nv-crumb__a" href="{{ url_for('launcher') }}">NOVA</a>
+<span class="nv-crumb__sep" aria-hidden="true">›</span>
+<a class="nv-crumb__a" href="{{ url_for('helios_home') }}">Helios Producto</a>
+<span id="wsCrumbTrail"></span>
 {% endblock %}
 {% block content %}
+<style>#wsCrumbTrail { display: contents; }</style>
 <div class="nv-workspace">
+  {{ nova_loader(id='wsLoad', inline=true) }}
   <iframe
     id="heliosFrame"
     class="nv-workspace__frame"
@@ -21,10 +25,58 @@
 <script>
 (function () {
   var frame = document.getElementById('heliosFrame');
-  var crumb = document.getElementById('wsCrumb');
+
+  // Carga confinada al lienzo del iframe: 5 s mínimos al entrar al módulo y
+  // un mínimo corto al cambiar de pantalla dentro del mismo iframe.
+  var MIN_ENTRADA = 5000;
+  var MIN_CAMBIO = 900;
+  var cargador = document.getElementById('wsLoad');
+  var inicioCarga = 0;
+  var minimoCarga = MIN_ENTRADA;
+  var relojOcultar = null;
+  var relojTope = null;
+  function mostrarCarga(minimo) {
+    if (!cargador) return;
+    clearTimeout(relojOcultar);
+    clearTimeout(relojTope);
+    inicioCarga = Date.now();
+    minimoCarga = minimo;
+    cargador.classList.add('is-on');
+    cargador.setAttribute('aria-hidden', 'false');
+    relojTope = setTimeout(ocultarCarga, minimo + 15000);
+  }
+  function ocultarCarga() {
+    if (!cargador) return;
+    clearTimeout(relojOcultar);
+    clearTimeout(relojTope);
+    cargador.classList.remove('is-on');
+    cargador.setAttribute('aria-hidden', 'true');
+  }
+  function pedirOcultar() {
+    var restante = Math.max(0, minimoCarga - (Date.now() - inicioCarga));
+    clearTimeout(relojOcultar);
+    relojOcultar = setTimeout(ocultarCarga, restante);
+  }
+  if (frame) {
+    frame.addEventListener('load', pedirOcultar);
+    mostrarCarga(MIN_ENTRADA);
+    var yaCargado = false;
+    try {
+      yaCargado = !!frame.contentDocument && frame.contentDocument.readyState === 'complete';
+    } catch (err) {
+      yaCargado = false;
+    }
+    if (yaCargado) pedirOcultar();
+    // Cualquier cambio de `src` (rail, breadcrumb o buscador) reactiva la carga.
+    if (window.MutationObserver) {
+      new MutationObserver(function () { mostrarCarga(MIN_CAMBIO); })
+        .observe(frame, { attributes: true, attributeFilter: ['src'] });
+    }
+  }
+
   var labels = {
     '/casos': 'Casos',
-    '/catalogos/clientes': 'Clientes',
+    '/catalogos/clientes': 'Clientes 360',
     '/flujos': 'Flujos',
     '/apis': 'APIs',
     '/catalogos/documentos': 'Documentos',
@@ -44,6 +96,41 @@
     }
     return 'Helios';
   }
+  function renderCrumb(path) {
+    var trail = document.getElementById('wsCrumbTrail');
+    if (!trail) return;
+    var parts = [];
+    var mCaso = path && path.match(/^\/casos\/(\d+)(\/datos)?/);
+    var mCli = path && path.match(/^\/catalogos\/clientes\/(\d+)/);
+    function add(label, href, current) {
+      parts.push('<span class="nv-crumb__sep" aria-hidden="true">›</span>');
+      if (current) parts.push('<span class="nv-crumb__cur">' + label + '</span>');
+      else if (href) parts.push('<a class="nv-crumb__a" href="' + href + '">' + label + '</a>');
+      else parts.push('<span class="nv-crumb__cur">' + label + '</span>');
+    }
+    if (mCaso) {
+      add('Casos', '/helios/w?to=' + encodeURIComponent('/casos'), false);
+      add('Caso #' + mCaso[1], '/helios/w?to=' + encodeURIComponent('/casos/' + mCaso[1]), !mCaso[2]);
+      if (mCaso[2]) add('Datos adicionales', null, true);
+    } else if (mCli) {
+      add('Clientes 360', '/helios/w?to=' + encodeURIComponent('/catalogos/clientes'), false);
+      add('Vista 360', null, true);
+    } else {
+      add(labelFor(path), null, true);
+    }
+    trail.innerHTML = parts.join('');
+    trail.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var to = (a.getAttribute('href') || '').split('to=')[1];
+        if (!to || !frame) return;
+        e.preventDefault();
+        var p = decodeURIComponent(to);
+        frame.src = embedUrl(p);
+        setActive(p);
+        try { history.replaceState(null, '', '/helios/w?to=' + encodeURIComponent(p)); } catch (err) {}
+      });
+    });
+  }
   function embedUrl(path) {
     if (!path) path = '/casos';
     return path + (path.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
@@ -58,8 +145,15 @@
       }
       a.classList.toggle('is-active', on);
     });
-    if (crumb) crumb.textContent = labelFor(path);
+    renderCrumb(path);
   }
+  window.addEventListener('message', function (ev) {
+    var d = ev.data || {};
+    if (d.type !== 'helios-nav' || !d.path) return;
+    var path = String(d.path).split('?')[0];
+    setActive(path);
+    try { history.replaceState(null, '', '/helios/w?to=' + encodeURIComponent(path)); } catch (err) {}
+  });
   document.querySelectorAll('.nv-rail__link[data-helios-path]').forEach(function (a) {
     a.addEventListener('click', function (e) {
       var path = a.getAttribute('data-helios-path');

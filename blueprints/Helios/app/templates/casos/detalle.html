@@ -8,10 +8,9 @@
 {% set etapas_con_api = etapas_con_api if etapas_con_api is defined else [] %}
 {% set salida_terminal = salida_terminal if salida_terminal is defined else 'Cierre' %}
 
-<div class="if-canvas">
   <nav class="if-bc" aria-label="breadcrumb">
     <a href="/casos">Casos</a>
-    <span class="if-bc__sep">/</span>
+    <span class="if-bc__sep"></span>
     <span class="if-bc__now">Caso #{{ caso.id }}</span>
   </nav>
 
@@ -85,17 +84,19 @@
     <div class="if-main">
 
       {# Documentación — adjuntos por requisito #}
-      <article class="caso-card" id="seccion-documentos">
-        <header class="caso-card__head">
-          <div class="caso-card__icon caso-card__icon--docs"><i class="bi bi-folder2-open"></i></div>
-          <div>
+      <article class="if-card" id="seccion-documentos">
+        <header class="if-card__head">
+          <span class="if-card__ico if-card__ico--docs" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16v14H4z"></path><path d="M8 6V4h8v2"></path></svg>
+          </span>
+          <div class="if-card__copy">
             <h2>Documentación</h2>
             <p>Adjunte los archivos requeridos de la etapa</p>
           </div>
-          {% if docs_pend_count %}<span class="caso-chip caso-chip--warn">{{ docs_pend_count }} pendiente{{ 's' if docs_pend_count != 1 }}</span>{% endif %}
+          {% if docs_pend_count %}<span class="if-badge">{{ docs_pend_count }} pendiente{{ 's' if docs_pend_count != 1 }}</span>{% endif %}
         </header>
-        <div class="caso-card__body">
-          <div class="doc-section-label">Requisitos · {{ caso.etapa_actual.nombre }}</div>
+        <div class="if-card__body if-card__body--pad">
+          <div class="if-sec">Requisitos · {{ caso.etapa_actual.nombre }}</div>
           {% if docs_etapa %}
           <div class="doc-list">
             {% for ed in docs_etapa %}
@@ -128,15 +129,14 @@
             {% endfor %}
           </div>
           {% else %}
-          <div class="caso-empty caso-empty--compact">
-            <i class="bi bi-inbox"></i>
+          <div class="if-empty if-empty--in">
             <p>Esta etapa no solicita documentos.</p>
           </div>
           {% endif %}
 
-          <div class="doc-section-label doc-section-label--spaced">
+          <div class="if-sec if-sec--gap">
             Expediente · todos los cargados
-            {% if docs_expediente %}<span class="st st-muted">{{ docs_expediente|length }}</span>{% endif %}
+            {% if docs_expediente %}<span class="if-badge if-badge--neutral">{{ docs_expediente|length }}</span>{% endif %}
           </div>
           {% if docs_expediente %}
           <div class="doc-list">
@@ -156,8 +156,7 @@
             {% endfor %}
           </div>
           {% else %}
-          <div class="caso-empty caso-empty--compact">
-            <i class="bi bi-folder2"></i>
+          <div class="if-empty if-empty--in">
             <p>Aún no se ha cargado ningún documento en este caso.</p>
           </div>
           {% endif %}
@@ -166,26 +165,38 @@
 
       {# Datos: edición (inline ≤6 / formulario >6) + consulta siempre visible en cualquier etapa #}
       {% if datos_etapa or datos_expediente %}
-      <article class="caso-card" id="seccion-datos">
-        <header class="caso-card__head">
-          <div class="caso-card__icon caso-card__icon--data"><i class="bi bi-sliders"></i></div>
-          <div>
+      <article class="if-card" id="seccion-datos">
+        <header class="if-card__head">
+          <span class="if-card__ico if-card__ico--data" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="5" y1="8" x2="19" y2="8"></line><line x1="5" y1="13" x2="14" y2="13"></line><line x1="5" y1="18" x2="17" y2="18"></line><circle cx="17" cy="13" r="1.4" fill="currentColor" stroke="none"></circle></svg>
+          </span>
+          <div class="if-card__copy">
             <h2>Datos adicionales</h2>
-            <p>{% if datos_etapa %}Etapa «{{ caso.etapa_actual.nombre }}»{% else %}Expediente del caso{% endif %}</p>
+            <p>{% if datos_etapa %}Etapa «{{ caso.etapa_actual.nombre }}» · {{ datos_etapa|length }} campos{% else %}Expediente del caso{% endif %}</p>
           </div>
-          {% if datos_pend_count %}<span class="caso-chip caso-chip--warn">{{ datos_pend_count }} pendiente{{ 's' if datos_pend_count != 1 }}</span>
-          {% elif datos_etapa %}<span class="caso-chip" style="background:#f1f5f9;color:#1a1a2e">Completo</span>{% endif %}
+          {% if datos_pend_count %}<span class="if-badge">{{ datos_pend_count }} pendiente{{ 's' if datos_pend_count != 1 }}</span>
+          {% elif datos_etapa %}<span class="if-badge if-badge--ok">Completo</span>{% endif %}
         </header>
-        <div class="caso-card__body">
+        <div class="if-card__body if-card__body--pad">
           {% if datos_etapa %}
             {% if datos_inline %}
-            <form method="post" action="/casos/{{ caso.id }}/datos" class="data-grid js-datos-ajax" id="formDatosInline" novalidate>
+            <form method="post" action="/casos/{{ caso.id }}/datos" class="js-datos-ajax" id="formDatosInline" novalidate>
+              <div class="if-dgrid">
               {% for ed in datos_etapa %}
                 {{ campo_dato(ed, datos_valores.get(ed.dato_id, ''), puede_actuar, datos_pendientes, intent_errs, field_errors|default({}), valor_es_ui|default(false), 'half', datos_api_readonly) }}
               {% endfor %}
+              </div>
+              {% if puede_actuar %}
+              <div class="if-dact">
+                <button type="submit" class="if-btn if-btn--ghost">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5,13 10,18 19,7"></polyline></svg>
+                  Guardar datos
+                </button>
+                <a class="if-dact__hint" href="/casos/{{ caso.id }}/datos">Abrir formulario completo</a>
+              </div>
+              {% endif %}
             </form>
             {% else %}
-            {# > 6 campos en esta etapa: capturar/editar en formulario dedicado #}
             {{ boton_datos_adicionales(caso, datos_pend_count, datos_total, datos_completados, puede_actuar) }}
             {% endif %}
           {% endif %}
@@ -196,97 +207,99 @@
       </article>
       {% endif %}
 
-      {# Timeline historial #}
-      <article class="caso-card" id="seccion-historial">
-        <header class="caso-card__head">
-          <div class="caso-card__icon caso-card__icon--hist"><i class="bi bi-clock-history"></i></div>
-          <div>
+      <article class="if-card" id="seccion-historial">
+        <header class="if-card__head">
+          <span class="if-card__ico" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12,7 12,12 15.5,14"></polyline></svg>
+          </span>
+          <div class="if-card__copy">
             <h2>Historial</h2>
-            <p>{{ historial_total }} evento{{ 's' if historial_total != 1 }} registrados</p>
+            <p>{{ historial_total }} evento{{ 's' if historial_total != 1 }} · se muestran los últimos {{ [historial_total, 6]|min }}</p>
           </div>
         </header>
-        <div class="caso-card__body">
-          {% if historial_visible %}
-          <ol class="caso-timeline">
-            {% for h in historial_visible %}
-            <li class="tl-item tl-{{ h.origen|lower }}">
-              <div class="tl-dot"></div>
-              <div class="tl-body">
-                <div class="tl-top">
-                  <strong>{{ h.etapa.nombre }}</strong>
-                  <span class="tl-state">{{ h.estado.nombre }}</span>
-                  <span class="tl-origen origen-{{ h.origen|lower }}">{{ h.origen }}</span>
+        <div class="if-card__body if-card__body--pad">
+          {% set hv = historial_vista[:6] if historial_vista is defined else [] %}
+          {% if hv %}
+          <div class="if-tl">
+            {% for ev in hv %}
+            <div class="if-tl__row">
+              <div class="if-tl__rail"><span class="if-tl__dot {% if loop.first %}is-now{% endif %}"></span>{% if not loop.last %}<span class="if-tl__line"></span>{% endif %}</div>
+              <div class="if-tl__body">
+                <div class="if-tl__top">
+                  <strong>{{ ev.titulo }}</strong>
+                  <span class="if-tl__chip {% if ev.es_api %}is-api{% endif %}">{{ ev.origen }}</span>
                 </div>
-                <div class="tl-meta">
-                  {{ h.fecha.strftime('%d/%m/%Y %H:%M') }}
-                  · {{ h.usuario.nombre if h.usuario else 'Sistema' }}
+                <div class="if-tl__meta">{{ ev.fecha.strftime('%d/%m/%Y %H:%M') if ev.fecha else '' }} · {{ ev.usuario }}</div>
+                {% if ev.mostrar_cuerpo %}
+                {% if ev.kpis %}
+                <div class="if-tl__kpis">
+                  {% for k in ev.kpis %}<span><small>{{ k.label }}</small>{{ k.value }}</span>{% endfor %}
                 </div>
-                {% if h.comentario %}<div class="tl-comment">{{ h.comentario }}</div>{% endif %}
+                {% endif %}
+                {% if ev.destino %}<div class="if-tl__dest">Siguiente · {{ ev.destino }}</div>{% endif %}
+                {% if ev.resumen %}<div class="if-tl__note">{{ ev.resumen }}</div>{% endif %}
+                {% endif %}
               </div>
-            </li>
+            </div>
             {% endfor %}
-          </ol>
-          {% if historial_total > historial_visible|length %}
-          <button type="button" class="btn-ver-mas" id="btnVerMasHistorial" data-bs-toggle="collapse" data-bs-target="#historialFull">
-            Ver historial completo ({{ historial_total }})
-          </button>
+          </div>
+          {% if historial_total > 6 %}
+          <button type="button" class="if-more" data-bs-toggle="collapse" data-bs-target="#historialFull">Ver historial completo ({{ historial_total }})</button>
           <div class="collapse" id="historialFull">
-            <ol class="caso-timeline caso-timeline--rest">
-              {% for h in historial_ordenado[historial_visible|length:] %}
-              <li class="tl-item tl-{{ h.origen|lower }}">
-                <div class="tl-dot"></div>
-                <div class="tl-body">
-                  <div class="tl-top">
-                    <strong>{{ h.etapa.nombre }}</strong>
-                    <span class="tl-state">{{ h.estado.nombre }}</span>
-                    <span class="tl-origen origen-{{ h.origen|lower }}">{{ h.origen }}</span>
-                  </div>
-                  <div class="tl-meta">{{ h.fecha.strftime('%d/%m/%Y %H:%M') }} · {{ h.usuario.nombre if h.usuario else 'Sistema' }}</div>
-                  {% if h.comentario %}<div class="tl-comment">{{ h.comentario }}</div>{% endif %}
+            <div class="if-tl if-tl--more">
+              {% for ev in historial_vista[6:] %}
+              <div class="if-tl__row">
+                <div class="if-tl__rail"><span class="if-tl__dot"></span>{% if not loop.last %}<span class="if-tl__line"></span>{% endif %}</div>
+                <div class="if-tl__body">
+                  <div class="if-tl__top"><strong>{{ ev.titulo }}</strong><span class="if-tl__chip {% if ev.es_api %}is-api{% endif %}">{{ ev.origen }}</span></div>
+                  <div class="if-tl__meta">{{ ev.fecha.strftime('%d/%m/%Y %H:%M') if ev.fecha else '' }} · {{ ev.usuario }}</div>
+                  {% if ev.destino %}<div class="if-tl__dest">{{ ev.destino }}</div>{% endif %}
+                  {% if ev.resumen %}<div class="if-tl__note">{{ ev.resumen }}</div>{% endif %}
                 </div>
-              </li>
+              </div>
               {% endfor %}
-            </ol>
+            </div>
           </div>
           {% endif %}
           {% else %}
-          <div class="caso-empty"><i class="bi bi-journal-text"></i><p>Aún no hay movimientos.</p></div>
+          <div class="if-empty if-empty--in"><p>Aún no hay movimientos.</p></div>
           {% endif %}
         </div>
       </article>
 
       {# API logs — resumen de negocio (sin JSON a la vista) #}
-      <article class="caso-card" id="seccion-api">
-        <header class="caso-card__head">
-          <div class="caso-card__icon caso-card__icon--api"><i class="bi bi-plugin"></i></div>
-          <div>
+      <article class="if-card" id="seccion-api">
+        <header class="if-card__head">
+          <span class="if-card__ico if-card__ico--api" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 12h8"></path><path d="M6 8l-3 4 3 4"></path><path d="M18 8l3 4-3 4"></path></svg>
+          </span>
+          <div class="if-card__copy">
             <h2>Integraciones API</h2>
             <p>Resultado de negocio · sin JSON en la vista operativa</p>
           </div>
           {% if api_result_cards %}
-          <span class="caso-chip caso-chip--neutral">{{ api_result_cards|length }} integración{{ 'es' if api_result_cards|length != 1 }}</span>
+          <span class="if-badge if-badge--neutral">{{ api_result_cards|length }} integración{{ 'es' if api_result_cards|length != 1 }}</span>
           {% endif %}
         </header>
-        <div class="caso-card__body">
+        <div class="if-card__body if-card__body--pad">
           {% if puede_reintentar_api %}
-          <div class="aside-alert {% if ultimo_api_log_estado and not ultimo_api_log_estado.exito %}aside-alert--danger{% else %}aside-alert--ok{% endif %} mb-3" style="margin:0 0 1rem">
-            <strong><i class="bi bi-arrow-repeat"></i> {% if api_estado_nombre %}{{ api_estado_nombre }}{% else %}API del estado{% endif %}</strong>
+          <div class="if-note {% if ultimo_api_log_estado and not ultimo_api_log_estado.exito %}if-note--bad{% else %}if-note--ok{% endif %}">
+            <strong>{% if api_estado_nombre %}{{ api_estado_nombre }}{% else %}API del estado{% endif %}</strong>
             {% if ultimo_api_log_estado and not ultimo_api_log_estado.exito %}
-            <p class="small mb-2">La última ejecución falló (HTTP {{ ultimo_api_log_estado.http_status or '—' }}). Puede reintentar desde aquí.</p>
+            <p>La última ejecución falló (HTTP {{ ultimo_api_log_estado.http_status or '—' }}). Puede reintentar desde aquí.</p>
             {% else %}
-            <p class="small mb-2">El estado actual tiene un API. Puede ejecutarlo o reintentarlo.</p>
+            <p>El estado actual tiene un API. Puede ejecutarlo o reintentarlo.</p>
             {% endif %}
             <form method="post" action="/casos/{{ caso.id }}/reintentar-api">
-              <button type="submit" class="btn-caso-primary">
-                <i class="bi bi-arrow-repeat"></i>
+              <button type="submit" class="if-btn">
                 {% if ultimo_api_log_estado and not ultimo_api_log_estado.exito %}Reintentar API{% else %}Ejecutar API{% endif %}
               </button>
             </form>
           </div>
           {% elif api_fallo_otro_estado and estado_api_fallo %}
-          <div class="aside-alert aside-alert--danger mb-3" style="margin:0 0 1rem">
-            <strong><i class="bi bi-exclamation-triangle"></i> API falló en otro estado</strong>
-            <p class="small mb-0">
+          <div class="if-note if-note--bad">
+            <strong>API falló en otro estado</strong>
+            <p>
               El fallo fue en «<strong>{{ estado_api_fallo.nombre }}</strong>».
               El caso está ahora en «{{ caso.estado_actual.nombre }}», que no tiene ese API.
               Muévalo de nuevo a «{{ estado_api_fallo.nombre }}» y use <em>Reintentar API</em>.
@@ -318,19 +331,20 @@
                   {{ card.total_intentos }} intento{{ 's' if card.total_intentos != 1 }}
                 </span>
               </div>
-              <div class="if-api-card__body">
-                {% if card.score is not none %}
-                <div class="if-score">
-                  <span class="if-score__lbl">Score{% if card.es_buro %} XCORE{% endif %}</span>
-                  <div class="if-score__row">
-                    <span class="if-score__n">{{ card.score }}</span>
-                    <span class="if-score__of">de 999</span>
-                    {% if card.banda %}<span class="if-sit {% if card.banda == 'Bueno' %}if-sit--ok{% elif card.banda == 'Regular' %}{% else %}if-sit--bad{% endif %}">{{ card.banda }}</span>{% endif %}
-                  </div>
-                  <div class="if-score__bar"><span style="width: {{ [100, ((card.score|int) * 100 / 999)|int]|min }}%"></span></div>
-                  <div class="if-score__ends"><span>0</span><span>999</span></div>
-                </div>
-                {% endif %}
+              <div class="if-api-card__body if-api-card__body--stack">
+                {% set r = card.reporte or {} %}
+                {% set nombre = r.Nombre or (caso.cliente.nombre_completo if caso.cliente else none) %}
+                {% set cedula = r.Cedula or (caso.cliente.identificacion if caso.cliente else none) %}
+                {% set iniciales = (nombre[:2]|upper) if nombre else 'CL' %}
+                {% set score = card.score %}
+                {% set banda = card.banda %}
+                {% set dictamen = card.dictamen %}
+                {% set compact = true %}
+                {% if card.es_buro %}
+                  {% include "partials/buro_documento.html" %}
+                {% elif card.es_motor %}
+                  {% include "partials/motor_documento.html" %}
+                {% else %}
                 <div class="if-api-main">
                   <p class="if-api-dict"><strong>{{ card.titulo }}.</strong>{% if card.razon %} {{ card.razon }}{% endif %}</p>
                   {% if card.kpis %}
@@ -343,20 +357,21 @@
                     {% endfor %}
                   </div>
                   {% endif %}
-                  <div class="if-api-acts">
-                    <button type="button" class="if-btn" data-bs-toggle="modal" data-bs-target="#modalApiReporte{{ card.id }}">
-                      Ver reporte completo
-                    </button>
-                    {% if not card.exito and puede_reintentar_api %}
-                    <form method="post" action="/casos/{{ caso.id }}/reintentar-api">
-                      <button type="submit" class="if-btn if-btn--ghost">Volver a ejecutar</button>
-                    </form>
-                    {% endif %}
-                  </div>
+                </div>
+                {% endif %}
+                <div class="if-api-acts">
+                  <button type="button" class="if-btn" data-bs-toggle="modal" data-bs-target="#modalApiReporte{{ card.id }}">
+                    {% if card.es_buro %}Ver buró completo{% else %}Ver detalle{% endif %}
+                  </button>
+                  {% if not card.exito and puede_reintentar_api %}
+                  <form method="post" action="/casos/{{ caso.id }}/reintentar-api">
+                    <button type="submit" class="if-btn if-btn--ghost">Volver a ejecutar</button>
+                  </form>
+                  {% endif %}
                 </div>
               </div>
               {% if card.intentos|length > 1 %}
-              <div style="padding:0 18px 14px;display:flex;flex-direction:column;gap:5px">
+              <div class="if-try-list">
                 <div class="if-sec">Historial de intentos</div>
                 {% for it in card.intentos %}
                 <div class="if-try">
@@ -373,7 +388,7 @@
             {% endfor %}
           </div>
           {% else %}
-          <div class="caso-empty" style="padding:1.5rem"><i class="bi bi-hdd-network"></i><p>Sin ejecuciones de API todavía.</p></div>
+          <div class="if-empty if-empty--in"><p>Sin ejecuciones de API todavía.</p></div>
           {% endif %}
         </div>
       </article>
@@ -387,20 +402,18 @@
           <p class="if-side__p">Transiciones válidas desde «{{ caso.estado_actual.nombre }}»</p>
 
           {% if caso.estado_general != 'ACTIVO' %}
-            <div class="aside-disabled">
-              <i class="bi bi-lock"></i>
+            <div class="if-off">
               <p>Este caso está <strong>{{ caso.estado_general|lower }}</strong> y no admite movimientos.</p>
             </div>
           {% elif not puede_actuar %}
-            <div class="aside-disabled">
-              <i class="bi bi-person-lock"></i>
+            <div class="if-off">
               <p>Su usuario no pertenece a los grupos de esta etapa.</p>
             </div>
           {% elif transiciones or tiene_reglas_datos or puede_reintentar_api or api_fallo_otro_estado or regla_api_match %}
 
             {% if intent_errs %}
-            <div class="aside-alert aside-alert--danger" id="panel-errores-movimiento">
-              <strong><i class="bi bi-exclamation-triangle-fill"></i> Faltan requisitos</strong>
+            <div class="if-note if-note--bad" id="panel-errores-movimiento">
+              <strong>Faltan requisitos</strong>
               <ul>
                 {% for err in intent_errs %}
                 <li>{% if err.ancla %}
@@ -412,18 +425,18 @@
                 {% else %}{{ err.mensaje }}{% endif %}</li>
                 {% endfor %}
               </ul>
-              <p class="mb-0">Corrija y pulse <em>Confirmar</em> — la acción sigue seleccionada.</p>
+              <p>Corrija y pulse <em>Confirmar</em> — la acción sigue seleccionada.</p>
             </div>
             {% elif intent and not intent_errs %}
-            <div class="aside-alert aside-alert--ok">
-              <i class="bi bi-check-circle-fill"></i> Listo para confirmar el movimiento.
+            <div class="if-note if-note--ok">
+              <p>Listo para confirmar el movimiento.</p>
             </div>
             {% endif %}
 
             {% if api_fallo_otro_estado and estado_api_fallo %}
-            <div class="aside-alert aside-alert--danger mb-3">
-              <strong><i class="bi bi-plugin"></i> API pendiente de reintento</strong>
-              <p class="small mb-0">
+            <div class="if-note if-note--bad">
+              <strong>API pendiente de reintento</strong>
+              <p>
                 Falló en «<strong>{{ estado_api_fallo.nombre }}</strong>».
                 Está en «{{ caso.estado_actual.nombre }}».
                 Elija la transición de vuelta a «{{ estado_api_fallo.nombre }}»; al entrar se ejecutará el API (o use Reintentar allí).
@@ -432,21 +445,20 @@
             {% endif %}
 
             {% if puede_reintentar_api %}
-            <div class="aside-alert {% if ultimo_api_log_estado and not ultimo_api_log_estado.exito %}aside-alert--danger{% else %}aside-alert--ok{% endif %} mb-3">
-              <strong><i class="bi bi-plugin"></i> API del estado{% if api_estado_nombre %}: {{ api_estado_nombre }}{% endif %}</strong>
+            <div class="if-note {% if ultimo_api_log_estado and not ultimo_api_log_estado.exito %}if-note--bad{% else %}if-note--ok{% endif %}">
+              <strong>API del estado{% if api_estado_nombre %}: {{ api_estado_nombre }}{% endif %}</strong>
               {% if ultimo_api_log_estado %}
                 {% if ultimo_api_log_estado.exito %}
-                <p class="mb-2 small mb-0">Última ejecución OK (HTTP {{ ultimo_api_log_estado.http_status or '—' }}). Puede volver a ejecutar si el caso sigue en este estado.</p>
+                <p>Última ejecución OK (HTTP {{ ultimo_api_log_estado.http_status or '—' }}). Puede volver a ejecutar si el caso sigue en este estado.</p>
                 {% else %}
-                <p class="mb-2 small mb-0">Última ejecución <strong>falló</strong> (HTTP {{ ultimo_api_log_estado.http_status or '—' }}). Puede reintentar.</p>
+                <p>Última ejecución <strong>falló</strong> (HTTP {{ ultimo_api_log_estado.http_status or '—' }}). Puede reintentar.</p>
                 {% endif %}
               {% else %}
-              <p class="mb-2 small mb-0">Este estado tiene un API asociado. Ejecútelo para continuar el flujo automático.</p>
+              <p>Este estado tiene un API asociado. Ejecútelo para continuar el flujo automático.</p>
               {% endif %}
-              <form method="post" action="/casos/{{ caso.id }}/reintentar-api" class="mt-2">
-                <textarea class="caso-input mb-2" name="comentario" rows="1" placeholder="Comentario del reintento (opcional)…"></textarea>
-                <button type="submit" class="btn-caso-primary btn-caso-primary--block">
-                  <i class="bi bi-arrow-repeat"></i>
+              <form method="post" action="/casos/{{ caso.id }}/reintentar-api">
+                <textarea class="caso-input" name="comentario" rows="1" placeholder="Comentario del reintento (opcional)…"></textarea>
+                <button type="submit" class="if-btn if-btn--block">
                   {% if ultimo_api_log_estado and not ultimo_api_log_estado.exito %}Reintentar API{% else %}Ejecutar API{% endif %}
                 </button>
               </form>
@@ -454,52 +466,48 @@
             {% endif %}
 
             {% if regla_api_match %}
-            <div class="aside-alert aside-alert--ok mb-3">
-              <strong><i class="bi bi-hdd-network"></i> Regla API</strong>
-              <p class="mb-1 small">{{ regla_api_preview }}</p>
-              <p class="mb-2 small text-muted mb-0">
+            <div class="if-note if-note--ok">
+              <strong>Regla API</strong>
+              <p>{{ regla_api_preview }}</p>
+              <p>
                 Destino: <strong>{{ regla_api_match.estado_destino.nombre }}</strong>
                 · {{ regla_api_match.etapa_destino.nombre }}
                 · {% if (regla_api_match.modo_ejecucion or 'AUTO')|upper == 'MANUAL' %}manual{% else %}automático{% endif %}
               </p>
               {% if docs_pend_count or datos_pend_count %}
-              <p class="mb-0 small text-warning">
+              <p>
                 Complete {{ docs_pend_count }} doc(s) y {{ datos_pend_count }} dato(s) obligatorio(s)
                 {% if (regla_api_match.modo_ejecucion or 'AUTO')|upper == 'AUTO' %}para avanzar automáticamente{% else %}antes de confirmar{% endif %}.
               </p>
               {% elif (regla_api_match.modo_ejecucion or 'AUTO')|upper == 'MANUAL' %}
-              <form method="post" action="/casos/{{ caso.id }}/mover-por-api" class="mt-2">
+              <form method="post" action="/casos/{{ caso.id }}/mover-por-api">
                 <input type="hidden" name="attempt_id" value="{{ intent.attempt_id if intent else '' }}">
-                <textarea class="caso-input mb-2" name="comentario" rows="1" placeholder="Comentario opcional…"></textarea>
-                <button type="submit" class="btn-caso-primary btn-caso-primary--block">
-                  <i class="bi bi-lightning-charge"></i> Confirmar transición API
-                </button>
+                <textarea class="caso-input" name="comentario" rows="1" placeholder="Comentario opcional…"></textarea>
+                <button type="submit" class="if-btn if-btn--block">Confirmar transición API</button>
               </form>
               {% else %}
-              <p class="mb-0 small">Se aplicará automáticamente al refrescar (requisitos cumplidos).</p>
+              <p>Se aplicará automáticamente al refrescar (requisitos cumplidos).</p>
               {% endif %}
             </div>
             {% endif %}
 
             {% if tiene_reglas_datos %}
-            <div class="aside-alert {% if regla_datos_match %}aside-alert--ok{% else %}aside-alert--danger{% endif %} mb-3">
-              <strong><i class="bi bi-diagram-3"></i> Reglas por datos</strong>
+            <div class="if-note {% if regla_datos_match %}if-note--ok{% else %}if-note--bad{% endif %}">
+              <strong>Reglas por datos</strong>
               {% if regla_datos_match %}
-              <p class="mb-1 small">{{ regla_datos_preview }}</p>
-              <p class="mb-2 small text-muted mb-0">
+              <p>{{ regla_datos_preview }}</p>
+              <p>
                 Destino: <strong>{{ regla_datos_match.estado_destino.nombre }}</strong>
                 · {{ regla_datos_match.etapa_destino.nombre }}
                 {% if regla_datos_match.es_default %} · <em>fallback</em>{% endif %}
               </p>
-              <form method="post" action="/casos/{{ caso.id }}/mover-por-datos" class="mt-2">
+              <form method="post" action="/casos/{{ caso.id }}/mover-por-datos">
                 <input type="hidden" name="attempt_id" value="{{ intent.attempt_id if intent else '' }}">
-                <textarea class="caso-input mb-2" name="comentario" rows="1" placeholder="Comentario opcional…"></textarea>
-                <button type="submit" class="btn-caso-primary btn-caso-primary--block">
-                  <i class="bi bi-lightning-charge"></i> Continuar según condiciones
-                </button>
+                <textarea class="caso-input" name="comentario" rows="1" placeholder="Comentario opcional…"></textarea>
+                <button type="submit" class="if-btn if-btn--block">Continuar según condiciones</button>
               </form>
               {% else %}
-              <p class="mb-0 small">Ninguna condición se cumple y no hay transición por defecto configurada.</p>
+              <p>Ninguna condición se cumple y no hay transición por defecto configurada.</p>
               {% endif %}
             </div>
             {% endif %}
@@ -508,7 +516,7 @@
             <form method="post" action="/casos/{{ caso.id }}/mover" id="formMovimiento" autocomplete="off">
               <input type="hidden" name="attempt_id" value="{{ intent.attempt_id if intent else '' }}" id="attemptId">
 
-              <label class="aside-label">{% if tiene_reglas_datos %}O elija transición manual{% else %}Acción{% endif %}</label>
+              <label class="if-lbl">{% if tiene_reglas_datos %}O elija transición manual{% else %}Acción{% endif %}</label>
               <div class="action-choices" id="listaTransiciones">
                 {% for t in transiciones %}
                 <label class="action-choice {% if intent_sel == t.estado_destino_id or (not intent_sel and loop.first) %}is-selected{% endif %}">
@@ -522,23 +530,20 @@
                 {% endfor %}
               </div>
 
-              <label class="aside-label mt-3">Comentario</label>
+              <label class="if-lbl">Comentario</label>
               <textarea class="caso-input" name="comentario" id="comentarioMovimiento" rows="2" placeholder="Opcional…">{{ intent.comentario if intent else '' }}</textarea>
 
-              <button type="submit" class="btn-caso-primary btn-caso-primary--block mt-3" id="btnConfirmarMovimiento">
-                <i class="bi bi-check2-circle"></i> Confirmar movimiento
-              </button>
+              <button type="submit" class="if-btn if-btn--block" id="btnConfirmarMovimiento">Confirmar movimiento</button>
             </form>
 
             {% if intent %}
-            <form method="post" action="/casos/{{ caso.id }}/intent/cancelar" class="mt-2">
-              <button type="submit" class="btn-caso-ghost">Cancelar selección</button>
+            <form method="post" action="/casos/{{ caso.id }}/intent/cancelar">
+              <button type="submit" class="if-btn if-btn--ghost if-btn--block">Cancelar selección</button>
             </form>
             {% endif %}
             {% endif %}
           {% else %}
-            <div class="aside-disabled">
-              <i class="bi bi-signpost"></i>
+            <div class="if-off">
               <p>No hay transiciones, reglas de datos ni API reejecutable desde «{{ caso.estado_actual.nombre }}».</p>
             </div>
           {% endif %}
@@ -565,11 +570,11 @@
         {% endif %}
 
         {% if caso.estado_general == 'ACTIVO' and usuario.perfil_id in (1, 3) %}
-        <section class="aside-card aside-card--danger">
-          <div class="aside-card__title">Zona sensible</div>
+        <section class="if-side if-side--danger">
+          <div class="if-side__k">Zona sensible</div>
           <form method="post" action="/casos/{{ caso.id }}/cancelar" id="formCancelarCaso" onsubmit="return confirm('¿Cancelar el caso #{{ caso.id }}?');">
-            <textarea class="caso-input mb-2" name="comentario" rows="1" placeholder="Motivo de cancelación"></textarea>
-            <button class="btn-caso-danger"><i class="bi bi-x-circle"></i> Cancelar caso</button>
+            <textarea class="caso-input" name="comentario" rows="1" placeholder="Motivo de cancelación"></textarea>
+            <button type="submit" class="if-btn if-btn--line-danger if-btn--block">Cancelar caso</button>
           </form>
         </section>
         {% endif %}
@@ -579,36 +584,29 @@
 
   {# Barra fija inferior: guardar sin scrollear #}
   {% if puede_actuar and ((datos_etapa and datos_inline) or transiciones or (datos_etapa and not datos_inline)) %}
-  <div class="caso-sticky-bar" role="region" aria-label="Acciones de guardado">
-    <div class="caso-sticky-bar__inner">
-      <div class="caso-sticky-bar__hint">
+  <div class="if-sticky" role="region" aria-label="Acciones de guardado">
+    <div class="if-sticky__inner">
+      <div class="if-sticky__hint">
         {% if pendientes_total %}
-        <span class="st st-bad">{{ pendientes_total }} pendiente{{ 's' if pendientes_total != 1 }}</span>
+        <span class="if-badge">{{ pendientes_total }} pendiente{{ 's' if pendientes_total != 1 }}</span>
         {% else %}
-        <span class="st st-ok">Requisitos al día</span>
+        <span class="if-sit if-sit--ok">Requisitos al día</span>
         {% endif %}
-        <span class="caso-sticky-bar__muted">Guarde los cambios antes de avanzar</span>
+        <span class="if-sticky__muted">Guarde los cambios antes de avanzar</span>
       </div>
-      <div class="caso-sticky-bar__actions">
+      <div class="if-sticky__acts">
         {% if datos_etapa and datos_inline %}
-        <button type="submit" form="formDatosInline" class="btn-caso-secondary">
-          <i class="bi bi-check2"></i> Guardar datos
-        </button>
+        <button type="submit" form="formDatosInline" class="if-btn if-btn--ghost">Guardar datos</button>
         {% elif datos_etapa and not datos_inline %}
-        <a class="btn-caso-secondary" href="/casos/{{ caso.id }}/datos"><i class="bi bi-sliders"></i> Formulario de datos</a>
+        <a class="if-btn if-btn--ghost" href="/casos/{{ caso.id }}/datos">Formulario de datos</a>
         {% endif %}
         {% if transiciones %}
-        <a href="#seccion-acciones" class="btn-caso-primary" id="ctaStickyAccion">
-          <i class="bi bi-arrow-right"></i> Ir a acciones
-        </a>
+        <a href="#seccion-acciones" class="if-btn" id="ctaStickyAccion">Ir a acciones</a>
         {% endif %}
       </div>
     </div>
   </div>
   {% endif %}
-</div>
-
-
 
 <script>
 (function () {
@@ -640,7 +638,7 @@
     } catch (_) {}
     submitting = true;
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando…';
+    btn.textContent = 'Procesando…';
   });
 })();
 </script>
@@ -653,7 +651,7 @@
       btn.disabled = true;
       if (btn.tagName === 'BUTTON') {
         btn.dataset._label = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Ejecutando API…';
+        btn.textContent = 'Ejecutando API…';
       }
     });
   });
@@ -673,7 +671,7 @@
   });
 })();
 </script>
-<script src="/static/js/dato_formato.js?v=20260903o"></script>
-<script src="/static/js/dato_condicion.js?v=20260903o"></script>
-<script src="/static/js/datos_form.js?v=20260903o"></script>
+<script src="/static/js/dato_formato.js?v=20260903p"></script>
+<script src="/static/js/dato_condicion.js?v=20260903p"></script>
+<script src="/static/js/datos_form.js?v=20260910e"></script>
 {% endblock %}

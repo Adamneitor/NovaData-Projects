@@ -1,9 +1,11 @@
 {% extends "shell_claude.html" %}
 {% block page_title %}Casos · Helios · NOVA{% endblock %}
 {% block breadcrumb %}
-<a href="{{ url_for('launcher') }}">NOVA</a><span class="sep">/</span>
-<a href="{{ url_for('helios_home') }}">Helios</a><span class="sep">/</span>
-<span class="cur">Casos</span>
+<a class="nv-crumb__a" href="{{ url_for('launcher') }}">NOVA</a>
+<span class="nv-crumb__sep" aria-hidden="true">›</span>
+<a class="nv-crumb__a" href="{{ url_for('helios_home') }}">Helios Producto</a>
+<span class="nv-crumb__sep" aria-hidden="true">›</span>
+<span class="nv-crumb__cur">Casos</span>
 {% endblock %}
 {% block content %}
 <div class="casos-head">

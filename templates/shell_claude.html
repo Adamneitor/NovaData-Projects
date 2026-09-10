@@ -1,5 +1,6 @@
 {% extends "base_claude.html" %}
 {% from "macros/nova_mark.html" import nova_mark, icon_helios, icon_hermes, icon_venus, icon_zeus, icon_ares, icon_lock, user_initials %}
+{% from "macros/nova_loader.html" import nova_loader, nova_loader_js %}
 {% set pick = shell_pick_mode|default(false) %}
 {% set catalog = solutions_enriched if solutions_enriched is defined else solutions %}
 {% set current_id = session.get('nova_solution') or active_product %}
@@ -34,7 +35,9 @@
           {% endif %}
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg>
         </button>
-        <span class="nv-env-badge nv-env-badge--plain">Desarrollo</span>
+        {% if nova_env|default('development') != 'production' %}
+        <span class="nv-env-badge nv-env-badge--plain">{{ nova_env|default('development')|capitalize if nova_env|default('development') != 'development' else 'Desarrollo' }}</span>
+        {% endif %}
       </div>
       <div class="nv-topbar__right">
         <div class="nv-user-tray">
@@ -184,10 +187,11 @@
     </aside>
     <div class="nv-main{% if pick %} nv-main--blank{% endif %}">
       {% if not pick %}
-      <nav class="nv-crumb" aria-label="Breadcrumb">
+      <nav class="nv-crumb" aria-label="Ruta">
         {% block breadcrumb %}
-        <a href="{{ url_for('launcher') }}">NOVA</a><span class="sep">/</span>
-        <span class="cur">Helios</span>
+        <a class="nv-crumb__a" href="{{ url_for('launcher') }}">NOVA</a>
+        <span class="nv-crumb__sep" aria-hidden="true">/</span>
+        <span class="nv-crumb__cur">Helios</span>
         {% endblock %}
       </nav>
       {% endif %}
@@ -221,8 +225,10 @@
     </div>
   </div>
 </div>
+{{ nova_loader() }}
 {% endblock %}
 {% block extra_scripts %}
+{{ nova_loader_js() }}
 <script>
 (function () {
   var pickMode = {{ 'true' if pick else 'false' }};
@@ -243,6 +249,17 @@
     });
   }
 
+  // Tras el login, entrar a una solución mantiene la animación 5 s.
+  window.NovaLoad.conectarEnlaces('.nv-switcher__item[href]', 5000);
+  document.querySelectorAll('a.nv-rail__link[data-helios-path]').forEach(function (enlace) {
+    enlace.addEventListener('click', function (ev) {
+      // En el workspace el iframe se recarga en sitio; aquí sí hay navegación.
+      if (document.getElementById('heliosFrame')) return;
+      if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      window.NovaLoad.show();
+    });
+  });
+
   var rail = document.getElementById('appRail');
   var overlay = document.getElementById('railOverlay');
   var railToggle = document.getElementById('railToggle');
@@ -253,6 +270,12 @@
   if (!pickMode) {
     railToggle?.addEventListener('click', function () { setRail(!rail.classList.contains('is-open')); });
     overlay?.addEventListener('click', function () { setRail(false); });
+    rail?.querySelectorAll('a.nv-rail__link, a.nv-rail__back').forEach(function (a) {
+      a.addEventListener('click', function () { setRail(false); });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setRail(false);
+    });
   }
 
   var modal = document.getElementById('lockedModal');

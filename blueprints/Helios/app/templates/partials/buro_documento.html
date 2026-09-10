@@ -1,0 +1,419 @@
+{# =====================================================================
+   Documento de buró · Helios 360 — estilo NOVA profesional.
+   Variables requeridas: r (dict reporte), nombre, cedula, iniciales,
+   score, banda, dictamen, compact (bool).
+   NOTA: r puede venir incompleto (solo campos del API log). Todos los
+   accesos usan |default o fallback para evitar UndefinedError.
+   ===================================================================== #}
+{% set r = r or {} %}
+{% set cuentas_list = r.get('Cuentas', []) or [] %}
+{% set compact = compact|default(false) %}
+{% set mostrar_identidad = mostrar_identidad|default(true) %}
+{% set iniciales = iniciales|default(((nombre or r.get('Nombre','CL'))[:2]|upper)) %}
+{% set dm = dictamen|default(r.get('DictamenBuro','')) %}
+{% set xc = (score|default(r.get('Xcore', 0)) or 0)|int %}
+{% set xc_clamp = [300, [xc, 999]|min]|max if xc else 0 %}
+{% set xc_pct = ((xc_clamp - 300) / 699.0) if xc else 0 %}
+
+{# Banda de score #}
+{% if not xc %}{% set banda_cls = 'none' %}{% set banda_txt = 'Sin score' %}
+{% elif xc < 580 %}{% set banda_cls = 'bad' %}{% set banda_txt = 'Malo' %}
+{% elif xc < 670 %}{% set banda_cls = 'low' %}{% set banda_txt = 'Bajo' %}
+{% elif xc < 740 %}{% set banda_cls = 'mid' %}{% set banda_txt = 'Regular' %}
+{% elif xc < 800 %}{% set banda_cls = 'good' %}{% set banda_txt = 'Bueno' %}
+{% else %}{% set banda_cls = 'great' %}{% set banda_txt = 'Excelente' %}
+{% endif %}
+
+<article class="if-buro if-buro--nova {% if compact %}if-buro--compact{% endif %}">
+
+  {# ====== HEADER: Identidad + Score Gauge ====== #}
+  <header class="if-buro__header">
+    {% if mostrar_identidad %}
+    <div class="if-buro__person">
+      <span class="if-buro__av">{{ iniciales }}</span>
+      <div class="if-buro__who">
+        <div class="if-buro__name">{{ nombre|default(r.get('Nombre','—')) }}</div>
+        <div class="if-buro__meta">
+          <span class="if-buro__ced">{{ cedula|default(r.get('Cedula','—')) }}</span>
+          {% if dm %}
+          <span class="if-sit {% if (dm|string)|upper in ['OK','BUENO','APROBADA'] %}if-sit--ok{% elif (dm|string)|upper in ['ALERTA','REGULAR','REFERIDA'] %}if-sit--warn{% else %}if-sit--bad{% endif %}">{{ dm }}</span>
+          {% endif %}
+          {% if r.get('ChanceFavor') is not none %}
+          <span class="if-buro__chip if-buro__chip--favor">Favor {{ r.get('ChanceFavor') }}%</span>
+          {% endif %}
+          {% if r.get('ChanceRiesgoEnContra') is not none %}
+          <span class="if-buro__chip if-buro__chip--contra">Riesgo {{ r.get('ChanceRiesgoEnContra') }}%</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="if-buro__heading">
+      <span class="if-buro__eyebrow">Reporte consolidado</span>
+      <h2>Buró de crédito</h2>
+      <p>Comportamiento, obligaciones y capacidad crediticia</p>
+    </div>
+    {% endif %}
+
+    {# Score Gauge SVG — arco semicircular 180° #}
+    {% set arc_len = 204 %}
+    <div class="if-gauge {% if not xc %}if-gauge--empty{% endif %}" data-band="{{ banda_cls }}">
+      <svg viewBox="0 0 160 95" class="if-gauge__svg">
+        <defs>
+          <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#888CA0"/>
+            <stop offset="48%" stop-color="#4A9FF5"/>
+            <stop offset="100%" stop-color="#5B52E8"/>
+          </linearGradient>
+        </defs>
+        <path d="M 15 80 A 65 65 0 0 1 145 80" fill="none" stroke="#e8ebf0" stroke-width="10" stroke-linecap="round"/>
+        {% if xc %}
+        <path d="M 15 80 A 65 65 0 0 1 145 80" fill="none" stroke="url(#gaugeGrad)" stroke-width="10" stroke-linecap="round"
+              stroke-dasharray="{{ (arc_len * xc_pct)|round(1) }} {{ arc_len }}" />
+        {% endif %}
+      </svg>
+      <div class="if-gauge__center">
+        <div class="if-gauge__label">XCORE</div>
+        <div class="if-gauge__value">{{ xc if xc else '—' }}</div>
+        <div class="if-gauge__of">de 999</div>
+        <span class="if-gauge__band if-gauge__band--{{ banda_cls }}">{{ banda_txt }}</span>
+      </div>
+    </div>
+  </header>
+
+  {# ====== KPI STRIP ====== #}
+  {% set hist_anios = r.get('HistoriaAnios', '—') %}
+  {% set uso_tc = r.get('UsoLimitePct', 0)|int %}
+  {% set n_activas = r.get('CuentasActivas', 0) %}
+  {% set n_cerradas = r.get('CuentasCerradas', 0) %}
+  {% set atraso = (r.get('AtrasoMonto') or r.get('AtrasoTotal') or 0)|float %}
+  <div class="if-buro__kpis">
+    <div class="if-buro__kpi">
+      <div class="if-buro__kpi-l">Historia crediticia</div>
+      <div class="if-buro__kpi-v">{{ hist_anios }} <span>años</span></div>
+    </div>
+    <div class="if-buro__kpi {% if uso_tc > 70 %}is-alert{% elif uso_tc > 40 %}is-warn{% else %}is-ok{% endif %}">
+      <div class="if-buro__kpi-l">Uso del límite TC</div>
+      <div class="if-buro__kpi-v">{{ r.get('UsoLimitePct', '—') }}%</div>
+    </div>
+    <div class="if-buro__kpi">
+      <div class="if-buro__kpi-l">Cuentas activas</div>
+      <div class="if-buro__kpi-v">{{ n_activas }} <span>abiertas</span></div>
+      <div class="if-buro__kpi-sub">{{ n_cerradas }} cerradas</div>
+    </div>
+    <div class="if-buro__kpi {% if atraso > 0 %}is-alert{% else %}is-ok{% endif %}">
+      <div class="if-buro__kpi-l">Atraso total</div>
+      <div class="if-buro__kpi-v">{{ '{:,.0f}'.format(atraso) }}</div>
+      <div class="if-buro__kpi-sub">{{ 'Con vencimientos' if atraso > 0 else 'Al día' }}</div>
+    </div>
+    {% set eic_min = r.get('EicMin') %}
+    {% if eic_min is not none %}
+    <div class="if-buro__kpi">
+      <div class="if-buro__kpi-l">EIC rango</div>
+      <div class="if-buro__kpi-v">{{ '{:,.0f}'.format(eic_min|float) }} – {{ '{:,.0f}'.format((r.get('EicMax') or 0)|float) }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if not compact %}
+  {# ====== GRID: Capacidad + Histórico Score ====== #}
+  {% set ingresos = r.get('Ingresos') %}
+  {% set comprometido = r.get('Comprometido') %}
+  {% set end_pct = r.get('EndeudamientoPct') %}
+  {% set disponible = r.get('DisponibleMes') %}
+  {% set asalariado = r.get('Asalariado') %}
+  <div class="if-buro__grid2">
+    <section class="if-buro__card">
+      <div class="if-buro__card-h">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Endeudamiento Actual
+      </div>
+      {% if asalariado is not none %}
+      <div class="if-buro__row"><span>Asalariado</span><strong>{{ 'SÍ' if asalariado|int == 1 else 'NO' }}</strong></div>
+      {% endif %}
+      <div class="if-buro__row"><span>Ingresos</span><strong>RD$ {{ '{:,.0f}'.format(ingresos|float) if ingresos else '—' }}</strong></div>
+      <div class="if-buro__row"><span>Comprometido</span><strong>RD$ {{ '{:,.0f}'.format(comprometido|float) if comprometido else '—' }}</strong></div>
+      <div class="if-buro__row">
+        <span>Endeudamiento</span>
+        <strong class="{% if end_pct and (end_pct|float) > 60 %}is-bad{% elif end_pct and (end_pct|float) > 40 %}is-warn{% endif %}">{{ end_pct if end_pct is not none else '—' }}%</strong>
+      </div>
+      <div class="if-buro__disp">
+        <span>Disponible / mes</span>
+        <strong class="{% if disponible is not none and disponible|float < 0 %}is-bad{% endif %}">RD$ {{ '{:,.0f}'.format(disponible|float) if disponible is not none else '—' }}</strong>
+      </div>
+    </section>
+
+    <section class="if-buro__card">
+      <div class="if-buro__card-h">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Histórico de Score
+      </div>
+      {% set hist = r.get('HistorialScore', []) or [] %}
+      {% if hist %}
+      <div class="if-buro__hist">
+        {% for h in hist %}
+        {% set h_score = (h.get('score', 0) if h is mapping else h.score)|int %}
+        {% set h_pct = (([300, [h_score, 999]|min]|max - 300) / 699.0 * 100)|round|int if h_score else 5 %}
+        <div class="if-buro__bar" title="{{ h.get('mes','') if h is mapping else h.mes }}: {{ h_score }}">
+          <span class="if-buro__bar-v">{{ h_score }}</span>
+          <i style="height: {{ [8, (h_pct * 0.6)|int]|max }}px"
+             class="{% if h_score >= 800 %}is-great{% elif h_score >= 740 %}is-good{% elif h_score >= 670 %}is-mid{% elif h_score >= 580 %}is-low{% else %}is-bad{% endif %}"></i>
+          <small>{{ h.get('mes','') if h is mapping else h.mes }}</small>
+        </div>
+        {% endfor %}
+      </div>
+      {% if hist|length >= 2 %}
+      {% set first_s = (hist[0].get('score',0) if hist[0] is mapping else hist[0].score)|int %}
+      {% set last_s = (hist[-1].get('score',0) if hist[-1] is mapping else hist[-1].score)|int %}
+      {% set delta = last_s - first_s %}
+      <div class="if-buro__hist-meta">
+        {{ hist|length }} evaluaciones ·
+        <span class="{% if delta > 0 %}is-up{% elif delta < 0 %}is-down{% endif %}">
+          {{ '↑' if delta > 0 else ('↓' if delta < 0 else '→') }} {{ delta|abs }} pts vs primera
+        </span>
+      </div>
+      {% endif %}
+      {% else %}
+      <p class="if-buro__empty">Sin histórico de evaluaciones.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  {# ====== CUENTAS ====== #}
+  {% if cuentas_list %}
+  <section class="if-buro__section">
+    <div class="if-buro__sec-h">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Detalle de Cuentas
+      <span class="if-buro__count">{{ cuentas_list|length }}</span>
+    </div>
+    {% for cta in cuentas_list %}
+    <div class="if-rep-cta">
+      <div class="if-rep-cta__top">
+        <span>{{ cta.get('entidad','—') if cta is mapping else cta.entidad }}{% if (cta.get('producto') if cta is mapping else cta.producto) %} · {{ cta.get('producto') if cta is mapping else cta.producto }}{% endif %}</span>
+        <em class="{% if (cta.get('estado','') if cta is mapping else cta.estado) != 'abierta' %}is-off{% endif %}">{{ 'Abierta' if (cta.get('estado','') if cta is mapping else cta.estado) == 'abierta' else 'Cerrada' }}</em>
+      </div>
+      <div class="if-rep-cta__grid">
+        <span>Apertura <strong>{{ (cta.get('apertura','—') if cta is mapping else cta.apertura) or '—' }}</strong></span>
+        <span>Aprobado <strong>{{ '{:,.0f}'.format((cta.get('aprobado',0) if cta is mapping else cta.aprobado)|float) }}</strong></span>
+        <span>Adeudado <strong>{{ '{:,.0f}'.format((cta.get('adeudado',0) if cta is mapping else cta.adeudado)|float) }}</strong></span>
+        <span>Cuota <strong>{{ '{:,.0f}'.format((cta.get('cuota',0) if cta is mapping else cta.cuota)|float) }}</strong></span>
+        <span>Vencido <strong class="{% if ((cta.get('vencido',0) if cta is mapping else cta.vencido)|float) > 0 %}is-bad{% else %}is-ok{% endif %}">{{ '{:,.0f}'.format((cta.get('vencido',0) if cta is mapping else cta.vencido)|float) }}</strong></span>
+      </div>
+      {% set vec = (cta.get('vector') if cta is mapping else cta.vector) %}
+      {% if vec %}
+      <div class="if-rep-24">
+        <span>Vector 24M</span>
+        {% with celdas = vec %}{% include "partials/buro_vector.html" %}{% endwith %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {# ====== RESUMEN DE ENDEUDAMIENTO ====== #}
+  {% if cuentas_list %}
+  {% set ns = namespace(tot_aprobado=0, tot_adeudado=0, tot_cuota=0, tot_vencido=0, n_open=0, n_closed=0) %}
+  {% for cta in cuentas_list %}
+    {% set ns.tot_aprobado = ns.tot_aprobado + ((cta.get('aprobado',0) if cta is mapping else cta.aprobado)|float) %}
+    {% set ns.tot_adeudado = ns.tot_adeudado + ((cta.get('adeudado',0) if cta is mapping else cta.adeudado)|float) %}
+    {% set ns.tot_cuota = ns.tot_cuota + ((cta.get('cuota',0) if cta is mapping else cta.cuota)|float) %}
+    {% set ns.tot_vencido = ns.tot_vencido + ((cta.get('vencido',0) if cta is mapping else cta.vencido)|float) %}
+    {% if (cta.get('estado','') if cta is mapping else cta.estado) == 'abierta' %}
+      {% set ns.n_open = ns.n_open + 1 %}
+    {% else %}
+      {% set ns.n_closed = ns.n_closed + 1 %}
+    {% endif %}
+  {% endfor %}
+  <section class="if-buro__section">
+    <div class="if-buro__sec-h">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Resumen de Endeudamiento
+    </div>
+    <div class="if-buro__card">
+      <div class="if-v360-endeu">
+        <div class="if-v360-endeu__kpi">
+          <span class="if-v360-endeu__label">Total Aprobado</span>
+          <strong class="if-v360-endeu__value">RD$ {{ '{:,.0f}'.format(ns.tot_aprobado) }}</strong>
+        </div>
+        <div class="if-v360-endeu__kpi">
+          <span class="if-v360-endeu__label">Total Adeudado</span>
+          <strong class="if-v360-endeu__value">RD$ {{ '{:,.0f}'.format(ns.tot_adeudado) }}</strong>
+        </div>
+        <div class="if-v360-endeu__kpi">
+          <span class="if-v360-endeu__label">Total Cuotas</span>
+          <strong class="if-v360-endeu__value">RD$ {{ '{:,.0f}'.format(ns.tot_cuota) }}</strong>
+        </div>
+        <div class="if-v360-endeu__kpi">
+          <span class="if-v360-endeu__label">Total Vencido</span>
+          <strong class="if-v360-endeu__value {% if ns.tot_vencido > 0 %}is-bad{% else %}is-ok{% endif %}">RD$ {{ '{:,.0f}'.format(ns.tot_vencido) }}</strong>
+        </div>
+        <div class="if-v360-endeu__kpi">
+          <span class="if-v360-endeu__label">Cuentas Abiertas</span>
+          <strong class="if-v360-endeu__value">{{ ns.n_open }}</strong>
+        </div>
+        <div class="if-v360-endeu__kpi">
+          <span class="if-v360-endeu__label">Cuentas Cerradas</span>
+          <strong class="if-v360-endeu__value if-v360-endeu__value--muted">{{ ns.n_closed }}</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ====== LEADS PRE-APROBADOS ====== #}
+  {% set leads = r.get('Leads', []) or [] %}
+  {% if leads %}
+  <section class="if-buro__section">
+    <div class="if-buro__sec-h">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+      Leads Pre-Aprobados
+      <span class="if-buro__count">{{ leads|length }}</span>
+    </div>
+    <div class="if-buro__leads">
+      {% for lead in leads %}
+      <div class="if-buro__lead">
+        <div class="if-buro__lead-top">
+          <span class="if-buro__lead-tipo">{{ lead.get('tipo','') if lead is mapping else lead.tipo }}</span>
+          <span class="if-buro__lead-dict">{{ lead.get('Dictamen','') if lead is mapping else lead.Dictamen }}</span>
+        </div>
+        <div class="if-buro__lead-body">
+          <div><span>Monto</span><strong>{{ (lead.get('Moneda','DOP') if lead is mapping else lead.Moneda) }} {{ '{:,.0f}'.format((lead.get('Monto',0) if lead is mapping else lead.Monto)|float) }}</strong></div>
+          <div><span>Cuota</span><strong>{{ '{:,.0f}'.format((lead.get('Cuota',0) if lead is mapping else lead.Cuota)|float) }}</strong></div>
+          {% set plazo = (lead.get('Plazo') if lead is mapping else lead.Plazo) %}
+          {% if plazo %}<div><span>Plazo</span><strong>{{ plazo }} meses</strong></div>{% endif %}
+          {% set tasa = (lead.get('Tasa') if lead is mapping else lead.Tasa) %}
+          {% if tasa %}<div><span>Tasa</span><strong>{{ '%.2f'|format(tasa|float) }}%</strong></div>{% endif %}
+        </div>
+        {% set prod = (lead.get('Producto_Sugerido') if lead is mapping else lead.Producto_Sugerido) %}
+        {% if prod %}
+        <div class="if-buro__lead-prod">{{ prod }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ====== CONSULTAS PREVIAS ====== #}
+  {% set consultas = r.get('ConsultasPrevias', []) or [] %}
+  {% if consultas %}
+  <section class="if-buro__section">
+    <div class="if-buro__sec-h">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Consultas Previas al Buró
+      <span class="if-buro__count">{{ consultas|length }}</span>
+    </div>
+    <div class="if-buro__table-wrap">
+      <table class="if-buro__table">
+        <thead><tr><th>Fecha</th><th>Institución</th><th>Mes</th><th>Notas</th></tr></thead>
+        <tbody>
+          {% for cp in consultas %}
+          <tr>
+            <td>{{ cp.get('Fecha_Texto','') if cp is mapping else cp.Fecha_Texto }}</td>
+            <td>{{ (cp.get('Cliente_Consulta','') if cp is mapping else cp.Cliente_Consulta) or '—' }}</td>
+            <td>{{ cp.get('Mes_Label','') if cp is mapping else cp.Mes_Label }}</td>
+            <td>
+              {% if (cp.get('Es_Interna') if cp is mapping else cp.Es_Interna) %}<span class="if-buro__tag">Interna</span>{% endif %}
+              {% set reps = (cp.get('Repeticiones',0) if cp is mapping else cp.Repeticiones) %}
+              {% if reps and reps > 1 %}<span class="if-buro__tag if-buro__tag--dup">×{{ reps }}</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ====== LOCALIZACIÓN ====== #}
+  {% set loc = r.get('Localizacion', {}) or {} %}
+  {% set tels = loc.get('telefonos', []) or [] %}
+  {% set mails = loc.get('correos', []) or [] %}
+  {% set dirs = loc.get('direcciones', []) or [] %}
+  {% set fam = loc.get('familiares', {}) or {} %}
+  {% set vehs = loc.get('vehiculos', []) or [] %}
+  {% if tels or mails or dirs or fam.get('Nombre_Padre') %}
+  <section class="if-buro__section">
+    <div class="if-buro__sec-h">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      Localización y Contacto
+    </div>
+    <div class="if-buro__loc-grid">
+      {% if tels %}
+      <div class="if-buro__loc-card">
+        <div class="if-buro__loc-h">Teléfonos <span>{{ tels|length }}</span></div>
+        {% for t in tels %}
+        <div class="if-buro__loc-item"><strong>{{ t.get('Telefono','') if t is mapping else t.Telefono }}</strong><span>{{ (t.get('Tipo_Telefono','') if t is mapping else t.Tipo_Telefono) or 'N/A' }}</span></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if mails %}
+      <div class="if-buro__loc-card">
+        <div class="if-buro__loc-h">Correos <span>{{ mails|length }}</span></div>
+        {% for m in mails %}
+        <div class="if-buro__loc-item"><strong>{{ m.get('Correo','') if m is mapping else m.Correo }}</strong></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if dirs %}
+      <div class="if-buro__loc-card if-buro__loc-card--wide">
+        <div class="if-buro__loc-h">Direcciones <span>{{ dirs|length }}</span></div>
+        {% for d in dirs %}
+        <div class="if-buro__loc-item"><strong>{{ d.get('Direccion','') if d is mapping else d.Direccion }}</strong></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if fam.get('Nombre_Padre') or fam.get('Nombre_Madre') or fam.get('Nombre_Conyugue') %}
+      <div class="if-buro__loc-card">
+        <div class="if-buro__loc-h">Núcleo Familiar</div>
+        {% if fam.get('Nombre_Padre') %}<div class="if-buro__loc-item"><span>Padre</span><strong>{{ fam.get('Nombre_Padre') }}</strong></div>{% endif %}
+        {% if fam.get('Nombre_Madre') %}<div class="if-buro__loc-item"><span>Madre</span><strong>{{ fam.get('Nombre_Madre') }}</strong></div>{% endif %}
+        {% if fam.get('Nombre_Conyugue') %}<div class="if-buro__loc-item"><span>Cónyuge</span><strong>{{ fam.get('Nombre_Conyugue') }}</strong></div>{% endif %}
+        {% if fam.get('Actividad_Comercial') %}<div class="if-buro__loc-item"><span>Ocupación</span><strong>{{ fam.get('Actividad_Comercial') }}</strong></div>{% endif %}
+      </div>
+      {% endif %}
+      {% if vehs %}
+      <div class="if-buro__loc-card">
+        <div class="if-buro__loc-h">Vehículos <span>{{ vehs|length }}</span></div>
+        {% for v in vehs %}
+        <div class="if-buro__loc-item">
+          <strong>{{ (v.get('Marca','') if v is mapping else v.Marca) or '—' }} {{ (v.get('Modelo','') if v is mapping else v.Modelo) or '' }} {{ (v.get('Anio','') if v is mapping else v.Anio) or '' }}</strong>
+          <span>{% if (v.get('Placa') if v is mapping else v.Placa) %}Placa: {{ v.get('Placa') if v is mapping else v.Placa }}{% endif %}{% if (v.get('Color') if v is mapping else v.Color) %} · {{ v.get('Color') if v is mapping else v.Color }}{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% else %}
+  {# ====== MODO COMPACTO (dentro del caso) ====== #}
+  {% if cuentas_list %}
+  <section class="if-rep-card if-rep-card--list">
+    <div class="if-rep-list__head">
+      <span class="if-rep-h">Cuentas · {{ cuentas_list|length }}</span>
+      {% if cuentas_list|length > 2 %}<span class="if-rep-h__sub">Mostrando 2 de {{ cuentas_list|length }}</span>{% endif %}
+    </div>
+    {% for cta in cuentas_list[:2] %}
+    <div class="if-rep-cta">
+      <div class="if-rep-cta__top">
+        <span>{{ cta.get('entidad','—') if cta is mapping else cta.entidad }}{% if (cta.get('producto') if cta is mapping else cta.producto) %} · {{ cta.get('producto') if cta is mapping else cta.producto }}{% endif %}</span>
+        <em class="{% if (cta.get('estado','') if cta is mapping else cta.estado) != 'abierta' %}is-off{% endif %}">{{ 'Abierta' if (cta.get('estado','') if cta is mapping else cta.estado) == 'abierta' else 'Cerrada' }}</em>
+      </div>
+      <div class="if-rep-cta__grid">
+        <span>Apertura <strong>{{ (cta.get('apertura','—') if cta is mapping else cta.apertura) or '—' }}</strong></span>
+        <span>Aprobado <strong>{{ '{:,.0f}'.format((cta.get('aprobado',0) if cta is mapping else cta.aprobado)|float) }}</strong></span>
+        <span>Adeudado <strong>{{ '{:,.0f}'.format((cta.get('adeudado',0) if cta is mapping else cta.adeudado)|float) }}</strong></span>
+        <span>Cuota <strong>{{ '{:,.0f}'.format((cta.get('cuota',0) if cta is mapping else cta.cuota)|float) }}</strong></span>
+        <span>Vencido <strong class="{% if ((cta.get('vencido',0) if cta is mapping else cta.vencido)|float) == 0 %}is-ok{% endif %}">{{ '{:,.0f}'.format((cta.get('vencido',0) if cta is mapping else cta.vencido)|float) }}</strong></span>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+  {% endif %}
+
+</article>

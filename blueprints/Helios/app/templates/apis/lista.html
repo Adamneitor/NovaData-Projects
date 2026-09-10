@@ -10,7 +10,7 @@
 </div>
 
 <div class="if-api-list">
-  <div style="padding:12px 16px;border-bottom:1px solid #eef0f5;font:700 10px/1 Montserrat,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#9ca3af">
+  <div class="if-api-list__h">
     {{ apis|length }} integración{{ 'es' if apis|length != 1 }}
   </div>
   {% for a in apis %}
@@ -22,7 +22,7 @@
     <div class="if-api-row__url"><b>{{ a.metodo }}</b> {{ a.url }} · {{ a.outputs|length }} outputs</div>
   </a>
   {% else %}
-  <div class="if-empty" style="border:0">
+  <div class="if-empty if-empty--bare">
     <div class="if-empty__box">
       <div class="if-empty__title">No hay APIs</div>
       <p>Cree la primera integración para asociarla a un estado.</p>
@@ -36,13 +36,13 @@
     <form method="post" action="/apis/crear">
       <div class="modal-header"><h5 class="modal-title">Nueva API</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" required placeholder="Ej: Consulta buró de crédito"></div>
-        <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2"></textarea></div>
-        <div class="row">
-          <div class="col-4 mb-2"><label class="form-label">Método</label>
-            <select class="form-select" name="metodo"><option>POST</option><option>GET</option><option>PUT</option><option>PATCH</option></select>
+        <div class="if-field"><label class="if-lbl" for="apiNombre">Nombre</label><input class="caso-input" id="apiNombre" name="nombre" required placeholder="Ej: Consulta buró de crédito"></div>
+        <div class="if-field"><label class="if-lbl" for="apiDesc">Descripción</label><textarea class="caso-input" id="apiDesc" name="descripcion" rows="2"></textarea></div>
+        <div class="if-2 if-2--48">
+          <div class="if-field"><label class="if-lbl" for="apiMetodo">Método</label>
+            <select class="caso-input" id="apiMetodo" name="metodo"><option>POST</option><option>GET</option><option>PUT</option><option>PATCH</option></select>
           </div>
-          <div class="col-8 mb-2"><label class="form-label">URL</label><input class="form-control" name="url" required placeholder="https://api.ejemplo.com/consulta/{id}"></div>
+          <div class="if-field"><label class="if-lbl" for="apiUrl">URL</label><input class="caso-input" id="apiUrl" name="url" required placeholder="https://api.ejemplo.com/consulta/{id}"></div>
         </div>
       </div>
       <div class="modal-footer">

@@ -9,7 +9,7 @@
   <button type="button" class="if-btn" data-bs-toggle="modal" data-bs-target="#modalNuevo">Nuevo cliente</button>
 </div>
 
-<form method="get" action="/catalogos/clientes" class="if-search" style="width:100%;max-width:480px" role="search">
+<form method="get" action="/catalogos/clientes" class="if-search if-search--wide" role="search">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
   <input type="search" name="q" id="qClientes" value="{{ q or '' }}" placeholder="Nombre, identificación, teléfono o correo…" autocomplete="off">
 </form>
@@ -19,20 +19,20 @@
     {% for c in clientes %}
     <a class="if-people__row" href="/catalogos/clientes/{{ c.id }}">
       <span class="if-av">{{ c.nombre_completo[:2]|upper }}</span>
-      <span style="flex:1;min-width:0">
+      <span class="if-grow">
         <span class="if-people__name">{{ c.nombre_completo }}</span>
         <span class="if-people__meta">{{ c.tipo_identificacion }} {{ c.identificacion }}{% if c.telefono %} · {{ c.telefono }}{% endif %}</span>
       </span>
-      <span class="if-sit">Ver ficha</span>
+      <span class="if-sit">Vista 360</span>
     </a>
     {% endfor %}
     {% if clientes_total %}
     <div class="if-foot"><span class="if-foot__txt">Mostrando {{ clientes|length }} de {{ clientes_total }}{% if clientes_mode == 'recientes' %} · recientes{% endif %}</span></div>
     {% endif %}
   {% elif q %}
-    <div class="if-empty" style="border:0"><div class="if-empty__box"><div class="if-empty__title">Sin resultados</div><p>Nada para «{{ q }}».</p></div></div>
+    <div class="if-empty if-empty--bare"><div class="if-empty__box"><div class="if-empty__title">Sin resultados</div><p>Nada para «{{ q }}».</p></div></div>
   {% else %}
-    <div class="if-empty" style="border:0"><div class="if-empty__box"><div class="if-empty__title">No hay clientes</div><p>Cree uno con «Nuevo cliente».</p></div></div>
+    <div class="if-empty if-empty--bare"><div class="if-empty__box"><div class="if-empty__title">No hay clientes</div><p>Cree uno con «Nuevo cliente».</p></div></div>
   {% endif %}
 </div>
 
@@ -41,17 +41,30 @@
     <form method="post" action="/catalogos/clientes/crear">
       <div class="modal-header"><h5 class="modal-title">Nuevo cliente</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <div class="mb-2"><label class="form-label">Nombre completo / Razón social</label><input class="form-control" name="nombre_completo" required></div>
-        <div class="row">
-          <div class="col-5 mb-2"><label class="form-label">Tipo ID</label>
-            <select class="form-select" name="tipo_identificacion">
+        <div class="if-field">
+          <label class="if-lbl" for="cliNombre">Nombre completo / Razón social</label>
+          <input class="caso-input" id="cliNombre" name="nombre_completo" required>
+        </div>
+        <div class="if-2 if-2--37">
+          <div class="if-field">
+            <label class="if-lbl" for="cliTipo">Tipo ID</label>
+            <select class="caso-input" id="cliTipo" name="tipo_identificacion">
               <option>Cedula</option><option>Pasaporte</option><option>RNC</option>
             </select>
           </div>
-          <div class="col-7 mb-2"><label class="form-label">Identificación</label><input class="form-control" name="identificacion" required></div>
+          <div class="if-field">
+            <label class="if-lbl" for="cliId">Identificación</label>
+            <input class="caso-input" id="cliId" name="identificacion" required>
+          </div>
         </div>
-        <div class="mb-2"><label class="form-label">Teléfono</label><input class="form-control" name="telefono"></div>
-        <div class="mb-2"><label class="form-label">Correo</label><input type="email" class="form-control" name="correo"></div>
+        <div class="if-field">
+          <label class="if-lbl" for="cliTel">Teléfono</label>
+          <input class="caso-input" id="cliTel" name="telefono">
+        </div>
+        <div class="if-field">
+          <label class="if-lbl" for="cliMail">Correo</label>
+          <input type="email" class="caso-input" id="cliMail" name="correo">
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button>
@@ -71,22 +84,22 @@
   async function live(q) {
     const my = ++seq;
     if (q.trim().length < 2) return;
-    box.innerHTML = '<div class="if-empty" style="border:0"><div class="if-empty__box"><p>Buscando…</p></div></div>';
+    box.innerHTML = '<div class="if-empty if-empty--bare"><div class="if-empty__box"><p>Buscando…</p></div></div>';
     const res = await fetch(`/catalogos/api/clientes/buscar?q=${encodeURIComponent(q)}&page_size=25`);
     const data = await res.json();
     if (my !== seq) return;
     if (!data.items.length) {
-      box.innerHTML = '<div class="if-empty" style="border:0"><div class="if-empty__box"><div class="if-empty__title">Sin resultados</div></div></div>';
+      box.innerHTML = '<div class="if-empty if-empty--bare"><div class="if-empty__box"><div class="if-empty__title">Sin resultados</div></div></div>';
       return;
     }
     box.innerHTML = data.items.map(c => `
       <a class="if-people__row" href="/catalogos/clientes/${c.id}">
         <span class="if-av">${esc((c.nombre_completo || '??').slice(0,2).toUpperCase())}</span>
-        <span style="flex:1;min-width:0">
+        <span class="if-grow">
           <span class="if-people__name">${esc(c.nombre_completo)}</span>
           <span class="if-people__meta">${esc(c.tipo_identificacion)} ${esc(c.identificacion)}${c.telefono ? ' · ' + esc(c.telefono) : ''}</span>
         </span>
-        <span class="if-sit">Ver ficha</span>
+        <span class="if-sit">Vista 360</span>
       </a>`).join('') +
       `<div class="if-foot"><span class="if-foot__txt">Mostrando ${data.items.length} de ${data.total}</span></div>`;
   }

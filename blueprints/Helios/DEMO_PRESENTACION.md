@@ -1,4 +1,4 @@
-﻿# Guía — Demo Helios multi-rol
+# Guía — Demo Helios multi-rol
 
 ## Usuarios demo (login NOVA / Helios)
 

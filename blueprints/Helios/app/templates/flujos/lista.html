@@ -15,15 +15,15 @@
   </div>
   {% for f in flujos %}
   <div class="if-tr if-tr--flow {% if loop.index is even %}if-tr--alt{% endif %}">
-    <span style="font:600 13px Montserrat,sans-serif;color:#1a1a2e">{{ f.nombre }}</span>
+    <span class="if-cell">{{ f.nombre }}</span>
     <span class="if-flujo">{{ f.tipo_flujo.nombre }}</span>
-    <span style="font:600 12.5px Montserrat,sans-serif;color:#1a1a2e">{{ f.etapas|length }}</span>
-    <span style="font:600 12.5px Montserrat,sans-serif;color:#1a1a2e">{% set ns = namespace(n=0) %}{% for e in f.etapas %}{% set ns.n = ns.n + (e.estados|length) %}{% endfor %}{{ ns.n }}</span>
+    <span class="if-cell--num">{{ f.etapas|length }}</span>
+    <span class="if-cell--num">{% set ns = namespace(n=0) %}{% for e in f.etapas %}{% set ns.n = ns.n + (e.estados|length) %}{% endfor %}{{ ns.n }}</span>
     {% if f.activo %}<span class="if-sit">Activo</span>{% else %}<span class="if-sit">Borrador</span>{% endif %}
-    <a class="if-btn if-btn--sm" href="/flujos/{{ f.id }}/editar">Diseñar</a>
+    <a class="if-btn if-btn--ghost if-btn--sm" href="/flujos/{{ f.id }}/editar">Diseñar</a>
   </div>
   {% else %}
-  <div class="if-empty" style="border:0">
+  <div class="if-empty if-empty--bare">
     <div class="if-empty__box">
       <div class="if-empty__title">No hay flujos</div>
       <p>Cree el primero para comenzar a diseñar el proceso.</p>
@@ -38,11 +38,11 @@
     <form method="post" action="/flujos/crear">
       <div class="modal-header"><h5 class="modal-title">Nuevo flujo</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
-        <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" required placeholder="Ej: Préstamo personal"></div>
-        <div class="mb-2"><label class="form-label">Tipo de flujo</label>
-          <select class="form-select" name="tipo_flujo_id">{% for t in tipos %}<option value="{{ t.id }}">{{ t.nombre }}</option>{% endfor %}</select>
+        <div class="if-field"><label class="if-lbl" for="flujoNombre">Nombre</label><input class="caso-input" id="flujoNombre" name="nombre" required placeholder="Ej: Préstamo personal"></div>
+        <div class="if-field"><label class="if-lbl" for="flujoTipo">Tipo de flujo</label>
+          <select class="caso-input" id="flujoTipo" name="tipo_flujo_id">{% for t in tipos %}<option value="{{ t.id }}">{{ t.nombre }}</option>{% endfor %}</select>
         </div>
-        <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2"></textarea></div>
+        <div class="if-field"><label class="if-lbl" for="flujoDesc">Descripción</label><textarea class="caso-input" id="flujoDesc" name="descripcion" rows="2"></textarea></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="if-btn if-btn--ghost" data-bs-dismiss="modal">Cancelar</button>

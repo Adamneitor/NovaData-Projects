@@ -14,8 +14,6 @@
         box.innerHTML = "";
       }
     });
-    const banner = form.querySelector("[data-datos-error-banner]");
-    if (banner) banner.remove();
   }
 
   function showFieldError(form, fieldName, message) {
@@ -40,19 +38,6 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
-  }
-
-  function showBanner(form, text) {
-    let banner = form.querySelector("[data-datos-error-banner]");
-    if (!banner) {
-      banner = document.createElement("div");
-    banner.className = "alert alert-danger hx-datos-banner";
-    banner.setAttribute("data-datos-error-banner", "1");
-    const card = form.querySelector(".hx-datos-card");
-    if (card) form.insertBefore(banner, card);
-    else form.prepend(banner);
-    }
-    banner.innerHTML = `<strong><i class="bi bi-exclamation-triangle-fill"></i> ${escapeHtml(text)}</strong>`;
   }
 
   function isSiNo(val) {
@@ -84,7 +69,7 @@
         return;
       }
       if (isSelect || isSiNo(val)) return;
-      const digitsOnly = digitsOf(val);
+      /* No bloquear el POST por máscara de moneda/número: el servidor normaliza. */
       if (formato === "telefono" || codigo === "telefono") {
         const digits = val.replace(/\D/g, "");
         if (digits.length < 10) {
@@ -96,22 +81,6 @@
           errors.push({ field: el.name, message: "El teléfono no puede superar 15 dígitos." });
         }
         return;
-      }
-      if (codigo === "numero" || codigo === "moneda" || formato === "numero" || formato === "moneda") {
-        const normalized = digitsOnly.replace(/\.0+$/, "");
-        if (!/^-?\d+$/.test(normalized)) {
-          errors.push({ field: el.name, message: "Solo se permiten números enteros (sin decimales)." });
-        }
-      }
-      if (
-        codigo === "numero_decimal" ||
-        codigo === "moneda_decimal" ||
-        formato === "numero_decimal" ||
-        formato === "moneda_decimal"
-      ) {
-        if (!/^-?\d+(\.\d+)?$/.test(digitsOnly)) {
-          errors.push({ field: el.name, message: "Valor numérico inválido." });
-        }
       }
     });
     return errors;
@@ -152,7 +121,14 @@
   function applyErrors(form, errors) {
     clearFieldErrors(form);
     if (!errors?.length) return;
-    showBanner(form, "Corrija los campos marcados. Sus datos se conservaron.");
+    const fieldErrors = errors.filter((e) => e.field && e.field !== "_form");
+    const formError = errors.find((e) => !e.field || e.field === "_form");
+    const message = formError?.message || (
+      fieldErrors.length === 1
+        ? "Revise el campo marcado. El valor ingresado se conserva."
+        : `Revise los ${fieldErrors.length} campos marcados. Los valores ingresados se conservan.`
+    );
+    global.HeliosToast?.show(message, "danger", { duration: 60000 });
     errors.forEach((e) => {
       if (e.field && e.field !== "_form") showFieldError(form, e.field, e.message);
     });
@@ -203,6 +179,12 @@
       }
 
       clearFieldErrors(form);
+      try {
+        sessionStorage.setItem(
+          "helios-pending-toast",
+          JSON.stringify({ message: json.message || "Datos guardados.", level: "success" })
+        );
+      } catch (_) {}
       if (json.redirect) {
         window.location.href = json.redirect;
         return;

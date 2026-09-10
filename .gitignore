@@ -70,3 +70,7 @@ instance/
 instance/Helios.bak
 *.bak
 
+# Archivos operativos / adjuntos (pueden contener PII)
+blueprints/Helios/uploads/
+scripts/_migrate_payload/
+

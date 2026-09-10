@@ -8,27 +8,31 @@
   </div>
 </div>
 
-<div class="if-split--2 if-split">
+<div class="if-split if-split--2">
   <div class="if-table">
     <div class="if-tr if-tr--head if-tr--tipo">
       <span>Tipo</span><span>Código</span><span></span>
     </div>
     {% for t in tipos %}
     <div class="if-tr if-tr--tipo {% if loop.index is even %}if-tr--alt{% endif %}">
-      <span style="font:600 13px Montserrat,sans-serif;color:#1a1a2e">{{ t.nombre }}</span>
+      <span class="if-cell">{{ t.nombre }}</span>
       <span class="if-flujo">{{ t.id }}</span>
       <span></span>
     </div>
     {% else %}
-    <div class="if-empty" style="border:0"><div class="if-empty__box"><div class="if-empty__title">No hay tipos</div></div></div>
+    <div class="if-empty if-empty--bare">
+      <div class="if-empty__box"><div class="if-empty__title">No hay tipos</div></div>
+    </div>
     {% endfor %}
   </div>
   <div class="if-panel">
-    <div style="font:700 13px Montserrat,sans-serif;color:#1a1a2e">Nuevo tipo</div>
+    <div class="if-panel__t">Nuevo tipo</div>
     <form method="post" action="/catalogos/tipos-flujo/crear">
-      <label class="form-label">Nombre</label>
-      <input class="form-control" name="nombre" placeholder="Ej: Cobranza" required>
-      <button class="if-btn" style="margin-top:12px">Crear</button>
+      <div class="if-field">
+        <label class="if-lbl" for="tipoNombre">Nombre</label>
+        <input class="caso-input" id="tipoNombre" name="nombre" placeholder="Ej: Cobranza" required>
+      </div>
+      <button class="if-btn">Crear</button>
     </form>
   </div>
 </div>

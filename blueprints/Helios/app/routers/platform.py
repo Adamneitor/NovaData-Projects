@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -83,6 +85,13 @@ def helios_home(
         "pendientes": 0,
         "comite": comite,
     }
+    hora = datetime.now().hour
+    if hora < 12:
+        saludo = "Buenos días"
+    elif hora < 19:
+        saludo = "Buenas tardes"
+    else:
+        saludo = "Buenas noches"
     tiles = [
         {"title": "Casos", "desc": "Tu bandeja de trabajo", "href": "/casos", "icon": "bi-kanban", "count": bandeja},
         {"title": "Clientes 360", "desc": "Ficha y casos por cliente", "href": "/catalogos/clientes", "icon": "bi-people", "count": None},
@@ -93,8 +102,17 @@ def helios_home(
         {"title": "Tipos de flujo", "desc": "Crédito · Operativo", "href": "/catalogos/tipos-flujo", "icon": "bi-tags", "count": None},
         {"title": "Seguridad", "desc": "Usuarios · grupos · políticas", "href": "/admin/usuarios", "icon": "bi-shield-lock", "count": None},
     ]
+    from datetime import datetime as _dt
     return render(
         request,
         "plataforma/helios_home.html",
-        {"solution": sol, "tiles": tiles, "usuario": user, "user": user, "stats": stats},
+        {
+            "solution": sol,
+            "tiles": tiles,
+            "usuario": user,
+            "user": user,
+            "stats": stats,
+            "saludo": saludo,
+            "now": _dt.now(),
+        },
     )

@@ -8,7 +8,7 @@
   </div>
 </div>
 
-<div class="if-panel" style="max-width:640px">
+<div class="if-panel if-panel--narrow">
   <div class="if-danger-grid">
     <div class="if-danger-box">
       <div class="if-danger-box__k">Se borra</div>
@@ -20,11 +20,14 @@
     </div>
   </div>
   <form method="post" action="/admin/ambiente/reiniciar" id="formReiniciar">
-    <label class="form-label">Escribe <strong style="font:700 11.5px ui-monospace,Menlo,monospace">REINICIAR</strong> para habilitar</label>
-    <input class="form-control" id="confirmReiniciar" placeholder="REINICIAR" autocomplete="off">
-    <button type="submit" class="if-btn if-btn--off" id="btnReiniciar" disabled style="margin-top:12px;width:100%">Reiniciar datos del BPM</button>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+    <div class="if-field">
+      <label class="if-lbl" for="confirmReiniciar">Escribe <strong>REINICIAR</strong> para habilitar</label>
+      <input class="caso-input" id="confirmReiniciar" placeholder="REINICIAR" autocomplete="off">
+    </div>
+    <button type="submit" class="if-btn if-btn--off if-btn--block" id="btnReiniciar" disabled>Reiniciar datos del BPM</button>
   </form>
-  <div style="font:400 11px/1.5 Montserrat,sans-serif;color:#9ca3af">Habilitado se vuelve rojo — el único rojo de la pantalla.</div>
+  <p class="if-hint">Habilitado se vuelve rojo — el único rojo de la pantalla.</p>
 </div>
 <script>
 (function () {

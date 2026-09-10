@@ -1,138 +1,150 @@
 {% extends "base.html" %}
 {% block titulo %}API {{ api.nombre }}{% endblock %}
 {% block contenido %}
+<nav class="if-bc" aria-label="breadcrumb">
+  <a href="/apis">APIs</a>
+  <span class="if-bc__sep"></span>
+  <span class="if-bc__now">{{ api.nombre }}</span>
+</nav>
+
 <div class="if-head">
   <div class="if-head__text">
     <h1 class="if-head__title">{{ api.nombre }}</h1>
-    <p class="if-head__sub">Definición, parámetros y outputs · <a href="/apis">Volver a APIs</a></p>
+    <p class="if-head__sub">Definición, parámetros y outputs</p>
   </div>
+  <a class="if-btn if-btn--ghost" href="/apis">Volver a APIs</a>
 </div>
 
-<div class="row g-3">
-  <div class="col-lg-5">
-    <div class="card">
-      <div class="card-header fw-semibold"><i class="bi bi-gear me-1"></i>Definición del API</div>
-      <div class="card-body">
-        <form method="post" action="/apis/{{ api.id }}/actualizar">
-          <div class="mb-2"><label class="form-label">Nombre</label><input class="form-control" name="nombre" value="{{ api.nombre }}" required></div>
-          <div class="mb-2"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="2">{{ api.descripcion or '' }}</textarea></div>
-          <div class="row">
-            <div class="col-4 mb-2"><label class="form-label">Método</label>
-              <select class="form-select" name="metodo">
-                {% for m in ['POST','GET','PUT','PATCH'] %}<option {% if api.metodo == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
-              </select>
-            </div>
-            <div class="col-8 mb-2"><label class="form-label">URL</label><input class="form-control" name="url" value="{{ api.url }}" required></div>
+<div class="if-cfg if-cfg--api">
+  <article class="if-card">
+    <header class="if-card__head">
+      <div class="if-card__copy"><h2>Definición</h2><p>Método, URL y headers</p></div>
+    </header>
+    <div class="if-card__body if-card__body--pad">
+      <form method="post" action="/apis/{{ api.id }}/actualizar">
+        <div class="if-field"><label class="if-lbl">Nombre</label><input class="caso-input" name="nombre" value="{{ api.nombre }}" required></div>
+        <div class="if-field"><label class="if-lbl">Descripción</label><textarea class="caso-input" name="descripcion" rows="2">{{ api.descripcion or '' }}</textarea></div>
+        <div class="if-2 if-2--48">
+          <div class="if-field"><label class="if-lbl">Método</label>
+            <select class="caso-input" name="metodo">
+              {% for m in ['POST','GET','PUT','PATCH'] %}<option {% if api.metodo == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+            </select>
           </div>
-          <div class="mb-2"><label class="form-label">Headers fijos (JSON)</label><textarea class="form-control font-monospace" name="headers_json" rows="2" placeholder='{"Authorization": "Bearer XXX"}'>{{ api.headers_json or '' }}</textarea></div>
-          <div class="row align-items-end">
-            <div class="col-6 mb-2"><label class="form-label">Timeout (seg)</label><input type="number" class="form-control" name="timeout_seg" value="{{ api.timeout_seg }}"></div>
-            <div class="col-6 mb-3 form-check ms-2"><input class="form-check-input" type="checkbox" name="activo" value="1" id="apiact" {% if api.activo %}checked{% endif %}><label class="form-check-label" for="apiact">Activo</label></div>
-          </div>
-          <button class="btn btn-warning">Guardar</button>
-        </form>
-      </div>
+          <div class="if-field"><label class="if-lbl">URL</label><input class="caso-input" name="url" value="{{ api.url }}" required></div>
+        </div>
+        <div class="if-field"><label class="if-lbl">Headers fijos (JSON)</label><textarea class="caso-input if-mono" name="headers_json" rows="2" placeholder='{"Authorization": "Bearer XXX"}'>{{ api.headers_json or '' }}</textarea></div>
+        <div class="if-2">
+          <div class="if-field"><label class="if-lbl">Timeout (seg)</label><input type="number" class="caso-input" name="timeout_seg" value="{{ api.timeout_seg }}"></div>
+          <label class="if-check"><input type="checkbox" name="activo" value="1" {% if api.activo %}checked{% endif %}> Activo</label>
+        </div>
+        <div class="if-dact"><button type="submit" class="if-btn if-btn--ghost">Guardar</button></div>
+      </form>
     </div>
-  </div>
+  </article>
 
-  <div class="col-lg-7">
-    <div class="card mb-3">
-      <div class="card-header fw-semibold"><i class="bi bi-box-arrow-in-right me-1"></i>Parámetros de entrada</div>
-      <div class="card-body">
-        <table class="table table-sm align-middle">
-          <thead class="table-light"><tr><th>Nombre</th><th>Ubicación</th><th>Origen</th><th>Valor</th><th></th></tr></thead>
+  <div class="if-cfg__stack">
+    <article class="if-card">
+      <header class="if-card__head">
+        <div class="if-card__copy"><h2>Parámetros de entrada</h2><p>Cómo se arma el request</p></div>
+      </header>
+      <div class="if-card__body if-card__body--pad">
+        <table class="if-tbl">
+          <thead><tr><th>Nombre</th><th>Ubicación</th><th>Origen</th><th>Valor</th><th></th></tr></thead>
           <tbody>
           {% for p in api.parametros %}
             <tr>
-              <td class="fw-semibold">{{ p.nombre }}</td>
-              <td><span class="badge badge-etapa">{{ p.ubicacion }}</span></td>
+              <td class="if-cell">{{ p.nombre }}</td>
+              <td><span class="if-sit">{{ p.ubicacion }}</span></td>
               <td>{{ p.origen }}</td>
-              <td class="small text-muted">
+              <td class="if-sub">
                 {% if p.origen == 'fijo' %}{{ p.valor_fijo }}
                 {% elif p.origen == 'dato' %}{{ p.dato.nombre if p.dato else '?' }}
                 {% else %}{{ p.campo_caso }}{% endif %}
               </td>
-              <td class="text-end">
-                <form method="post" action="/apis/{{ api.id }}/parametros/{{ p.id }}/eliminar" class="d-inline">
-                  <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              <td>
+                <form method="post" action="/apis/{{ api.id }}/parametros/{{ p.id }}/eliminar">
+                  <button class="if-btn if-btn--line-danger if-btn--sm" type="submit">Quitar</button>
                 </form>
               </td>
             </tr>
-          {% else %}<tr><td colspan="5" class="text-muted text-center">Sin parámetros.</td></tr>{% endfor %}
+          {% else %}
+            <tr><td colspan="5"><div class="if-empty if-empty--in"><p>Sin parámetros.</p></div></td></tr>
+          {% endfor %}
           </tbody>
         </table>
-        <form method="post" action="/apis/{{ api.id }}/parametros/crear" class="row g-2 align-items-end border-top pt-3">
-          <div class="col-md-3"><label class="form-label small">Nombre</label><input class="form-control form-control-sm" name="nombre" required></div>
-          <div class="col-md-2"><label class="form-label small">Ubicación</label>
-            <select class="form-select form-select-sm" name="ubicacion"><option value="body">body</option><option value="query">query</option><option value="path">path</option><option value="header">header</option></select>
+        <form method="post" action="/apis/{{ api.id }}/parametros/crear" class="if-add if-mini">
+          <div class="if-field"><label class="if-lbl">Nombre</label><input class="caso-input" name="nombre" required></div>
+          <div class="if-field if-field--sm"><label class="if-lbl">Ubicación</label>
+            <select class="caso-input" name="ubicacion"><option value="body">body</option><option value="query">query</option><option value="path">path</option><option value="header">header</option></select>
           </div>
-          <div class="col-md-2"><label class="form-label small">Origen</label>
-            <select class="form-select form-select-sm" name="origen" onchange="cambiarOrigen(this)"><option value="fijo">Valor fijo</option><option value="dato">Dato compl.</option><option value="caso">Campo del caso</option></select>
+          <div class="if-field if-field--sm"><label class="if-lbl">Origen</label>
+            <select class="caso-input" name="origen" onchange="cambiarOrigen(this)"><option value="fijo">Valor fijo</option><option value="dato">Dato compl.</option><option value="caso">Campo del caso</option></select>
           </div>
-          <div class="col-md-3">
-            <label class="form-label small">Valor</label>
-            <input class="form-control form-control-sm origen-fijo" name="valor_fijo" placeholder="valor fijo">
-            <select class="form-select form-select-sm origen-dato d-none" name="dato_id">
+          <div class="if-field">
+            <label class="if-lbl">Valor</label>
+            <input class="caso-input origen-fijo" name="valor_fijo" placeholder="valor fijo">
+            <select class="caso-input origen-dato d-none" name="dato_id">
               {% for d in datos %}<option value="{{ d.id }}">{{ d.nombre }}</option>{% endfor %}
             </select>
-            <select class="form-select form-select-sm origen-caso d-none" name="campo_caso">
+            <select class="caso-input origen-caso d-none" name="campo_caso">
               {% for v, lbl in campos_caso %}<option value="{{ v }}">{{ lbl }}</option>{% endfor %}
             </select>
           </div>
-          <div class="col-md-2"><button class="btn btn-sm btn-warning w-100">Agregar</button></div>
+          <button class="if-btn if-btn--ghost if-btn--sm">Agregar</button>
         </form>
       </div>
-    </div>
+    </article>
 
-    <div class="card">
-      <div class="card-header fw-semibold"><i class="bi bi-box-arrow-right me-1"></i>Outputs (respuesta)</div>
-      <div class="card-body">
-        <table class="table table-sm align-middle">
-          <thead class="table-light"><tr><th>Nombre</th><th>Ruta JSON</th><th>Formato</th><th></th></tr></thead>
+    <article class="if-card">
+      <header class="if-card__head">
+        <div class="if-card__copy"><h2>Outputs</h2><p>Valores que se extraen de la respuesta</p></div>
+      </header>
+      <div class="if-card__body if-card__body--pad">
+        <table class="if-tbl">
+          <thead><tr><th>Nombre</th><th>Ruta JSON</th><th>Formato</th><th></th></tr></thead>
           <tbody>
           {% for o in api.outputs %}
             <tr>
-              <td class="fw-semibold">{{ o.nombre }}</td>
-              <td class="font-monospace small">{{ o.json_path }}</td>
-              <td><span class="badge badge-etapa">{{ o.formato }}</span></td>
-              <td class="text-end">
-                <form method="post" action="/apis/{{ api.id }}/outputs/{{ o.id }}/eliminar" class="d-inline">
-                  <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              <td class="if-cell">{{ o.nombre }}</td>
+              <td class="if-mono">{{ o.json_path }}</td>
+              <td><span class="if-sit">{{ o.formato }}</span></td>
+              <td>
+                <form method="post" action="/apis/{{ api.id }}/outputs/{{ o.id }}/eliminar">
+                  <button class="if-btn if-btn--line-danger if-btn--sm" type="submit">Quitar</button>
                 </form>
               </td>
             </tr>
-          {% else %}<tr><td colspan="4" class="text-muted text-center">Sin outputs. Defina los valores que se extraen de la respuesta.</td></tr>{% endfor %}
+          {% else %}
+            <tr><td colspan="4"><div class="if-empty if-empty--in"><p>Sin outputs. Defina los valores que se extraen de la respuesta.</p></div></td></tr>
+          {% endfor %}
           </tbody>
         </table>
-        <form method="post" action="/apis/{{ api.id }}/outputs/crear" class="row g-2 align-items-end border-top pt-3">
-          <div class="col-md-4"><label class="form-label small">Nombre</label><input class="form-control form-control-sm" name="nombre" required placeholder="Ej: score"></div>
-          <div class="col-md-4"><label class="form-label small">Ruta JSON (con puntos)</label><input class="form-control form-control-sm font-monospace" name="json_path" required placeholder="resultado.score"></div>
-          <div class="col-md-2"><label class="form-label small">Formato</label>
-            <select class="form-select form-select-sm" name="formato"><option value="texto">texto</option><option value="numero">número</option><option value="booleano">booleano</option></select>
+        <form method="post" action="/apis/{{ api.id }}/outputs/crear" class="if-add if-mini">
+          <div class="if-field"><label class="if-lbl">Nombre</label><input class="caso-input" name="nombre" required placeholder="Ej: score"></div>
+          <div class="if-field"><label class="if-lbl">Ruta JSON</label><input class="caso-input if-mono" name="json_path" required placeholder="resultado.score"></div>
+          <div class="if-field if-field--sm"><label class="if-lbl">Formato</label>
+            <select class="caso-input" name="formato"><option value="texto">texto</option><option value="numero">número</option><option value="booleano">booleano</option></select>
           </div>
-          <div class="col-md-2"><button class="btn btn-sm btn-warning w-100">Agregar</button></div>
+          <button class="if-btn if-btn--ghost if-btn--sm">Agregar</button>
         </form>
       </div>
-    </div>
+    </article>
 
-    <div class="card mt-3">
-      <div class="card-header fw-semibold"><i class="bi bi-play-circle me-1"></i>Probar API</div>
-      <div class="card-body">
-        <p class="form-text">Ejecuta el API contra un caso real y muestra preview del request / outputs. Queda registrado en el log del caso.</p>
-        <div class="row g-2 align-items-end">
-          <div class="col-md-4">
-            <label class="form-label small">Id de caso</label>
-            <input type="number" class="form-control form-control-sm" id="testCasoId" min="1" placeholder="Ej. 2">
+    <article class="if-card">
+      <header class="if-card__head">
+        <div class="if-card__copy"><h2>Probar API</h2><p>Contra un caso real · queda en el log del caso</p></div>
+      </header>
+      <div class="if-card__body if-card__body--pad">
+        <div class="if-mini">
+          <div class="if-field">
+            <label class="if-lbl" for="testCasoId">Id de caso</label>
+            <input type="number" class="caso-input" id="testCasoId" min="1" placeholder="Ej. 2">
           </div>
-          <div class="col-md-3">
-            <button type="button" class="btn btn-sm btn-outline-primary" id="btnTestApi">
-              <i class="bi bi-lightning"></i> Test API
-            </button>
-          </div>
+          <button type="button" class="if-btn" id="btnTestApi">Test API</button>
         </div>
-        <pre class="small bg-light border rounded p-2 mt-3 mb-0 d-none" id="testApiOut" style="max-height:320px;overflow:auto"></pre>
+        <pre class="if-pre d-none" id="testApiOut"></pre>
       </div>
-    </div>
+    </article>
   </div>
 </div>
 
@@ -147,7 +159,11 @@ document.getElementById('btnTestApi')?.addEventListener('click', async () => {
   const casoId = document.getElementById('testCasoId').value;
   const out = document.getElementById('testApiOut');
   const btn = document.getElementById('btnTestApi');
-  if (!casoId) { alert('Indique un Id de caso'); return; }
+  if (!casoId) {
+    window.HeliosToast?.show('Indique un Id de caso.', 'warning');
+    document.getElementById('testCasoId')?.focus();
+    return;
+  }
   out.classList.remove('d-none');
   out.textContent = 'Ejecutando…';
   if (btn) { btn.disabled = true; }

@@ -2,6 +2,11 @@
 {% block titulo %}Diseñar · {{ flujo.nombre }}{% endblock %}
 {% block contenido %}
 <div class="fb-shell" id="flowBuilder">
+  <nav class="if-bc" aria-label="breadcrumb">
+    <a href="/flujos">Flujos</a>
+    <span class="if-bc__sep"></span>
+    <span class="if-bc__now">Diseñar</span>
+  </nav>
   <div class="if-head">
     <div class="if-head__text">
       <h1 class="if-head__title" id="fbTitle">{{ flujo.nombre }}</h1>
@@ -14,37 +19,37 @@
     </div>
   </div>
 
-  <div class="row g-3">
-    <div class="col-lg-3">
-      <div class="card fb-card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <strong>Etapas</strong>
-          <button type="button" class="if-btn if-btn--sm" id="fbAddEtapa">Añadir</button>
-        </div>
-        <div class="list-group list-group-flush" id="fbEtapaList"></div>
-      </div>
-    </div>
+  <div class="if-cfg">
+    <article class="if-card fb-card">
+      <header class="if-card__head if-card__head--split">
+        <div class="if-card__copy"><h2>Etapas</h2><p>Orden del pipeline</p></div>
+        <button type="button" class="if-btn if-btn--sm" id="fbAddEtapa">Añadir</button>
+      </header>
+      <div class="fb-etapas list-group list-group-flush" id="fbEtapaList"></div>
+    </article>
 
-    <div class="col-lg-9">
-      <div class="card fb-card mb-3">
-        <div class="card-header fw-semibold">Propiedades del flujo</div>
-        <div class="card-body row g-2" id="fbFlowProps"></div>
-      </div>
+    <div class="if-cfg__stack">
+      <article class="if-card fb-card">
+        <header class="if-card__head">
+          <div class="if-card__copy"><h2>Propiedades del flujo</h2><p>Nombre, tipo e integración al cierre</p></div>
+        </header>
+        <div class="if-card__body if-card__body--pad if-fb-grid" id="fbFlowProps"></div>
+      </article>
 
-      <div class="card fb-card" id="fbEtapaPanel">
-        <div class="card-header">
-          <ul class="nav nav-tabs card-header-tabs" id="fbTabs">
-            <li class="nav-item"><button type="button" class="nav-link active" data-tab="props">Etapa</button></li>
-            <li class="nav-item"><button type="button" class="nav-link" data-tab="grupos">Grupos</button></li>
-            <li class="nav-item"><button type="button" class="nav-link" data-tab="docs">Documentos</button></li>
-            <li class="nav-item"><button type="button" class="nav-link" data-tab="datos">Datos</button></li>
-            <li class="nav-item"><button type="button" class="nav-link" data-tab="estados">Estados / Transiciones</button></li>
-          </ul>
+      <article class="if-card fb-card" id="fbEtapaPanel">
+        <header class="if-card__head if-card__head--tabs">
+          <div class="if-tabs" id="fbTabs">
+            <button type="button" class="nav-link if-tab active" data-tab="props">Etapa</button>
+            <button type="button" class="nav-link if-tab" data-tab="grupos">Grupos</button>
+            <button type="button" class="nav-link if-tab" data-tab="docs">Documentos</button>
+            <button type="button" class="nav-link if-tab" data-tab="datos">Datos</button>
+            <button type="button" class="nav-link if-tab" data-tab="estados">Estados / Transiciones</button>
+          </div>
+        </header>
+        <div class="if-card__body if-card__body--pad" id="fbEtapaBody">
+          <div class="if-empty if-empty--in"><p>Seleccione o cree una etapa.</p></div>
         </div>
-        <div class="card-body" id="fbEtapaBody">
-          <div class="empty-state"><i class="bi bi-signpost-2"></i><p>Seleccione o cree una etapa.</p></div>
-        </div>
-      </div>
+      </article>
     </div>
   </div>
 </div>
@@ -54,45 +59,45 @@
   .fb-savebar {
     position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center;
     gap: 1rem; padding: .75rem 1rem; margin: 0 0 1rem; border-radius: 12px;
-    border: 1px solid var(--hx-line, #e2e8f0); background: #fff; box-shadow: 0 4px 16px rgba(15,23,42,.06);
+    border: 1px solid var(--if-line); background: var(--if-paper); box-shadow: 0 4px 16px rgba(15,23,42,.06);
   }
-  .fb-savebar[data-status="dirty"] { border-color: #fbbf24; background: #fffbeb; }
-  .fb-savebar[data-status="saving"] { border-color: #93c5fd; background: #eff6ff; }
-  .fb-savebar[data-status="error"] { border-color: #fca5a5; background: #fef2f2; }
-  .fb-savebar[data-status="clean"] { border-color: #86efac; background: #f0fdf4; }
+  .fb-savebar[data-status="dirty"] { border-color: var(--if-warn); background: #fffbeb; }
+  .fb-savebar[data-status="saving"] { border-color: var(--if-brand); background: #eff6ff; }
+  .fb-savebar[data-status="error"] { border-color: var(--if-danger); background: #fef2f2; }
+  .fb-savebar[data-status="clean"] { border-color: var(--if-ok); background: #f0fdf4; }
   .fb-savebar__status { font-weight: 600; font-size: .9rem; display: flex; align-items: center; gap: .4rem; }
   .fb-card .list-group-item { cursor: pointer; border-left: 3px solid transparent; }
-  .fb-card .list-group-item.active { background: #F7F8FC; border-left-color: #1a1a2e; color: inherit; }
+  .fb-card .list-group-item.active { background: #f4f5f9; border-left-color: var(--if-ink); color: inherit; }
   .fb-etapa-actions { display: flex; gap: .25rem; }
   .fb-etapa-actions .btn { padding: .1rem .35rem; }
   .fb-check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .5rem; }
-  .fb-check { display: flex; gap: .5rem; align-items: flex-start; padding: .55rem .65rem; border: 1px solid var(--hx-line,#e2e8f0); border-radius: 8px; background: #fff; }
-  .fb-estado { border: 1px solid var(--hx-line,#e2e8f0); border-radius: 12px; padding: 1rem; margin-bottom: .85rem; background: #f8fafc; }
+  .fb-check { display: flex; gap: .5rem; align-items: flex-start; padding: .55rem .65rem; border: 1px solid var(--if-line); border-radius: 8px; background: var(--if-paper); }
+  .fb-estado { border: 1px solid var(--if-line); border-radius: 12px; padding: 1rem; margin-bottom: .85rem; background: #f8f9fc; }
   .fb-datos-toolbar {
     display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
     gap: .75rem; margin-bottom: .85rem; padding: .65rem .8rem;
-    background: #f8fafc; border: 1px solid var(--hx-line,#e2e8f0); border-radius: 10px;
+    background: #f8f9fc; border: 1px solid var(--if-line); border-radius: 10px;
   }
-  .fb-datos-next { font-size: .8rem; color: var(--hx-muted,#64748b); white-space: nowrap; }
-  .fb-dato-row.is-used { background: #fff; }
+  .fb-datos-next { font-size: .8rem; color: var(--if-faint); white-space: nowrap; }
+  .fb-dato-row.is-used { background: var(--if-paper); }
   .fb-dato-row.is-dragging { opacity: .55; }
-  .fb-dato-row.fb-dato-drop { outline: 2px dashed #1a1a2e; outline-offset: -2px; }
-  .fb-dato-drag { color: #94a3b8; cursor: grab; width: 28px; text-align: center; }
+  .fb-dato-row.fb-dato-drop { outline: 2px dashed var(--if-ink); outline-offset: -2px; }
+  .fb-dato-drag { color: var(--if-input); cursor: grab; width: 28px; text-align: center; }
   .fb-dato-row.is-used .fb-dato-drag:active { cursor: grabbing; }
   .fb-dato-flash { animation: fbDatoFlash .55s ease; }
   @keyframes fbDatoFlash {
-    0% { background: #ccfbf1; }
+    0% { background: #d1fae5; }
     100% { background: transparent; }
   }
-  .fb-dato-rule { color: var(--hx-muted, #64748b); display: block; margin-top: .15rem; }
+  .fb-dato-rule { color: var(--if-faint); display: block; margin-top: .15rem; }
   .fb-dato-cond { margin-top: .25rem; }
   .data-field.is-cond-disabled,
   .df-field.is-cond-disabled { opacity: .55; transition: opacity .2s ease; }
   .data-field.is-cond-disabled .df-input,
-  .df-field.is-cond-disabled .df-input { background: #f8fafc; }
+  .df-field.is-cond-disabled .df-input { background: #f8f9fc; }
   .fb-estado__head { display: flex; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
-  .nav-tabs .nav-link { cursor: pointer; color: var(--hx-muted,#64748b); border: 0; }
-  .nav-tabs .nav-link.active { color: var(--hx-ink,#1a1a2e); border-bottom: 2px solid #1a1a2e; background: transparent; font-weight: 600; }
+  .nav-tabs .nav-link { cursor: pointer; color: var(--if-faint); border: 0; }
+  .nav-tabs .nav-link.active { color: var(--if-ink); border-bottom: 2px solid var(--if-ink); background: transparent; font-weight: 600; }
 </style>
 
 <script>
@@ -102,7 +107,7 @@
   window.HELIOS_BOOL_DATO_IDS = {{ catalogos.booleano_ids | tojson }};
 </script>
 <script src="/static/js/dato_orden.js?v=20260721b"></script>
-<script src="/static/js/flujo_builder.js?v=20260721b"></script>
+<script src="/static/js/flujo_builder.js?v=20260910e"></script>
 <script>
 (function () {
   let cat = window.HELIOS_FLOW_CATALOGOS;
@@ -169,21 +174,20 @@
   function renderFlowProps(pub) {
     const f = pub.state.flujo;
     elFlow.innerHTML = `
-      <div class="col-md-6"><label class="form-label">Nombre</label>
-        <input class="form-control" id="fNombre" value="${esc(f.nombre)}"></div>
-      <div class="col-md-3"><label class="form-label">Tipo</label>
-        <select class="form-select" id="fTipo">${cat.tipos_flujo.map(t =>
+      <div class="if-field if-fb-span2"><label class="if-lbl">Nombre</label>
+        <input class="caso-input" id="fNombre" value="${esc(f.nombre)}"></div>
+      <div class="if-field"><label class="if-lbl">Tipo</label>
+        <select class="caso-input" id="fTipo">${cat.tipos_flujo.map(t =>
           `<option value="${t.id}" ${t.id==f.tipo_flujo_id?'selected':''}>${esc(t.nombre)}</option>`).join('')}</select></div>
-      <div class="col-md-3"><label class="form-label">API conclusión</label>
-        <select class="form-select" id="fApi">
+      <div class="if-field"><label class="if-lbl">API conclusión</label>
+        <select class="caso-input" id="fApi">
           <option value="">— Ninguno —</option>
           ${cat.apis.map(a => `<option value="${a.id}" ${a.id==f.api_conclusion_id?'selected':''}>${esc(a.nombre)}</option>`).join('')}
         </select></div>
-      <div class="col-12"><label class="form-label">Descripción</label>
-        <textarea class="form-control" id="fDesc" rows="2">${esc(f.descripcion||'')}</textarea></div>
-      <div class="col-12"><div class="form-check">
-        <input class="form-check-input" type="checkbox" id="fActivo" ${f.activo?'checked':''}>
-        <label class="form-check-label" for="fActivo">Flujo activo</label></div></div>`;
+      <div class="if-field if-fb-span2"><label class="if-lbl">Descripción</label>
+        <textarea class="caso-input" id="fDesc" rows="2">${esc(f.descripcion||'')}</textarea></div>
+      <label class="if-check if-fb-span2">
+        <input type="checkbox" id="fActivo" ${f.activo?'checked':''}> Flujo activo</label>`;
     elFlow.querySelector('#fNombre').onchange = e => { store.setFlowField('nombre', e.target.value); elTitle.textContent = e.target.value; };
     elFlow.querySelector('#fTipo').onchange = e => store.setFlowField('tipo_flujo_id', parseInt(e.target.value,10));
     elFlow.querySelector('#fApi').onchange = e => store.setFlowField('api_conclusion_id', e.target.value ? parseInt(e.target.value,10) : null);
@@ -193,19 +197,19 @@
 
   function renderEtapaList(pub) {
     elList.innerHTML = pub.state.etapas.map(e => `
-      <div class="list-group-item ${e.key===pub.selectedEtapaKey?'active':''}" data-key="${esc(e.key)}">
-        <div class="d-flex justify-content-between align-items-start gap-2">
+      <div class="list-group-item fb-step ${e.key===pub.selectedEtapaKey?'active':''}" data-key="${esc(e.key)}">
+        <div class="fb-step__row">
           <div>
-            <div class="fw-semibold">${e.orden}. ${esc(e.nombre)}</div>
-            <div class="small text-muted">${e.estados.length} estado(s)</div>
+            <div class="fb-step__n">${e.orden}. ${esc(e.nombre)}</div>
+            <div class="fb-step__m">${e.estados.length} estado(s)</div>
           </div>
           <div class="fb-etapa-actions" onclick="event.stopPropagation()">
-            <button type="button" class="btn btn-sm btn-outline-dark" data-act="up" data-key="${esc(e.key)}" title="Subir">↑</button>
-            <button type="button" class="btn btn-sm btn-outline-dark" data-act="down" data-key="${esc(e.key)}" title="Bajar">↓</button>
-            <button type="button" class="btn btn-sm btn-outline-danger" data-act="del" data-key="${esc(e.key)}" title="Eliminar">×</button>
+            <button type="button" class="if-btn if-btn--ghost if-btn--sm" data-act="up" data-key="${esc(e.key)}" title="Subir">↑</button>
+            <button type="button" class="if-btn if-btn--ghost if-btn--sm" data-act="down" data-key="${esc(e.key)}" title="Bajar">↓</button>
+            <button type="button" class="if-btn if-btn--line-danger if-btn--sm" data-act="del" data-key="${esc(e.key)}" title="Eliminar">×</button>
           </div>
         </div>
-      </div>`).join('') || '<div class="p-3 text-muted small">Sin etapas</div>';
+      </div>`).join('') || '<div class="if-empty if-empty--in"><p>Sin etapas.</p></div>';
 
     elList.querySelectorAll('.list-group-item').forEach(item => {
       item.onclick = () => store.selectEtapa(item.dataset.key);
@@ -230,22 +234,22 @@
   function renderEtapaBody(pub) {
     const e = pub.selectedEtapa;
     if (!e) {
-      elBody.innerHTML = '<div class="empty-state"><i class="bi bi-signpost-2"></i><p>Seleccione o cree una etapa.</p></div>';
+      elBody.innerHTML = '<div class="if-empty if-empty--in"><p>Seleccione o cree una etapa.</p></div>';
       return;
     }
     if (pub.tab === 'props') {
       elBody.innerHTML = `
-        <div class="row g-2">
-          <div class="col-md-8"><label class="form-label">Nombre</label>
-            <input class="form-control" id="eNombre" value="${esc(e.nombre)}"></div>
-          <div class="col-md-4"><label class="form-label">Orden</label>
-            <input type="number" class="form-control" id="eOrden" value="${e.orden}" min="1"></div>
-          <div class="col-12"><label class="form-label">Descripción</label>
-            <textarea class="form-control" id="eDesc" rows="2">${esc(e.descripcion||'')}</textarea></div>
-          <div class="col-12 d-flex flex-wrap gap-3">
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="eDocs" ${e.solicita_documentacion?'checked':''}><label class="form-check-label" for="eDocs">Solicita documentación</label></div>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="eRetro" ${e.permite_retroceso?'checked':''}><label class="form-check-label" for="eRetro">Permite retroceso</label></div>
-            <div class="form-check"><input class="form-check-input" type="checkbox" id="eFinal" ${e.es_final?'checked':''}><label class="form-check-label" for="eFinal">Etapa final</label></div>
+        <div class="if-fb-grid">
+          <div class="if-field if-fb-wide"><label class="if-lbl">Nombre</label>
+            <input class="caso-input" id="eNombre" value="${esc(e.nombre)}"></div>
+          <div class="if-field"><label class="if-lbl">Orden</label>
+            <input type="number" class="caso-input" id="eOrden" value="${e.orden}" min="1"></div>
+          <div class="if-field if-fb-span2"><label class="if-lbl">Descripción</label>
+            <textarea class="caso-input" id="eDesc" rows="2">${esc(e.descripcion||'')}</textarea></div>
+          <div class="if-fb-span2">
+            <label class="if-check"><input type="checkbox" id="eDocs" ${e.solicita_documentacion?'checked':''}> Solicita documentación</label>
+            <label class="if-check"><input type="checkbox" id="eRetro" ${e.permite_retroceso?'checked':''}> Permite retroceso</label>
+            <label class="if-check"><input type="checkbox" id="eFinal" ${e.es_final?'checked':''}> Etapa final</label>
           </div>
         </div>`;
       const bind = (id, field, cast=v=>v) => elBody.querySelector('#'+id).onchange = ev => {
@@ -731,7 +735,7 @@
     elBody.innerHTML = `
       <div class="d-flex justify-content-between mb-3">
         <p class="text-muted small mb-0">Estados, transiciones manuales, reglas API y reglas por datos adicionales.</p>
-        <button type="button" class="btn btn-sm btn-warning" id="btnAddEstado"><i class="bi bi-plus-lg me-1"></i>Estado</button>
+        <button type="button" class="if-btn if-btn--sm" id="btnAddEstado">Estado</button>
       </div>
       ${e.estados.map(s => {
         const api = (cat.apis || []).find(a => Number(a.id) === Number(s.api_call_id));
@@ -973,7 +977,10 @@
         btn.onclick = () => {
           const api = cat.apis.find(a => a.id === st.api_call_id);
           const firstOut = api?.outputs?.[0]?.id;
-          if (!firstOut) { alert('El API no tiene outputs definidos.'); return; }
+          if (!firstOut) {
+            window.HeliosToast?.show('El API no tiene outputs definidos.', 'warning');
+            return;
+          }
           const reglas = deepClone(st.reglas||[]);
           reglas.push({
             nombre: '',
@@ -1248,7 +1255,7 @@
           btn.textContent = 'Recargando…';
           await reloadCatalogos();
         } catch (err) {
-          alert(err.message || String(err));
+          window.HeliosToast?.show(err.message || String(err), 'danger');
         }
       };
     });
@@ -1270,11 +1277,12 @@
     if (res.ok) {
       elBar.dataset.status = 'clean';
       elStatus.innerHTML = '<i class="bi bi-check-circle"></i> ' + (res.message || 'Guardado');
+      window.HeliosToast?.show(res.message || 'Cambios guardados.', 'success');
       try { await reloadCatalogos(); } catch (_) {}
     } else {
       elBar.dataset.status = 'error';
       elStatus.innerHTML = '<i class="bi bi-x-circle"></i> ' + (res.error || 'Error');
-      alert(res.error || 'No se pudo guardar');
+      window.HeliosToast?.show(res.error || 'No se pudo guardar.', 'danger');
     }
   };
   document.getElementById('fbReload').onclick = () => {

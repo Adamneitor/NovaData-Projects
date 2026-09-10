@@ -51,3 +51,8 @@ def application(environ, start_response):
 
 # Alias por si alguien apunta gunicorn a wsgi:app
 app = flask_app
+
+if __name__ == "__main__":
+    from werkzeug.serving import run_simple
+
+    run_simple("127.0.0.1", 5000, application, use_reloader=True, use_debugger=True, threaded=True)

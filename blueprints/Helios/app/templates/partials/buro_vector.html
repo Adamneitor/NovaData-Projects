@@ -1,0 +1,7 @@
+{# Vector 24M · valores 0 / 1 / 2+ / – como buro_credito #}
+{% set celdas = celdas or [] %}
+<div class="if-vec" title="0 = al día · 1 = 30d · 2 = 60d · 3+ = 90d o más · – = sin dato">
+  {% for c in celdas %}
+  <i class="if-vec__c is-{{ c.cls }}">{{ c.v }}</i>
+  {% endfor %}
+</div>

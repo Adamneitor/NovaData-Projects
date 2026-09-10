@@ -120,6 +120,9 @@ def summarize_api_log(log) -> dict[str, Any]:
             }
 
     resp_dict = resp if isinstance(resp, dict) else {}
+    from app.services.buro_view import normalizar_reporte_buro
+
+    reporte = normalizar_reporte_buro(resp_dict) if resp_dict else {}
     return {
         "id": getattr(log, "id", None),
         "api_nombre": api_nombre,
@@ -136,15 +139,21 @@ def summarize_api_log(log) -> dict[str, Any]:
         "request_preview": body_preview,
         "response_raw": getattr(log, "response_json", None) or "",
         "request_raw": getattr(log, "request_json", None) or "",
-        "es_buro": bool(
-            score_num is not None
-            or resp_dict.get("XCORE") is not None
-            or (api_nombre and "bur" in api_nombre.lower())
-        ),
         "es_motor": bool(
-            dictamen or (api_nombre and ("motor" in api_nombre.lower() or "evalu" in api_nombre.lower()))
+            (api_nombre and ("motor" in api_nombre.lower() or "evalu" in api_nombre.lower()))
+            or (isinstance(dictamen, str) and dictamen.upper() in {"APROBADA", "REFERIDA", "DECLINADA"})
         ),
-        "reporte": resp_dict,
+        "es_buro": bool(
+            (api_nombre and "bur" in api_nombre.lower())
+            or (
+                resp_dict.get("Cuentas")
+                and not (
+                    (api_nombre and ("motor" in api_nombre.lower() or "evalu" in api_nombre.lower()))
+                    or (isinstance(dictamen, str) and dictamen.upper() in {"APROBADA", "REFERIDA", "DECLINADA"})
+                )
+            )
+        ),
+        "reporte": reporte or resp_dict,
     }
 
 
