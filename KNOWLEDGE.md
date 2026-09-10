@@ -97,7 +97,7 @@ python scripts/import_helios_csv.py --wipe --dir "$env:USERPROFILE\Downloads\exp
 - **2026-09-10 CALOR TOTAL H**: Franjas finales del home = barra superior, pilares y bloque de cierre; el pie (`NOVA · El impulso… © 2026`) queda sin fondo.
 - **2026-09-10 CALOR TOTAL H**: La animación de carga quedó sin texto ni barra (solo anillos + marca N). Duraciones: 3 s antes del login, 5 s al enviar el login y al entrar a una solución, 5 s mínimos al abrir el módulo en el iframe y 900 ms en los cambios de pantalla internos (tope de seguridad +15 s).
 - **2026-09-10 CALOR TOTAL H**: Shell anclado al viewport (`body.page-shell` con `height:100dvh` + `overflow:hidden`): topbar, ruta y rail fijos; el scroll vive dentro del iframe, en `.nv-content` de las pantallas propias y en `.nv-rail__groups` cuando los módulos pasan del alto. La carga del iframe se dibuja solo sobre `.nv-workspace`. Cache bust `?v=20260910i`.
-- **2026-09-10 DEPLOY**: Runtime actualizado de Python 3.12.6 a 3.12.11 para evitar el artefacto `cpython-3.12.6+20240909` que devolvía HTTP 500 durante el build de Railpack/Railway.
+- **2026-09-10 DEPLOY**: Python actualizado de 3.12.6 a 3.12.11 en `mise.toml` (fuente efectiva de Railpack) y `runtime.txt`, para evitar el artefacto `cpython-3.12.6+20240909` que devolvía HTTP 500 durante el build.
 
 ## Pitfalls
 - Helios (FastAPI) + Flask comparten proceso vía `wsgi.py` (`a2wsgi`). APIs demo apuntan a `{RAILWAY_PUBLIC_DOMAIN}/demo-api/*`. Con `gunicorn -w 1`, `httpx` sync desde Helios hacia ese mismo host **deadlockea** el worker (~30s timeout) → UI “frisada”. Mitigar: workers/threads>1, invocación in-process, o mock en otro servicio.
